@@ -365,10 +365,20 @@ my %key_map = (&KEY_DOWN      => 'kd',
 # Returns a character if one is waiting, or undef otherwise.
 sub term_get_char () {
     my $ch = getch;
-    return $key_map{$ch} if (defined $key_map{$ch});
     return undef if ($ch eq '-1');    
-    return (sprintf("C-%c", (ord($ch) + ord('a') - 1))) if (iscntrl($ch));
-    return $key_map{$ch} || $ch;
+    my $meta = '';
+    if (ord($ch) == 27) {
+	$ch = getch;
+	return 'esc' if ($ch eq '-1');
+	$meta = 'M-';
+    } elsif ((ord($ch) >= 128) && (ord($ch) < 256)) {
+	$ch = chr(ord($ch)-128);
+	$meta = 'M-';
+    }
+    return $meta . $key_map{$ch} if (defined $key_map{$ch});
+    return ($meta . sprintf("C-%c", (ord($ch) + ord('a') - 1)))
+	if (iscntrl($ch));
+    return $meta . ($key_map{$ch} || $ch);
 }
 
 
