@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-$TL_VERSION="0.1d";
+$TL_VERSION="0.1e";
 $debug=0;
 
 use LC::log; 
@@ -8,11 +8,13 @@ use LC::config;
 use LC::UI;
 use LC::parse;
 use LC::Expand;
+use LC::gag;
 use Socket;
 use Fcntl;
 use IO::Socket;
 use IO::Select;
 use Curses;
+use POSIX;
 $|=1;
 
 # file globals
@@ -46,7 +48,7 @@ if (! $config{mono}) {
     ui_attr('emote',        'fg:cyan',    'bg:black');
     ui_attr('review',       'fg:magenta', 'bg:black');
     ui_attr('usersend',     'fg:red',     'bg:black');
-    ui_attr('time',         'fg:magenta', 'bg:black',  'bold');
+    #ui_attr('time',         'fg:magenta', 'bg:black',  'bold');
     ui_attr('whiteblue',    'fg:white',   'bg:blue');
     ui_attr('greenblue',    'fg:green',   'bg:blue',  'bold');
     ui_attr('yellow',       'fg:yellow',  'bg:black',  'bold');
@@ -105,7 +107,7 @@ sub login {
 sub connect_until {
     my ($waitfor)=@_;
     my ($str,$t,$u);
-    
+
     $waitfor=~ s/\*/\\\*/g;
     $waitfor=~ s/\./\\\./g;
 
@@ -124,58 +126,29 @@ sub connect_until {
 
 	@ready=$s->can_read($wakeup);	
 
-	$t="";
 	$str="";
 	foreach $rs (@ready) {      
 	    if ($rs == $sock) {
-		my $chunk="";
-		my $endtime=time() + 3;
-		while (time() <= $endtime) {
-		    my $crumb="";
-		    if (sysread($sock,$crumb,4096) < 1) {
-			if ($errno != EAGAIN) {
-			    log_err("sysread: $!"); 
-			}
+		my @lines = read_from_server($rs);
+
+		my $end = 0;
+		foreach $str (@lines) {
+		    # workaround for %recip_regexp at blurb prompt
+		    if ($str =~ s/^--> (%.*)$/--> /) {
+			parse_line('--> ');
+			parse_servercmd($1);
+		    } elsif ($str =~ /^%g(.*)/) {
+			parse_servercmd('%g');
+			parse_line($1);
+		    } elsif ($str =~ /^%/) {
+			parse_servercmd($str);
+		    } else {
+			parse_line($str);
 		    }
-		    $chunk .= $crumb;
-		    # break out if we're on a line boundary..
-		    if ($chunk =~ /\n$/) { last; }
-		    # break out if we're at a prompt (--> or (y/n)
-		    if ($chunk =~ /-->\s*$/) { last; }
-		    if ($chunk =~ /\(Y\/n\)\s*$/i) { last; }
-		    if ($chunk =~ /^login:/) { last; }
-		    if ($chunk =~ /^password:/) {
-			$password_mode = 1;
-			ui_password(1);
-			last;
-		    }
+		    $end = 1 if ($str =~ /$waitfor/);
 		}
-	        if ($debug && (time() > $endtime)) {
-		    log_notice("Chunk timeout\n"); 
-		}
-		$u=$chunk;		
-		
-		$u =~ s/^%.*$//gm;
-		# workaround for %recip_regexp at blurb prompt
-		$u =~ s/^--> %.*$/--> /gm;
+		return if ($end);
 
-		parse_output($u);    # show it to the user..
-
-		$str .= $chunk;
-
-		# workaround for %recip_regexp at blurb prompt
-		if ( $str =~ /^--> (%.*)$/m ) {
-		    parse_servercmd($1);
-		    $str =~ s/^--> %.*$/--> /gm;
-		} 
-
-		if ( $str =~ /^(%.*)$/m ) {
-		    parse_servercmd($1);
-		    $str =~ s/^%.*$//gm;
-		}
-
-		if ($str =~ /$waitfor/) { return; }
-		if ($chunk eq '\n') { $str=""; }
 		next;
 	    }
 	    
@@ -183,27 +156,23 @@ sub connect_until {
 		# check for UI events, deal wid' em.
 		while (1) {
 		    # get a line of input from the user if it's available.
-		    $line=ui_process();		
+		    my $line=ui_process();		
 		    if (defined($line)) {		    
 			my $qline = $line; $qline =~ s/[\<\\]/\\$&/g;
 
 			if ($password_mode) {
 			    $password_mode = 0;
 			    ui_password(0);
-			    send_to_server($line . "\n");
-			    next;
+			} else {
+			    ui_output("<usersend>" . $qline . "</usersend>");
 			}
 
-			ui_output("<usersend>" . $qline . "<usersend>");
 			if ($line =~ /^\!(.*)/) { 
 			    # !command handling
 			    ui_output(`$1`); 
 			} elsif ($line =~ /^%/) { 
 			    # handle client commands
-			    $line=~s/^%//g;
-			    my $output=eval($line); 
-			    ui_output($output);
-			    ui_output($@) if ($@);
+			    client_command($line);
 			} elsif ($line =~ /^([^:;]*)[;:]/) {
 			    # handle recipient caching for ;
 			    exp_set('recips', $1);
@@ -232,7 +201,7 @@ sub connect_until {
 # pass through all output from the server until a string is matched.
 sub pass_until {
     my ($waitfor,$timeout)=@_;
-    my ($t,$str,$matched);
+    my ($t,$str,$matched) = ('', '', 0);
     
     my $s = IO::Select->new();
 
@@ -240,31 +209,52 @@ sub pass_until {
 
     my $stime=time();
     my $now=$stime;
-    $t="";
-    $str="";
-    while ($now-$stime < $timeout) {	
+    while ((!$matched) && ($now-$stime < $timeout)) {	
 	if ($s->can_read($stime+$timeout-$now)) {
-	    if (sysread($sock,$t,1) != 1) { log_err("sysread: $!"); }
-	    $str .= $t;
-	    
-	    if ($str =~ /$waitfor$/) {
-		$matched=1;
-		last; 
-	    }
-
-	    if ($str =~ /\n/) {
-		parse_output($str);
-		$str = "";
+	    my(@lines) = read_from_server($sock);
+	    foreach (@lines) {
+		parse_line($_);
+		if (/$waitfor/) {
+		    $matched=1;
+		}
 	    }
 	}
 	$now=time();
     }
 
-    if ($str) { parse_output($str); }
-   
     if (! $matched) {
 	log_err("Error waiting for $waitfor, $timeout sec timeout expired.\n");
     }
+}
+
+
+my $crumb = '';
+sub read_from_server {
+    my ($sock) = @_;
+
+    my $buf;
+    if (sysread($sock,$buf,4096) < 1) {
+	if ($errno != EAGAIN) {
+	    log_err("sysread: $!"); 
+	    next;
+	}
+    }
+    
+    # Divide into lines.
+    $buf = $crumb . $buf;
+    my @lines = split /\r?\n/, $buf, -1;
+    $crumb = pop @lines;
+
+    # Durned prompts.
+    if ($crumb =~ /-->\s*$/ ||
+	$crumb =~ /\(y\/n\)\s*$/i ||
+	$crumb =~ /^login:/ ||
+	$crumb =~ /^password:/) {
+	push @lines, $crumb;
+	$crumb = '';
+    }
+
+    return @lines;
 }
 
 
@@ -278,6 +268,35 @@ sub send_to_server {
 	log_err("syswrite: $!"); 
     }
 
+}
+
+
+sub client_command {
+    my($command) = @_;
+
+    return if ($command !~ /^(%\w+)\s*(.*)$/);
+    my($cmd, $args) = ($1, $2);
+
+    if ($cmd eq '%eval') {
+	my $output=eval($args); 
+	ui_output($output);
+	ui_output($@) if ($@);
+    } elsif ($cmd eq '%gag') {
+	foreach (split /[\s,]+/, $args) {
+	    if ($gagged{tolower($_)}) {
+		undef $gagged{tolower($_)};
+		ui_output("$_ is no longer gagged.");
+	    } else {
+		$gagged{tolower($_)} = 1;
+		ui_output("$_ is gagged.");
+	    }
+	}
+    } else {
+	ui_output("?");
+	ui_output("? %eval <code>       - evals a chunk o' perl");
+	ui_output("? %gag <user>        - gags a user");
+	ui_output("?");
+    }
 }
 
 

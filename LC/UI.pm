@@ -9,6 +9,8 @@ use POSIX;
 use LC::config;
 use LC::CTerminal;
 
+use LC::log;
+
 @ISA = qw(Exporter);
 
 @EXPORT = qw(&ui_start &ui_end &ui_attr &ui_output &ui_status &ui_process
@@ -134,6 +136,7 @@ sub fmtline ($) {
 	my $line = '';
 	my $linelen = 0;
 	my $word;
+	$blk =~ s/\\\\//g;
 	$blk =~ s/\\\<//g;
 	$blk =~ tr/</</;
 	$blk =~ s/\\(.)/$1/g;
@@ -181,6 +184,7 @@ sub fmtline ($) {
 	foreach (reverse @tagstack) {
 	    $line .= "/$_>";
 	}
+	$line =~ tr//\\/;
 	$line =~ s/([\<\\])/\\$1/g;
 	$line =~ tr//</;
 	push @lines, $line if (length $line);
@@ -253,9 +257,10 @@ sub win_draw_line ($$) {
 
     $line = ' ' if ($line eq '');
 
+    $line =~ s/\\\\//g;
     $line =~ s/\\\<//g;
-    $line =~ tr/</</;
     $line =~ s/\\(.)/$1/g;
+    $line =~ tr/</<\\/;
 
     my $xpos = 0;
 
