@@ -14,7 +14,7 @@ my %status;
 
 
 sub ui_attr {
-    &LC::UI::defattr(@_);
+    &LC::UI::attr_define(@_);
 }
 
 # put out a chunk of output..
