@@ -73,7 +73,6 @@ sub ui_end                 { $UI->ui_end(@_); }
 sub ui_attr                { $UI->ui_attr(@_); }
 sub ui_filter              { $UI->ui_filter(@_); }
 sub ui_resetfilter         { $UI->ui_resetfilter(@_); }
-sub ui_output              { $UI->ui_output(@_); }
 sub ui_status              { $UI->ui_status(@_); }
 sub ui_process             { $UI->ui_process(@_); }
 sub ui_callback($$)        { $UI->ui_callback(@_); }
@@ -82,6 +81,17 @@ sub ui_bell                { $UI->ui_bell(@_); }
 sub ui_password($)         { $UI->ui_password(@_); }
 sub ui_prompt              { $UI->ui_prompt(@_); }
 sub ui_select($$$$)        { $UI->ui_select(@_); }
+
+sub ui_output              {
+    my %h;
+    if (@_ == 1) {
+	%h = (Text => $_[0]);
+    } else {
+	%h = @_;
+    }
+
+    $UI->ui_output(%h); 
+}
 
 sub ui_escape($) {
     my ($line)=@_;
