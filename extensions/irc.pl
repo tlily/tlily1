@@ -16,7 +16,7 @@ sub irc {
 #    $ENV{SIRCLIB}=/path/to/dir.
     subclient_start(name=> "irc",
 		    run => "dsirc -8 @_",
-		    prefix => "irc>",
+		    prefix => "<subc>irc></subc>",
 		    filter => \&irc_filter,
 		    onexit => \&cleanup);
 
