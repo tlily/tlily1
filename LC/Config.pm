@@ -37,6 +37,13 @@ sub config_init {
 sub read_init_files {
     my $ifile;
 
+    if(! -f $main::TL_LIBDIR."/tlily.global") {
+	print STDERR "Warning: Global configuration file ",
+	    $main::TL_LIBDIR."/tlily.global", "\nnot found.  ";
+	print STDERR "TigerLily may not be properly installed.\n";
+	sleep 1;
+    }
+
     foreach $ifile ($main::TL_LIBDIR."/tlily.global",
 		    $main::TL_ETCDIR."/tlily.site",
 		    $ENV{HOME}."/.lily/tlily/tlily.cf")
