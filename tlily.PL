@@ -1,12 +1,11 @@
 @@PERL@@
-# $Header: /data/cvs/tlily/tlily.PL,v 1.39 1998/06/01 02:19:54 neild Exp $
+# $Header: /data/cvs/tlily/tlily.PL,v 1.40 1998/06/12 01:36:28 albert Exp $
 
 require 5.00307;
 
 $TL_ETCDIR="@@ETCDIR@@";
 $TL_LIBDIR="@@LIBDIR@@";
 $TL_EXTDIR="@@LIBEXTDIR@@";
-$debug=0;
 
 use lib qw(@@LIBMODDIR@@);
 BEGIN { $load_ui=1; }
