@@ -1,4 +1,6 @@
 Version 0.8b-post
+  * [LC/NoTerminal.pm] Added NoTerminal terminal module for debugging and
+                       porting. (what a hack ;) [JDW]
   * [LC/Config.pm] Add -h and -host as synonyms for -server. [CWS]
   * [extensions/zone.pl] Moved test for $zonetype and $zonedelta so users can
                          set them dynamically without reloading. [CWS]
