@@ -10,6 +10,10 @@ register_help_short('version', "Display the version of Tigerlily and the server"
 register_help_long('version', "usage: %version\n* Displays the version of Tigerlily and the server.\n");
 
 
+register_user_command_handler('echo', \&echo_handler);
+register_help_short('help', "Echo text to the screen.");
+
+
 # %eval handler
 sub eval_handler($) {
     my($args) = @_;
@@ -41,9 +45,14 @@ sub bang_handler($$) {
 }
 
 # %version handler
-sub version_handler($$) {
-    my($event,$handler) = @_;
+sub version_handler {
     ui_output("(Tigerlily version $TL_VERSION)\n");
     server_send("/display version\r\n");
+    return 0;
+}
+
+# %echo handler
+sub echo_handler {
+    ui_output(join(' ', @_));
     return 0;
 }

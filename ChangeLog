@@ -1,4 +1,5 @@
 Version 0.6c
+  * [extensions/misc.pl] Added an %echo command.  [DPN]
   * [LC/State.pm] New configuration variable: 'prefer'.  See the README.  [DPN]
   * [extensions/hidesend.pl] New extension: don't display user's sends.
     Useful for people with message_echo turned on.  [DPN]
