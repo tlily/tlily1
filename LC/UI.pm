@@ -438,9 +438,10 @@ sub fmtline($) {
 	    $text = substr($text, length $&);
 	    push @fmt, $FOattr, $1;
 	} elsif ($text =~ /^\r?\n/) {
+	    # newline
 	    $text = substr($text, length $&);
 	    push @fmt, $FOnewline;
-	} elsif ($text =~ /^[^]+/) {
+	} elsif ($text =~ /^[^\r\n]+/) {
 	    # text
 	    $text = substr($text, length $&);
 	    $line .= $&;
