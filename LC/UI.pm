@@ -1,6 +1,8 @@
 # -*- Perl -*-
 package LC::UI;
 
+use LC::config;
+
 use Curses;
 use IO::Handle;
 use POSIX;
@@ -61,7 +63,6 @@ my $attr_cur_bg = COLOR_BLACK;
 my $attr_cur_fg = COLOR_WHITE;
 
 
-
 # Starts the curses UI.
 sub init () {
     initscr;
@@ -103,17 +104,19 @@ sub color_alloc ($$) {
 sub attr_colors ($$$) {
     my($fg,$bg,$attr) = @_;
 
-    attrset $attr;
+    if ($config{mono}) {
+	attrset $attr;
+	return;
+    }
 
     $fg = $attr_cur_fg if (!defined $fg);
     $bg = $attr_cur_bg if (!defined $bg);
 
     my $n = color_alloc($fg,$bg);
+    attrset $attr | COLOR_PAIR($n);
 
     $attr_cur_fg = $fg;
     $attr_cur_bg = $bg;
-
-    attrset $attr | COLOR_PAIR($n);
 }
 
 
