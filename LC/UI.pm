@@ -1,5 +1,5 @@
 # -*- Perl -*-
-# $Header: /data/cvs/tlily/LC/UI.pm,v 1.54 1998/06/01 02:19:55 neild Exp $
+# $Header: /data/cvs/tlily/LC/UI.pm,v 1.55 1998/06/05 04:47:18 neild Exp $
 package LC::UI;
 
 
@@ -1085,8 +1085,9 @@ sub input_accept($$$) {
 
     return input_add(' ', $line, $pos) if ($input_pastemode);
 
-    if (($line eq '') && (($text_l != $#text_lines) ||
-			  ($text_r != line_height($text_l) - 1))) {
+    if (($line eq '') && ($input_prompt eq '') &&
+        (($text_l != $#text_lines) ||
+	 ($text_r != line_height($text_l) - 1))) {
 	input_pagedown();
 	return ($line, $pos, 0);
     }
