@@ -1,4 +1,5 @@
 Version 0.7b-post
+  * [extensions/parse.pl] Parser tweak: handle private sends in /reviews. [DPN]
   * [extensions/look.pl] Output in a columnar format, limit lines.  [DPN]
   * [extensions/irc.pl] Extension using the SubClient interface to use irc from
 	                     within tigerlily. [JDW]

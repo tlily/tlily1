@@ -221,17 +221,19 @@ sub parse_line($$) {
     # /review ################################################################
 
     if (($line =~ /^\#\s*$/) ||
-	($line =~ /^\#\s[\>\-\*\(]/) ||
+	($line =~ /^\# [\>\-\*\(]/) ||
 	($line =~ /^\# \\\</) ||
 	($line =~ /^\# \#\#\#/)) {
 
-	if (((substr($line, 2, 1) eq '*')) || (substr($line, 2, 1) eq '>')) {
+	if ((substr($line, 2, 1) eq '*') ||
+	    ((substr($line, 2, 1) eq '>') && (substr($line, 2, 2) ne '>>'))) {
 	    $line = substr($line, 2);
 	    $review = '# ';
 	} else {
 	    $line = substr($line, 1);
 	    $review = '#';
 	}
+	ui_output("line = '$line'");
     }
 
 
