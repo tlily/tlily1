@@ -5,6 +5,7 @@ use LC::Command;
 use LC::Extend;
 use LC::Event;
 use LC::Client;
+use LC::UI;
 
 use vars qw(@ISA @EXPORT $user $pass);
 
@@ -16,6 +17,7 @@ use vars qw(@ISA @EXPORT $user $pass);
 sub bot_init {
     config_init();
     cmd_init();
+    ui_start("default","Debug");
 }
 
 sub bot_login {
@@ -55,7 +57,7 @@ sub bot_login {
 			  Call => sub {
 			      my($event, $handler) = @_;
 			      
-			      print "$event->{Text}\n";
+#			      print "$event->{Text}\n";
 			      # if we see a login prompt at this point, 
 			      # there was a problem logging in..
 			      if ($event->{Text} =~ /^login:/) {
@@ -238,7 +240,7 @@ sub eventhandler {
 	}
 	
 	chomp($send=$event->{Raw});       
-	print "$send\n";
+#	print "$send\n";
     }          
 
     

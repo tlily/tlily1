@@ -1,5 +1,5 @@
 # -*- Perl -*-
-# $Header: /data/cvs/tlily/extensions/parse.pl,v 2.7 1999/01/04 19:54:51 neild Exp $
+# $Header: /data/cvs/tlily/extensions/parse.pl,v 2.8 1999/02/05 22:19:01 josh Exp $
 =head1 NAME
 
 parse.pl - The lily event parser
@@ -147,6 +147,7 @@ sub parse_line($$) {
 
     # %command, all cores.
     if ($line =~ /^%command \[(\d+)\] (.*)/) {
+    	%event = (Type => 'cmd');
 	$cmdid = $1;
 	$line = $2;
     }

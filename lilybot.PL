@@ -1,5 +1,5 @@
 @@PERL@@
-# $Header: /data/cvs/tlily/lilybot.PL,v 2.6 1998/12/08 21:36:48 steve Exp $
+# $Header: /data/cvs/tlily/lilybot.PL,v 2.7 1999/02/05 22:18:56 josh Exp $
 
 # This is the source to the bot running as "MechaJosh" on RPI-Lily.
 
@@ -55,6 +55,10 @@ register_bothandler(Match => "surreal|weird|compliment",
 			}
 		    }
 		    );
+		    
+register_bothandler(Match => "search",
+		    Respond => sub { getsearch(); }
+		    );		    
 
 
 bot_mainloop();
@@ -75,6 +79,21 @@ sub getquote {
 	s/\s+/ /g;
 	if ($p) { $ret .= $_; }
     }
+    close(E);    
+
+    $ret;
+}
+
+sub getsearch {
+    my ($ret);
+
+    print "getting url\n";
+    open (E,"lynx -dump http://www.webcrawler.com/cgi-bin/SearchTicker|");
+    $ret = <E>;
+    $ret = <E>;
+    $ret = <E>;
+    print "got $ret\n";
+    chomp $ret;
     close(E);    
 
     $ret;
