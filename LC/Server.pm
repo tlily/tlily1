@@ -4,7 +4,7 @@ package LC::Server;
 use Exporter;
 use LC::Event;
 use IO::Socket;
-use POSIX;
+use Fcntl;
 
 @ISA = qw(Exporter);
 
