@@ -156,25 +156,25 @@ sub also_proc ($) {
 	exp_set('recips', join(",", $expansions{'recips'}, @dests));
 }
 
-if (config_ask("oops")) {
     register_eventhandler(Type => 'scommand',
 			  Call => sub {
 			      my($event,$handler) = @_;
-			      return 0 unless ($event->{Command} eq '/oops');
-			      oops_proc($event->{Args}->[0]);
+			      if (config_ask("oops")) {
+				  return 0 unless ($event->{Command} eq 'oops');
+				  oops_proc($event->{Args}->[0]);
+			      }
 			      return 0;
 			  });
-}
 
-if (config_ask("also")) {
     register_eventhandler(Type => 'scommand',
 			  Call => sub {
 			      my($event,$handler) = @_;
-			      return 0 unless ($event->{Command} eq '/also');
-			      also_proc($event->{Args}->[0]);
+			      if (config_ask("also")) {
+				  return 0 unless ($event->{Command} eq 'also');
+				  also_proc($event->{Args}->[0]);
+			      }
 			      return 0;
 			  });
-}
 register_user_command_handler('oops', \&oops_cmd);
 register_user_command_handler('also', \&also_cmd);
 register_help_short('oops', "/oops with fixed sendlist");

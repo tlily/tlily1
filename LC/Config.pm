@@ -235,14 +235,20 @@ sub parse_command_line {
 	if($ARGV[0] =~ /^-(m|mono)$/) {
 	    shift @ARGV; $config{mono} = 1; next;
 	}
-	if($ARGV[0] =~ /^-(\w+)=(\w+)$/) {
+	print STDERR "$ARGV[0]\n";
+	if($ARGV[0] =~ /^-(\w+)=(\S+)$/) {
 	    my($var,$val) = ($1,$2);
+	    print STDERR "$var => $val\n";
 	    $config{$var} = $val;
 	    shift @ARGV; next;
 	}
 	if($ARGV[0] =~ /^-(\w+)$/) {
 	    my($var) = $1;
 	    $config{$var} = 1;
+	    shift @ARGV; next;
+	}
+	else {
+	    warn "Unknown option: $ARGV[0], skipping.\n";
 	    shift @ARGV; next;
 	}
     }

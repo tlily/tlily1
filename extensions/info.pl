@@ -120,17 +120,17 @@ sub export_cmd($) {
 register_user_command_handler('info', \&info_cmd);
 register_user_command_handler('export', \&export_cmd);
 
-if (config_ask("info")) {
     register_eventhandler(Type => 'scommand',
 			  Call => sub {
 		my($event,$handler) = @_;
-		if ($event->{Command} eq 'info') {
+		if (config_ask("info")) {
+		    if ($event->{Command} eq 'info') {
 			info_cmd(join(' ', @{$event->{Args}}));
 			$event->{ToServer} = 0;
+		    }
 		}
 		return 0;
     });
-}
 
 register_help_short("info", "Improved /info functions");
 register_help_long("info", "
@@ -142,7 +142,7 @@ register_help_long("info", "
 			        a file or to edit a /info)
 %info clear [discussion]     - Allows you to clear a /info.
 
-Note: You can set your editor via \$config{editor}, or the VISUAL and EDITOR
+Note: You can set your editor via \%set editor, or the VISUAL and EDITOR
       environment variables.
 
 ");

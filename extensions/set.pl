@@ -80,23 +80,25 @@ sub set_handler($) {
 register_user_command_handler('set', \&set_handler);
 register_help_short('set', "Set configuration variables");
 register_help_long('set', qq(usage:
-    %set name=value
+    %set name value
         Sets a scalar config variable to a value.
-    %set name=(value,value,value)
+    %set name (value,value,value)
         Appends the given list to a list config variable.
-    %set name{key}=value
+    %set name{key} value
         Sets the hash hey key in the config variable name to value.
-    %set name{key}=(value,value,value)
+    %set name{key} (value,value,value)
         Sets the hash hey key in the config variable name to the given list.
   Examples:
     %set mono=1
         Turns on monochrome mode.  (Also has the side effect of setting your
         colors to your monochrome preferences.)
-    %set slash=(also,oops)
+    %set slash (also,oops)
         Appends 'also', and 'oops' onto your list of /-commands that
         are allowed to be intercepted.
-    %set color_attrs{pubmsg}=(normal,bg:red,fg:green,bold)
+    %set color_attrs{pubmsg} (normal,bg:red,fg:green,bold)
         Sets your color pref. for public messages to black on white & bold.
+        (Also has the side effect of changing the color of public messages
+        on your screen to those colors)
 ));
 
 1;
