@@ -1,4 +1,7 @@
 Version 1.0.1-post
+  * [LC/UI/Native.pm] Don't replace the killbuffer with a zero-length
+    string.  (i.e., ^U when point is at the start of line shouldn't
+    update the killbuffer.)  [DPN]
   * [extensions/url.pl] Made "view" a synonym for "show".  [DPN]
   * [LC/UI/Native.pm] Fixed a bug which caused C-w to stop working.  [DPN]
   * [extensions/httpd.pl] Simple http daemon, the first stage in my

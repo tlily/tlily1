@@ -1,5 +1,5 @@
 # -*- Perl -*-
-# $Header: /data/cvs/tlily/LC/UI/Native.pm,v 1.5 1998/10/28 21:19:14 neild Exp $
+# $Header: /data/cvs/tlily/LC/UI/Native.pm,v 1.6 1998/11/04 22:10:56 neild Exp $
 package LC::UI::Native;
 
 =head1 NAME
@@ -879,7 +879,7 @@ sub input_killword($$$$) {
 
     my $l = $line;
     substr($line, 0, $pos) =~ s/(\S+\s*)$//;
-    $self->{input_killbuf} = $1;
+    $self->{input_killbuf} = $1 if ($1);
     return ($line, $pos - length($1), 2);
 }
 
@@ -888,7 +888,7 @@ sub input_killword($$$$) {
 sub input_killtoend($$$$) {
     my($self, $key, $line, $pos) = @_;
 
-    $self->{input_killbuf} = substr($line, $pos);
+    $self->{input_killbuf} = substr($line, $pos) if ($pos < length($line));
     return (substr($line, 0, $pos), $pos, 2);
 }
 
@@ -897,7 +897,7 @@ sub input_killtoend($$$$) {
 sub input_killtohome($$$$) {
     my($self, $key, $line, $pos) = @_;
 
-    $self->{input_killbuf} = substr($line, 0, $pos);
+    $self->{input_killbuf} = substr($line, 0, $pos) if ($pos > 0);
     return (substr($line, $pos), 0, 2);
 }
 
