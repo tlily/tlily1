@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-$TL_VERSION="0.1f";
+$TL_VERSION="0.2b";
 $debug=0;
 
 use LC::log; 
@@ -15,6 +15,7 @@ use LC::User;
 use LC::State;
 use LC::Info;
 use LC::StatusLine;
+use LC::Extend;
 use Socket;
 use Fcntl;
 use IO::Select;
@@ -107,7 +108,6 @@ sub init_connection_handling() {
 
     $ehid = register_eventhandler('all', sub {
 	my($event) = @_;
-	my $os = $state;
 	if (($event->{Type} eq 'prompt') && ($event->{Line} =~ /^login:/)) {
 	    set_client_options() unless ($set_opts);
 	    $set_opts == 1;
@@ -133,7 +133,6 @@ sub init_connection_handling() {
 
     $ihid = register_user_input_handler(sub {
 	my($ievent) = @_;
-	my $os = $state;
 	if ($state eq 'password') {
 	    $state = 'login';
 	    $ievent->{UI} = 0;
@@ -197,6 +196,7 @@ sub main() {
     register_user_command_handler('eval', sub {
 	my($args) = @_;
 	eval($args);
+	ui_output("* Error: $@") if $@;
     });
 
     # !command handler
@@ -209,6 +209,9 @@ sub main() {
 	}
 	return 0;
     });
+
+
+    LC::config::dotfile_init();
 
     log_notice("Connecting to $config{server} $config{port}.");
     server_connect($config{server}, $config{port});

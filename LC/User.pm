@@ -12,7 +12,13 @@ use LC::UI;
 	     &deregister_user_command_handler
 	     &user_showline
 	     &user_accept
-	     &user_init);
+	     &user_init
+	     &help_get_list
+	     &help_get_short
+	     &help_get_long
+	     &register_help_short
+	     &register_help_long
+	     );
 
 
 @handlers = ();
@@ -37,6 +43,40 @@ sub deregister_user_input_handler ($) {
 sub register_user_command_handler ($&) {
     my($cmd, $fn) = @_;
     $commands{$cmd} = $fn;
+}
+
+
+sub help_get_list {
+    my %tmp;
+    foreach ( keys %helpshort ) { $tmp{$_}=1; }
+    foreach ( keys %helplong )  { $tmp{$_}=1; }
+    foreach ( keys %commands )  { delete $tmp{$_}; $tmp{"%".$_}=1; }
+
+    return sort keys %tmp;
+}
+
+
+sub help_get_short {
+    my($cmd) = @_;
+    $cmd=~s/^\%//g;
+    return $helpshort{$cmd}
+}
+
+
+sub register_help_short {
+    my($cmd,$help) = @_;
+    $helpshort{$cmd}=$help;
+}
+
+sub help_get_long {
+    my($cmd) = @_;
+    $cmd=~s/^\%//g;
+    return $helplong{$cmd}
+}
+
+sub register_help_long {
+    my($cmd,$help) = @_;
+    $helplong{$cmd}=$help;
 }
 
 
