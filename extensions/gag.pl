@@ -13,7 +13,7 @@ sub gag_command_handler($) {
 	    ui_output("(no users are being gagged)");
 	} else {
 	    my @users=ui_gaglist(); 
-	    ui_output("Gagged users: " . join(', ', @users));
+	    ui_output("(Gagged users: " . join(', ', @users). ")" );
 	}
 	return;
     }

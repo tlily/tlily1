@@ -2,8 +2,8 @@
 register_user_command_handler('after', \&after_handler);
 register_help_short('after', "Run a lily command after a delay");
 register_help_long('after', qq(Usage:
-%after (time) (command)
-Runs (command) after (time).
+%after (offset) (command)
+Runs (command) after (offset) amount of time.
 
 %after
 List all pending afters.
@@ -11,7 +11,7 @@ List all pending afters.
 %after cancel (id)
 Cancel after #(id).
 
-time can be:
+offset can be:
       N        N seconds
       Ns       N seconds
       Nm       N minutes
@@ -21,18 +21,18 @@ time can be:
 
 my %after;
 my %after_id;
-my %after_time;
+my %after_when;
 my $id=0;
 
-# %after handler
 sub after_handler {
     my($args) = @_;
     my(@F);
     if($args eq '') {
-	ui_output("Id\tTime\tCommand\n--\t----\t-------");
+        ui_output(sprintf("(%2s\t%-17s\t%s)", "Id", "When", "Command"));
 	my $k;
 	foreach $k (keys %after) {
-	    ui_output(sprintf("%2d\t%4s\t%s", $k, $after_time{$k}, $after{$k}));
+       		($sec,$min,$hour,$mday,$mon,$year) = localtime($after_when{$k});
+	    ui_output(sprintf("(%2d\t%02d:%02d:%02d %02d/%02d/%02d\t%s)", $k, $hour,$min,$sec,$mon,$mday,$year, $after{$k}));
 	}
 	return 0;
     }
@@ -41,33 +41,37 @@ sub after_handler {
 	my $tbc = $1;
 	ui_output("(Cancelling afterid $tbc ($after{$tbc}))");
 	deregister_handler($after_id{$tbc});
-	delete $after{$tbc}; delete $after_id{$tbc}; delete $after_time{$tbc};
+	delete $after{$tbc}; delete $after_id{$tbc}; delete $after_when{$tbc};
 	return 0;
     }
 
-    $args =~ m/^\s*(\d+[hms]?)\s+(.*?)\s*$/;
+    $args =~ m/^\s*(\d+[hmsd]?)\s+(.*?)\s*$/;
     @F = ($1,$2);
 
     my $T;
     if($F[0] =~ m/^(\d+)s?$/) {
 	$T = $1;
+ 	$W = time + $1;
     }
     elsif($F[0] =~ m/^(\d+)m$/) {
 	$T = $1 * 60;
+	$W = time + ($1 * 60);
     }
     elsif($F[0] =~ m/^(\d+)h$/) {
 	$T = $1 * 3600;
-    }
+	$W = time + ($1 * 3600);
+    } 
     elsif($F[0] =~ m/^(\d+)d$/) {
-	$T = $1 * 86400;
-    }
+	$T = $1 * 86400 ;
+	$W = time + ($1 * 86400); 
+    } 
     else {
-	ui_output("Usage: %after (time) (command)\n       %after cancel (id)");
+	ui_output("Usage: %after (offset) (command)");
 	return 0;
     }
-    #ui_output("time = $T");
+
     $after{$id} = $F[1];
-    $after_time{$id} = $F[0];
+    $after_when{$id} = $W;
     $after_id{$id} = register_timedhandler(Interval => $T,
                           Repeat => 0,
                           Call => sub {
@@ -79,6 +83,14 @@ sub after_handler {
     ui_output("(After $F[0] of time, I will run '$F[1]'.) (id $id)");
     $id++;
     return 0;
+}
+
+sub unload() {
+  foreach $k (keys %after) {
+    ui_output("(Cancelling afterid $k ($after{$k}))");
+    deregister_handler($after_id{$k});
+    delete $after{$k}; delete $after_id{$k}; delete $after_when{$k};
+  }
 }
 
 1;

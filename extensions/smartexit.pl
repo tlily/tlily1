@@ -1,5 +1,5 @@
 #
-# Exit iff a /bye or /detach was done.
+# Exit if a /bye or /detach was done.
 #
 
 register_eventhandler(Type => 'scommand',
@@ -11,7 +11,7 @@ sub handler {
     $t =~ s/\s.*$//;
 
     if (($t =~ m#^/det#) || ($t eq '/bye')) {
-	ui_output "Exiting smartly...";
+	ui_output "(Exiting smartly)";
 	$config{exit_on_disconnect} = 1;
     }
     return 0;

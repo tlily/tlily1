@@ -1,3 +1,10 @@
+Version 0.8c-post
+  * [extensions/smartexit.pl] Made UI output "conformant" [()'s] [WJC]
+  * [extensions/gag.pl] Made UI output "conformant" [()'s] [WJC]
+  * [extensions/after.pl] Display shows time handler will go off,
+                          added unload() to remove handlers set while extension 
+                          was loaded. [WJC]
+
 Version 0.8c
   * [extensions/parse.pl] Quick parser hack to survive the addition of
                           %beginmsg/%endmsg to emotes.  [DPN]
