@@ -111,16 +111,19 @@ for the specific module to see what options can be set.
 CVS access
 ----------
 The TigerLily sources are stored in a CVS repository.  Anyone working on
-TigerLily development can get access by contacting Damien (neild@acm.rpi.edu).
-The repository is currently located on zorg.hitchhiker.org.
+TigerLily development can get access by contacting Damien (neild@acm.rpi.edu)
+or Albert (albert@acm.rpi.edu).
+
+The repository is currently located on einstein.to.
 
 To access the repository remotely, you will need to set two environment
 variables:
-  export CVSROOT=:ext:neild@zorg.hitchhiker.org:/usr/src/cvs
+  export CVSROOT=:ext:neild@einstein.to:/usr/src/cvs
   export CVS_RSH=ssh
 
-Obviously, replace the `neild' with your own userid on zorg.  CVS_RSH need
-not necessarily be ssh, but this is likely to be the simplest method to use.
+Obviously, replace the `neild' with your own userid on einstein.to.  CVS_RSH
+need not necessarily be ssh, but this is likely to be the simplest method to
+use.
 
 The important CVS commands are:
   - cvs checkout tlily
@@ -132,13 +135,17 @@ All other CVS commands accept a list of files as an argument; in the absence
 of this list, they operate on the current directory.
 
   - cvs update
-    Compares a checked out tree to the current sources.
+    Compares a checked out tree to the current sources, merging down any
+    changed files from the repository.  Changes you make will not be added
+    to the repository until you do a cvs commit.
 
   - cvs add
-    Registers a new file into the repository.
+    Registers a new file into the repository.  The file will be visible to
+    others after you cvs commit.
 
   - cvs remove
-    Removes a file from the repository.
+    Removes a file from the repository.  The file will disappear to others
+    after you cvs commit.
 
   - cvs commit
     Checks in all changes in the current tree.
