@@ -6,6 +6,7 @@
 
 my $log_file;
 my $log_fd;
+my $log_status='';
 
 sub log_handler($$) {
     my($event,$handler) = @_;
@@ -39,12 +40,16 @@ sub log_start($) {
 
     $log_file = $file;
     ui_output("(Now logging to \"$file\")");
+    $log_status="Log: $file";
+    redraw_statusline();
 }
 
 sub log_stop() {
     if ($log_file) {
 	$log_fd->close();
 	ui_output("(No longer logging to \"$log_file\")");
+	$log_status="";
+	redraw_statusline();
 	undef $log_file;
 	undef $log_fd;
     }
@@ -81,6 +86,8 @@ sub unload() {
     }
 }
 
+register_statusline(Var => \$log_status,
+		    Position => "PACKRIGHT");
 register_eventhandler(Type => 'serverline',
 		      Order => 'after',
 		      Call => \&log_handler);
