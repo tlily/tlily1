@@ -1,8 +1,10 @@
-#!/usr/bin/perl
+@@PERL@@
 
-$TL_VERSION="0.2b";
+$TL_VERSION="@@VERSION@@";
+$TL_EXTDIR="@@LIBEXTDIR@@";
 $debug=0;
 
+use lib qw(@@LIBMODDIR@@);
 use LC::log; 
 use LC::config;
 use LC::UI;

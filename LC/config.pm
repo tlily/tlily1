@@ -63,12 +63,12 @@ sub dotfile_init {
     }
     
     log_notice("(Searching ~/.lily/tlily/extensions for extensions)");
-    foreach (grep /[^~]$/, glob "$ENV{HOME}/.lily/tlily/extensions/*") {
+    foreach (grep /[^~]$/, glob "$ENV{HOME}/.lily/tlily/extensions/*.pl") {
 	extension($_);
     }   
 
-    log_notice("(Searching ./extensions for extensions)");
-    foreach (grep /[^~]$/, glob "./extensions/*") {
+    log_notice("(Searching ", $main::TL_EXTDIR, " for extensions)");
+    foreach (grep /[^~]$/, glob $main::TL_EXTDIR."/*.pl") {
 	extension($_);
     }   
 
