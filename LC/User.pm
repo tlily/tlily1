@@ -129,8 +129,8 @@ sub init() {
 			      my($event,$handler) = @_;
 			      if ($event->{Text} =~ /^%(\w*)\s*(.*?)\s*$/) {
 				  my($cmd, $args) = ($1, $2);
+				  $event->{ToServer} = 0;
 				  if (defined $commands{$cmd}) {
-				      $event->{ToServer} = 0;
 				      my $f = $commands{$cmd};
 				      &$f($args);
 				  } else {
