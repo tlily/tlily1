@@ -1,5 +1,5 @@
 # -*- Perl -*-
-# $Header: /data/cvs/tlily/LC/SubClient.pm,v 2.3 1998/06/23 20:27:54 steve Exp $
+# $Header: /data/cvs/tlily/LC/SubClient.pm,v 2.4 1998/11/05 11:38:57 steve Exp $
 package LC::SubClient;
 
 # bugs:
@@ -30,7 +30,7 @@ input and output are accessable from within tlily.
 
 use IPC::Open3;
 use POSIX ":sys_wait_h";
-use IO::Select;
+#use IO::Select;
 use Exporter;
 use FileHandle;
 
@@ -210,9 +210,10 @@ sub sc_input_process {
     }     
 
     my $buf;
-    my $s=new IO::Select;
-    $s->add($hdl);
-    if (! ($s->can_read(0))) { return; }
+#    my $s=new IO::Select;
+#    $s->add($hdl);
+#    if (! ($s->can_read(0))) { return; }
+    return unless (ui_select([$hdl], [], [], 0));
 
 #	 return if ($del_hack{$subcli});
     my $rc = sysread($hdl,$buf,4096);
