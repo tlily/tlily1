@@ -1,5 +1,7 @@
 @@PERL@@
 
+require 5.003;
+
 $TL_ETCDIR="@@ETCDIR@@";
 $TL_LIBDIR="@@LIBDIR@@";
 $TL_EXTDIR="@@LIBEXTDIR@@";
@@ -189,6 +191,10 @@ sub server_reader($) {
 
     my $buf = server_read();
     if (!defined $buf) {
+	if ($config{'exit_on_disconnect'}) {
+	    ui_end();
+	    exit;
+	}
 	ui_output("*** Lost connection to server: hit enter to quit ***");
 	register_eventhandler(Type => 'userinput',
 			      Order => 'before',

@@ -1,4 +1,5 @@
 Version 0.6b
+  * [tlily.PL] Added $exit_on_disconnect variable. [DPN]
   * [LC/parse.pm] Untested patch to make consulting sends work.  [DPN]
   * [extensions/info.pl] Removed dependancy on IO::File.
   * [LC/Config.pm, extensions/autologin.pl] Added the 'noauto' option, to
