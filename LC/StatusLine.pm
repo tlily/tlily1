@@ -1,5 +1,5 @@
 # -*- Perl -*-
-# $Header: /data/cvs/tlily/LC/StatusLine.pm,v 2.1 1998/06/12 08:56:15 albert Exp $
+# $Header: /data/cvs/tlily/LC/StatusLine.pm,v 2.2 1998/10/25 18:50:32 mjr Exp $
 package LC::StatusLine;
 
 =head1 NAME
@@ -56,7 +56,8 @@ sub redraw_statusline {
 	# force update
     } else {
 	# limit updates to 1 per second.
-	return if (time()-$lastredraw < 1);
+	# Also, if the time was change back a signifcant amount, redraw
+	return if (abs(time()-$lastredraw) < 1);
 	$lastredraw=time();
     }
 

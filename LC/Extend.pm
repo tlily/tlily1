@@ -1,5 +1,5 @@
 # -*- Perl -*-
-# $Header: /data/cvs/tlily/LC/Extend.pm,v 2.4 1998/10/24 22:27:49 josh Exp $
+# $Header: /data/cvs/tlily/LC/Extend.pm,v 2.5 1998/10/25 18:50:32 mjr Exp $
 package LC::Extend;
 
 use Exporter;
@@ -27,6 +27,7 @@ BEGIN {
 @ISA = qw(Exporter);
 
 @EXPORT = qw(&extension
+	     &extension_unload
 	     &load_extensions);
 
 # initial version, 10/24/97, Josh Wilmes
@@ -82,6 +83,7 @@ sub extension($;$) {
     push @share,@LC::State::EXPORT;
     push @share,@LC::Config::EXPORT;
     push @share,@LC::Event::EXPORT;
+    push @share,@LC::Extend::EXPORT;
     push @share,@LC::StatusLine::EXPORT;
     push @share,@LC::SubClient::EXPORT;
 
