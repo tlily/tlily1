@@ -11,6 +11,8 @@ your curses.
 
 To create a usable tlily executable, run the command:
    perl Build.PL
+To see the full usage for Build.PL, run the command:
+   perl Build.PL -h
 
 
 Configuration (To be expanded)
