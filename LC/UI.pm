@@ -1,11 +1,18 @@
 # -*- Perl -*-
 package LC::UI;
 
-use LC::config;
-use LC::Terminal;
+use Exporter;
 
 use IO::Handle;
 use POSIX;
+
+use LC::config;
+use LC::CTerminal;
+
+@ISA = qw(Exporter);
+
+@EXPORT = qw(&ui_start &ui_end &ui_attr &ui_output &ui_status &ui_process
+	     &ui_callback);
 
 
 my $ui_up = 0;
@@ -31,8 +38,7 @@ my $status_line = "";
 
 my @accepted_lines = ();
 
-my %key_trans = (
-		 'kl' => \&input_left,
+my %key_trans = ('kl' => \&input_left,
 		 '' => \&input_left,
 		 'kr' => \&input_right,
 		 '' => \&input_right,
@@ -51,7 +57,8 @@ my %key_trans = (
 		 "\r" => \&input_accept,
 		 "\n" => \&input_accept,
 		 "" => \&input_refresh,
-		 '' => \&input_bs
+		 '' => \&input_bs,
+		 'bs' => \&input_bs
 		 );
 
 my %attr_list = ();
@@ -62,23 +69,23 @@ my $attr_cur_fg = COLOR_WHITE;
 
 
 # Starts the curses UI.
-sub init () {
+sub ui_start () {
     term_init();
-    attr_define('status_line', 'yellow|blue', 'bold');
-    attr_define('input_line', 'white|black', 'normal');
-    attr_define('text_window', 'white|black', 'normal');
+    ui_attr('status_line', 'reverse');
+    ui_attr('input_line', 'normal');
+    ui_attr('text_window', 'normal');
     &redraw;
 }
 
 
 # Terminates the UI.
-sub end () {
+sub ui_end () {
     term_end();
 }
 
 
 # Define a new attribute.
-sub attr_define ($@) {
+sub ui_attr ($@) {
     my ($name,@attrs) = @_;
     $attr_list{$name} = \@attrs;
 }
@@ -263,7 +270,7 @@ sub win_draw_line ($$) {
 	    $line = substr($line, length $&);
 	} elsif ($line =~ /^[^]+/) {
 	    my $len = $term_cols - $xpos;
-	    term_addstr($&);
+	    term_addstr(substr($&,0,$len));
 	    $line = substr($line, length $&);
 	    $xpos += length $&;
 	} else {
@@ -319,13 +326,13 @@ sub win_scroll ($) {
     } else {
 	my $i;
 	for ($i = 0; $i < $n; $i++) {
-	    term_move($win_height,0);
+	    term_move(win_height(),0);
 	    term_delete_line();
 	    term_move(0,0);
 	    term_insert_line();
 
-	    my $s = win_index($win_endline - (win_height()) + $i);
-	    win_draw_line($i, ($s ? $s : ''));
+	    my $s = win_index($win_endline - $i - 1);
+	    win_draw_line(0, ($s ? $s : ''));
 	}
     }
 
@@ -334,7 +341,7 @@ sub win_scroll ($) {
 
 
 # Adds a line of text to the text window.
-sub addline ($) {
+sub ui_output ($) {
     my($line) = @_;
     $line =~ s/[\r]//g;
     $line = ' ' if ($line eq '');
@@ -356,14 +363,15 @@ sub addline ($) {
 
 # Redraws the status line.
 sub sline_redraw () {
-    my $sline = "<status_line>${status_line}</status_line>";
+    my $sline = "<status_line>" . $status_line . (' ' x $term_cols) .
+	"</status_line>";
     win_draw_line($term_lines-1-$input_height, $sline);
     input_position_cursor();
 }
 
 
 # Sets the status line.
-sub sline_set ($) {
+sub ui_status ($) {
     my ($s) = @_;
     return if ($status_line eq $s);
     $status_line = $s;
@@ -415,19 +423,6 @@ sub input_normalize_cursor () {
     } elsif ($input_pos < 0) {
 	$input_pos = 0;
     }
-#
-#    my $ypos = ($input_pos / 80) - $input_fline;
-#    my $xpos = $input_pos % 80;
-#
-#    if ($ypos < 0) {
-#	$fline += $ypos;
-#	$ypos = 0;
-#    }
-#
-#    if ($ypos >= $input_height) {
-#	$fline += ($input_height - $ypos + 1);
-#	$ypos = $input_height;
-#    }
 }
 
 
@@ -615,16 +610,20 @@ sub scroll_info () {
 
 
 # Registers an input callback function.
-sub input_callback ($&) {
+sub ui_callback ($&) {
     my($key, $cb) = @_;
     $key_trans{$key} = $cb;
 }
 
 
 # Accepts input from the terminal.
-sub handle_input () {
+sub ui_process () {
     my $c;
-    while ($c = term_get_char()) {
+
+    attr_use('input_line');
+
+    while (1) {
+	$c = term_get_char();
 	last if ((!defined($c)) || ($c eq '-1'));
 
 	$win_lastseen = $win_endline if ($win_endline > $win_lastseen);
@@ -649,6 +648,8 @@ sub handle_input () {
 	    }
 	}
     }	
+
+    attr_top();
     return shift @accepted_lines;
 }
 

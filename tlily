@@ -1,10 +1,13 @@
-#!/usr/bin/perl 
+#!/usr/local/bin/perl 
 #-w
+
+$TL_VERSION="0.6";
 
 use LC::log; 
 use LC::config;
-use LC::IO;
+use LC::UI;
 use LC::parse;
+use LC::Expand;
 use Socket;
 use Fcntl;
 use IO::Socket;
@@ -24,19 +27,24 @@ $wakeup=10;     # how often to exit the select loop to do status processing,
 
 ## main ##
 LC::config::init();
+exp_init();
 
 
 ui_start();
-ui_attr('sender',undef,undef,A_BOLD);
-ui_attr('dest',undef,undef,A_BOLD);
+ui_attr('sender','bold');
+ui_attr('dest','bold');
 if (! $config{mono}) {
-    ui_attr('privhdr',COLOR_GREEN,COLOR_BLACK,A_NORMAL);
-    ui_attr('privmsg',COLOR_GREEN,COLOR_BLACK,A_NORMAL);
-    ui_attr('pubhdr',COLOR_CYAN,COLOR_BLACK,A_BOLD);
-    ui_attr('pubmsg',COLOR_WHITE,COLOR_BLACK,A_NORMAL);
-    ui_attr('review',COLOR_MAGENTA,COLOR_BLACK,A_NORMAL);
-    ui_attr('whiteblue',COLOR_WHITE,COLOR_BLUE,A_BOLD);
-    ui_attr('greenblue',COLOR_GREEN,COLOR_BLUE,A_BOLD);
+    ui_attr('status_line',  'fg:yellow',  'bg:blue',  'bold');
+    ui_attr('input_line',   'fg:white',   'bg:black', 'bold');
+    ui_attr('text_window',  'fg:white',   'bg:black', 'normal');
+    ui_attr('privhdr',      'fg:green',   'bg:black');
+    ui_attr('privmsg',      'fg:green',   'bg:black');
+    ui_attr('pubhdr',       'fg:cyan',    'bg:black', 'bold');
+    ui_attr('pubmsg',       'fg:white',   'bg:black');
+    ui_attr('emote',        'fg:cyan',    'bg:black');
+    ui_attr('review',       'fg:magenta', 'bg:black');
+    ui_attr('whiteblue',    'fg:white',   'bg_blue');
+    ui_attr('greenblue',    'fg:green',   'bg_blue',  'bold');
 }
 
 tie $page_status, 'LC::status_update', 'page_status';
@@ -53,8 +61,8 @@ END {
 sub login {    
     $parse_state="login";
     log_notice("Connecting to $config{server} $config{port}.");
-    ui_status(server => $config{server},
-	      status => "INIT");
+    set_status(server => $config{server},
+	       status => "INIT");
 
     $sock = IO::Socket::INET->new(PeerAddr => $config{server},
 				  PeerPort => $config{port},
@@ -63,23 +71,21 @@ sub login {
     
     fcntl($sock,F_SETFL,O_NONBLOCK) || die "fcntl: $!\n";
     
-    ui_status(status => "CONN");
+    set_status(status => "CONN");
     
     log_notice("Connected.");
     
     pass_until("login:",10);
+    set_client_options() if (!$config{options_after_connect});
+
     if ($config{login} && $config{pass}) {
 	log_info("Sending autologin ($config{login})\n");
 	send_to_server("$config{login} $config{pass}\n");
     }
 
     connect_until("***");
-
-    #heheheh this should be fixed!!!!
-    send_to_server("\#\$\# client_version 0.8b-zorak\n");
-    send_to_server("\#\$\# client_name lily\n");
-
-    ui_status(status => "ONLINE");
+    set_client_options() if ($config{options_after_connect});
+    set_status(status => "ONLINE");
     log_info("Connected");
 }
 
@@ -150,13 +156,17 @@ sub connect_until {
 		    # get a line of input from the user if it's available.
 		    $line=ui_process();		
 		    if (defined($line)) {		    
-			ui_output($line);
+			my $qline = $line; $qline =~ s/[\<\>]/\\$&/g;
+			ui_output($qline);
 			if ($line =~ /^%/) { 
 			    # handle client commands
 			    $line=~s/^%//g;
 			    my $output=eval($line); 
 			    ui_output($output);
 			    ui_output($@) if ($@);
+			} elsif ($line =~ /^([^:;]*)[;:]/) {
+			    exp_set('recips', $1);
+			    send_to_server("$line\n");
 			} else {
 			    # otherwise, send on to the server.
 			    send_to_server("$line\n");
@@ -268,6 +278,70 @@ sub alarm_handler {
 
     $last_alarm=time()	
 }
+
+
+sub set_client_options {
+    if ($config{spoof_lclient}) {
+	log_notice("Setting client options (lclient spoofing)..");
+	send_to_server("\#\$\# client_version 0.8b-tiger\n");
+	send_to_server("\#\$\# client_name lily\n");
+    } else {
+	log_notice("Setting client options..");
+	send_to_server("\#\$\# client_version $TL_VERSION\n");
+	send_to_server("\#\$\# client_name TigerLily\n");
+        #The available options are sender, sendgroup,recip_regexp, connected,
+        #info_size, usertype, leaf-cmd, leaf-msg, leaf-notify, and prompt.
+	#[+-]leaf-all will turn on or off all of the leafing options.
+	send_to_server("\#\$\# options +connected +usertype +leaf-msg +leaf-notify +prompt\n");
+    }
+}
+
+
+sub set_status {
+    my %s2=@_;
+
+    foreach (keys %s2) {
+	if ($s2{$_} eq "incr") {
+	    $status{$_}++;
+	} elsif ($s2{$_} eq "decr") {
+	    $status{$_}--;
+	} else {
+	    $status{$_}=$s2{$_}; 
+	}
+    }
+
+
+    my @left;
+    my $name=$status{pseudo};
+    $name .= "[$status{blurb}]" if (defined($status{blurb}));
+    push @left, $name if length($name);
+    push @left," -- $status{page_status} -- " 
+                                     if (length($status{page_status}));
+    push @left,"Parse: $LC::parse::parse_state";
+    my @right;
+    push @right, "$status{here} Here|$status{away} Away|$status{detached} Detach"
+                                     if (defined($status{detached}));
+    push @right, $status{server}     if (defined($status{server}));
+    push @right, $status{status}     if (defined($status{server}));
+    
+    my $left=join ' | ',@left;
+    my $right=join ' | ',@right;
+    my $lr=length($right);
+    my $ll=80-$lr;    
+
+    # favor things on the right over the left.
+    $fmt="%-$ll.$ll" . "s%$lr.$lr" . "s";
+    $status_line=sprintf($fmt,$left,$right);
+
+    $status_line =~ s:\|:<whiteblue>\|</whiteblue>:g;
+    $status_line =~ s:ONLINE:<greenblue>ONLINE</greenblue>:;
+
+    
+    ui_status($status_line);
+
+      
+}
+
 
 1;
 

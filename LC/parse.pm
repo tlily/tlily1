@@ -1,7 +1,8 @@
-package LC::parse;
+package LC::parse;                  # -*- Perl -*-
 
 use Exporter;
 use LC::status_update;
+use LC::Expand;
 
 @ISA = qw(Exporter);
 
@@ -26,6 +27,7 @@ sub parse_output {
 
 sub parse_line {
     ($line)=@_;
+    $line =~ s/\</\\$&/g;
     $_=$line;
     
 #    main::log_debug("parse_line: \"$line\"");
@@ -35,7 +37,7 @@ sub parse_line {
 	if ( /^Welcome to lily at (.*)/ ) {
 	    my $s=$1;
 	    $s=~s/\s*$//g;
-	    &main::ui_status( server => $s );
+	    &main::set_status( server => $s );
 	}
     }
 
@@ -49,13 +51,13 @@ sub parse_line {
     # ( ) messages- one way out of the blurb state.
     # blurb changes ####################################################
     if (/^\(your blurb has been set to \[(.*)\]\)/) {
-	&main::ui_status(blurb => $1);
+	&main::set_status(blurb => $1);
 	goto found;
     }    
 
     # pseudo changes ####################################################
     if (/^\(you are now named \"(.*)\"/) {
-	&main::ui_status(pseudo => $1);
+	&main::set_status(pseudo => $1);
 	goto found;
     }    
 
@@ -87,15 +89,24 @@ sub parse_line {
     if (/^ >>/) { 
 	my $blurb;
 
-	$parse_state="privhdr"; 
-	if (/message from (.*) \[(.*)\]:/) {
-	    ($sender,$blurb)=($1,$2);
-	} else {
-	    ($sender)=/message from (.*):/;	
-	    $blurb=undef;
+	if ($line =~ s|message from ([^\[]*) \[(.*)\]:|message from <sender>$1</sender> \[<blurb>$2</blurb>\]:|) {
+	    ($sender, $blurb) = ($1, $2);
+	} elsif ($line =~ s|message from (.*):|message from <sender>$1</sender>:|) {
+	    $sender = $1;
+	    $blurb = undef;
 	}
-	$line=~s|from $sender|from <sender>$sender</sender>|;
-	$line=~s|\[$blurb\]|\[<blurb>$blurb</blurb>\]|;
+
+	$parse_state="privhdr"; 
+	#if (/message from (.*) \[(.*)\]:/) {
+	#    ($sender,$blurb)=($1,$2);
+	#} else {
+	#    ($sender)=/message from (.*):/;	
+	#    $blurb=undef;
+	#}
+	my $qsender = $sender; $qsender =~ s/\s/_/g;
+	exp_set('sender', $qsender);
+	#$line=~s|from $sender|from <sender>$sender</sender>|;
+	#$line=~s|\[$blurb\]|\[<blurb>$blurb</blurb>\]|;
 	$line="<privhdr>$line</privhdr>";
 	goto found;
     }
@@ -105,19 +116,21 @@ sub parse_line {
 	goto found;
     }
 
+    # emotes ###########################################################
+    if (/^> /) { 
+	$parse_state="emote";
+	$line="<emote>$line</emote>";
+ 	goto found;
+    }
+
     # public messages ##################################################
     if (/^ ->/) {
 	$parse_state="pubhdr"; 
 
-	my $blurb;
-	if (/From (.*) \[(.*)\], to (.*):/) {
-	    ($sender,$blurb,$dest)=($1,$2,$3);
-	} else {
-	    ($sender,$dest)=/From (.*), to (.*):/;
+	unless ($line =~ s|From ([^\[]*) \[(.*)\], to (.*):|From <sender>$1</sender> \[<blurb>$2</blurb>\], to <dest>$3</dest>:|) {
+	    $line =~ s|From (.*), to (.*):|From <sender>$1</sender>, to <dest>$2</dest>:|;
 	}
-	$line=~s|From $sender, to $dest|From <sender>$sender</sender>, to <dest>$dest</dest>|;
-	$line=~s|\[$blurb\]|\[<blurb>$blurb</blurb\]|;
-	$line="\n<pubhdr>$line</pubhdr>";
+	$line="<pubhdr>$line</pubhdr>";
 	goto found;
     }
     if (/^ -/ && $parse_state eq "pubhdr")  { 
@@ -152,7 +165,7 @@ sub parse_line {
 	    $blurb=$1;
 	    $me=~s/\[.*\]//g;
 	}
-	&main::ui_status(pseudo => $me, blurb => $blurb);
+	&main::set_status(pseudo => $me, blurb => $blurb);
 	$main::have_pseudo=1;
 	$cli_command=undef;
 	$parse_state=undef;
@@ -165,7 +178,7 @@ sub parse_line {
 	# output from /how, first line
 	s/\s+/ /g;
 	my ($here,$away,$detached,$max)=/^Users: (\d+) Here; (\d+) Away; (\d+) Detached; (\d+) Max/;
-	&main::ui_status(here => $here,
+	&main::set_status(here => $here,
 			 away => $away,
 			 detached => $detached,
 			 max_users => $max);	    
@@ -179,7 +192,7 @@ sub parse_line {
 	# output from /how, first line
 	s/\s+/ /g;
 	my ($public,$private,$max)=/^Discs: (\d+) Public; (\d+) Private; (\d+) Max/;
-	&main::ui_status(public => $public,
+	&main::set_status(public => $public,
 			 private => $private,
 			 max_discs => $max);	    
 	$parse_state=undef;
@@ -195,16 +208,16 @@ sub parse_line {
     if (/^\*\*\*/) {
 	s/^\*\*\*//;
 	if (/^(.*) has detached/) {
-	  main::ui_status( detached => "incr" );
-	  main::ui_status( here => "decr" );
+	  main::set_status( detached => "incr" );
+	  main::set_status( here => "decr" );
 	}
 	if (/^(.*) has reattached/) {
-	  main::ui_status( detached => "decr" );
-	  main::ui_status( here => "incr" );
+	  main::set_status( detached => "decr" );
+	  main::set_status( here => "incr" );
 	}
 	if (/^(.*) is now \"away\"/) {
-	  main::ui_status( here => "decr" );
-	  main::ui_status( away => "incr" );
+	  main::set_status( here => "decr" );
+	  main::set_status( away => "incr" );
 	}
     }
 
@@ -244,7 +257,14 @@ sub parse_servercmd {
     $parse_state=undef unless $parse_state=~/(login|blurb)/;
     
     # sender commands, send before private messages.
-    if (/^%sender (.*)/) { $privsender=$1; return; }
+    if (/^%sender (.*)/) { exp_set('sender', $1); $privsender=$1; return; }
+
+    # beginmsg commands
+    if (/^%beginmsg/) { $parse_state="msg"; return; }
+    if (/^%endmsg/) { $parse_state=undef; return; }
+
+    # prompt
+    if (/^%prompt/) { $parse_state = "prompt"; goto print_rest; }
 
     # connected.
     if (/^%connected/) { main::alarm_handler(); return; }
@@ -257,6 +277,12 @@ sub parse_servercmd {
 
     # default
     &main::log_info("SERVER: $_");
+    return;
+
+  print_rest:
+    s/^%\S+\s+//;
+    s/^\[[^\]]*\]//;
+    &main::ui_output($_);
 }
 
 1;

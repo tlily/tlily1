@@ -1,3 +1,4 @@
+# -*- Perl -*-
 package LC::status_update;
 
 # used for tie() with scalars.  From the programmer's standpoint, the resulting
@@ -35,7 +36,7 @@ sub STORE {
     }
     $self->{val}=$val;
 
-    &main::ui_status($self->{varname} => $self->{val});
+    &main::set_status($self->{varname} => $self->{val});
 
     $self->{val}=$val;
 }
