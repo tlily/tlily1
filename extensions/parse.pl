@@ -1,5 +1,5 @@
 # -*- Perl -*-
-# $Header: /data/cvs/tlily/extensions/parse.pl,v 2.4 1998/12/07 22:37:58 neild Exp $
+# $Header: /data/cvs/tlily/extensions/parse.pl,v 2.5 1998/12/08 06:23:25 neild Exp $
 =head1 NAME
 
 parse.pl - The lily event parser
@@ -563,11 +563,11 @@ sub parse_line($$) {
 	    $msg_hdr = "";         # Not applicable.
 	    $msg_wrapchar = '> ';
 	    $msg_raw = $warm;
-	    $partial = $warm;
+	    $partial = $line;
 	    return 0;
 	} elsif ($msg_state eq 'emote') {
 	    $msg_raw .= "\n" . $warm;
-	    $partial .= substr($warm, 2);
+	    $partial .= substr($line, 2);
 	    return 0;
 	} else {
 	    %event = (Type => 'emote');
