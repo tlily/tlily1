@@ -15,3 +15,12 @@ For hacking within the source directory:
 3.  Make all changes to tlily.PL, not tlily.  perl Build.PL will
     regenerate tlily from tlily.PL.  tlily is made read-only to
 	discourage you from editing it.
+
+For making a release (main developers only!):
+
+1.  perl Build.PL release
+	You will be asked what version to release as, with the default
+	being the current version with the final 'a' to 'z' increased by 1.
+
+    The version module will be written and committed to CVS, the release
+	will be tagged, and a release archive will be made and compressed.

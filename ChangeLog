@@ -4,6 +4,12 @@ Version 0.3b
   * Fixed the slow-more-update bug.  [DPN]
   * Zone extension: fixed the negative-time bug.  [DPN]
   * Minor UI bugfix involving the input line's attributes.  [DPN]
+  * The Build script will now cache whether the directories in the cache
+    file are for the local directory, and warn you not to do an install. [CWS]
+  * If you try to install while your cached directories are for the local
+    directory, the Build script asks you if you really want to install. [CWS]
+  * The Build script explains better about the module library directory
+    (that you shouldn't add the trailing /LC) when asking for it. [CWS]
 
 Version 0.3a
   * Build script now asks what paths you want to use and caches them,

@@ -57,13 +57,22 @@ if(!$target) {
 elsif($target eq 'install') {
 	&make_tlily;
 	
+	if($DIRS_ARE_LOCAL) {
+		print "Your installation directories are set for local development of tigerlily.\n";
+		my($inp) = &ask("Do you really want to install tigerlily?", "n");
+		if($inp eq '' || $inp =~ /(n|no)/io) {
+			print "OK, bailing out of install.\n";
+			exit(1);
+		}
+		print "I hope you know what you're doing..\n";
+	}
 	print "Installing tlily...\n";
 	&install('DIR' => $BINDIR, 'MODE' => 0755);
 	&install('FILE' => 'tlily',
 	         'DEST' => $BINDIR.'/tlily',
 	         'MODE' => 0755);
 
-	print "Installing tlily support modules...\n";
+	print "Installing tlily internal modules...\n";
 	&install('DIR' => "$LIBMODDIR/$moddir", 'MODE' => 0755);
 
 	my($file);
@@ -95,7 +104,8 @@ elsif($target eq 'release') {
 	}
 	else {
 		print "Committing LC/version.pm with:\n$cmd\n";
-		system($cmd);
+		$rc = system($cmd);
+		if($rc) { die "Command returned error!\n"; }
 	}
 
 	$cmd = "cvs tag -F $CVSTAG";
@@ -104,7 +114,8 @@ elsif($target eq 'release') {
 	}
 	else {
 		print "Tagging release $VERSION with:\n$cmd\n";
-		system("$cmd");
+		$rc = system("$cmd");
+		if($rc) { die "Command returned error!\n"; }
 	}
 
 	if($nonono) {
@@ -123,7 +134,8 @@ elsif($target eq 'release') {
 	}
 	else {
 		print "Exporting tlily $VERSION with:\n$cmd\n";
-		system("$cmd");
+		$rc = system("$cmd");
+		if($rc) { die "Command returned error!\n"; }
 	}
 
 	$cmd = $Config{'tar'} || "tar";
@@ -134,7 +146,8 @@ elsif($target eq 'release') {
 	else {
 		if(-f "../tlily-$VERSION.tar") { unlink("../tlily-$VERSION.tar"); }
 		print "Packaging tlily $VERSION with:\n$cmd\n";
-		system("$cmd");
+		$rc = system("$cmd");
+		if($rc) { die "Command returned error!\n"; }
 	}
 
 	if($nonono) {
@@ -155,7 +168,8 @@ elsif($target eq 'release') {
 	else {
 		if(-f "tlily-$VERSION.tar.gz") { unlink("tlily-$VERSION.tar.gz"); }
 		print "Compressing the release archive with:\n$cmd\n";
-		system("$cmd");
+		$rc = system("$cmd");
+		if($rc) { die "Command returned error!\n"; }
 	}
 
 }
@@ -289,6 +303,9 @@ sub ask_dirs {
 	if(-f $cachefile) {
 		print "Reading cache file $cachefile.\n";
 		do "$cachefile";
+		if($DIRS_ARE_LOCAL) {
+			print "\n*** It is recommended that you not do 'perl Build.PL install' ***\n\n";
+		}
 		return;
 	} else {
 		$PREFIX='/usr/local';
@@ -315,20 +332,21 @@ the current directory only.
 		}
 	
 		$BINDIR=$PREFIX."/bin";
-		$inp = &ask("Installation directory for the tlily script?", $BINDIR);
+		$inp = &ask("\nInstallation directory for the tlily script?", $BINDIR);
 		if($inp) { $BINDIR=$inp; }
 		
 		$LIBDIR=$PREFIX."/lib/tlily";
 	
 		$LIBMODDIR=$LIBDIR; # the LC dir will be made below this
-		$inp = &ask("Installation directory for the tlily support library?",
-		    $LIBMODDIR);
+		print "\nInstallation directory for the tlily internal modules?  (The directory 'LC'\n";
+		$inp = &ask("will be created under this directory for the internal modules.)", $LIBMODDIR);
 		if($inp) { $LIBMODDIR=$inp; }
 	
 		$LIBEXTDIR=$LIBDIR."/extensions";
-		$inp = &ask("Installation directory for the tlily global extensions?",
+		$inp = &ask("\nInstallation directory for the tlily global extensions?",
 		    $LIBEXTDIR);
 		if($inp) { $LIBEXTDIR=$inp; }
+		$DIRS_ARE_LOCAL = '0';
 
 		&write_buildcache;
 	}
@@ -345,6 +363,9 @@ sub use_current_dir {
 	print "Module location is $LIBMODDIR\n";
 	$LIBEXTDIR = $LIBDIR."/extensions";
 	print "Extension directory is $LIBEXTDIR\n";
+	$DIRS_ARE_LOCAL = 1;
+
+	print "\n*** It is recommended that you not do 'perl Build.PL install' ***\n\n";
 
 	&write_buildcache;
 }
@@ -359,6 +380,7 @@ sub write_buildcache {
 			print "\$LIBDIR = '$LIBDIR'\n";
 			print "\$LIBMODDIR = '$LIBMODDIR'\n";
 			print "\$LIBEXTDIR = '$LIBEXTDIR'\n";
+			print "\$DIRS_ARE_LOCAL = '$DIRS_ARE_LOCAL'\n";
 			return;
 		}
 		print "Writing $cachefile\n";
@@ -373,6 +395,7 @@ sub write_buildcache {
 \$LIBDIR = '$LIBDIR';
 \$LIBMODDIR = '$LIBMODDIR';
 \$LIBEXTDIR = '$LIBEXTDIR';
+\$DIRS_ARE_LOCAL = '$DIRS_ARE_LOCAL';
 );
 		close $fh;
 		chmod(0444, $cachefile);
