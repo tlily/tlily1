@@ -1,0 +1,43 @@
+#!/usr/local/bin/perl 
+# $Header: /data/cvs/tlily/tests/xterm-pty,v 1.1 1998/10/24 18:24:53 josh Exp $
+
+use strict;
+use IO::Pty;
+use POSIX qw(:termios_h);
+use vars qw($xterm_pid);
+
+# permit file descriptors to be passed on to the child process.
+my $fdmax=$^F;  $^F=255;
+my $pty = new IO::Pty;
+$^F=$fdmax;
+
+my $ptynum = substr($pty->ttyname,-2,2);
+my $fd = fileno($pty);
+my $slave=$pty->slave;
+my $slave_fd = fileno($slave);
+my $xterm = "xterm -S$ptynum$fd";
+
+my $termios = new POSIX::Termios();
+$termios->getattr($slave_fd) || die "getattr: $!\n";
+my $lflag = $termios->getlflag;
+$lflag &= ~(POSIX::ICANON|POSIX::ECHO);
+$termios->setlflag($lflag);
+$termios->setattr($slave_fd,POSIX::TCSANOW) || die "setattr: $!\n";
+
+if (($xterm_pid=fork()) == 0) {
+    print "$xterm\n";
+    exec ($xterm);
+}
+
+# wait for the xterm
+sleep (3);
+
+for (1..500) {
+  print $slave "Test string $_\n";
+  sleep(1);
+}
+
+END {
+    kill 15, $xterm_pid;
+}
+
