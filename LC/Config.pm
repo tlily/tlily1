@@ -173,7 +173,7 @@ sub read_init_files {
 	    my $key;
 #	    print STDERR "*** Examining ", $safe->root, "\n";
 	    foreach $key (keys %stab) {
-		next if($key =~ /^_/ || $key =~ /::/);
+		next if($key =~ /^_/ || $key =~ /::/ || $key eq ENV || $key eq TL_VERSION);
 		local(*entry) = $stab{$key};
 		if(defined $entry) {
 		    $config{$key} = $entry;
@@ -228,7 +228,7 @@ sub parse_command_line {
 	if($ARGV[0] =~ /^-(h|help|\?)$/) {
 	    &Usage; exit;
 	}
-	if($ARGV[0] =~ /^-(s|server)$/) {
+	if($ARGV[0] =~ /^-(h|host|s|server)$/) {
 	    shift @ARGV; $config{server} = shift @ARGV; next;
 	}
 	if($ARGV[0] =~ /^-(p|port)$/) {
