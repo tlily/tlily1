@@ -363,7 +363,8 @@ sub parse_line($$) {
     }
 
     if (($line =~ /^ >> /) || ($line =~ /^ \\<\\< /) ||
-	($line =~ /^ -> /) || ($line =~ /^ \\<- /)) {
+	($line =~ /^ -> /) || ($line =~ /^ \\<- /) ||
+	($line =~ /^ => /)) {
 	my($blurb);
 
 	if ($msg_state ne 'msg') {
@@ -387,6 +388,10 @@ sub parse_line($$) {
 	    return 0;
 	}
 
+	if ($line =~ s|rom (Client \#.*), to (.*) and watchers::|rom <sender>$1</sender>, to <dest>$2</dest> and watchers:|) {
+	    $msg_sender = $1;
+	    $blurb = undef;
+	    @msg_dest = split /, /, $2;
 	if ($line =~ s|rom ([^\[]*) \[(.*)\], to (.*):|rom <sender>$1</sender> \[<blurb>$2</blurb>\], to <dest>$3</dest>:|) {
 	    $msg_sender = $1;
 	    $blurb = $2;
