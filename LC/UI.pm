@@ -52,7 +52,7 @@ sub init () {
     cbreak; noecho; nodelay 1; keypad 1;
     $ui_up = 1;
     defattr('status_line', COLOR_YELLOW, COLOR_BLUE, A_BOLD);
-    defattr('input_line', COLOR_WHITE, COLOR_BLACK, A_NORMAL);
+    defattr('input_line', COLOR_WHITE, COLOR_BLACK, A_BOLD);
     defattr('text_window', COLOR_WHITE, COLOR_BLACK, A_NORMAL);
     &redraw;
 }
