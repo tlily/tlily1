@@ -1,4 +1,6 @@
 Version 1.0.1-post
+  * [extensions/httpd.pl] Simple http daemon, the first stage in my
+    client-to-client communications project. [SMC]
   * [LC/Extend.pm] Fixed Extend.pm again so that it exports the
     extension_unload() function for use by extensions. [MJR]
   * [LC/StatusLine.pm] Fixed a bug where if the system time got set
