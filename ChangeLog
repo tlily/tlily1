@@ -1,3 +1,7 @@
+Version 0.9b-post
+  * [LC/TTerminal.pm] Fixed so that you can load TTerminal with no
+    Term::Size and indeed no /etc/termcap :)
+
 Version 0.9b
   * [LC/UI.pm] Possible fix for Josh's persistant prompt bug? [DPN]
   * [extensions/expand.pl] Fixed a minor expansion bug. [DPN]

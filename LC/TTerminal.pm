@@ -1,13 +1,19 @@
 # -*- Perl -*-
-# $Header: /data/cvs/tlily/LC/TTerminal.pm,v 1.6 1998/05/29 05:12:21 mjr Exp $
+# $Header: /data/cvs/tlily/LC/TTerminal.pm,v 1.7 1998/06/05 07:23:22 josh Exp $
 package LC::TTerminal;
 
 use IO::Select;
 use Term::Cap;
-use Term::Size;
+eval "use Term::Size;";
+my $termsize_installed;
+if ("$@") { 
+  warn("** WARNING: Unable to load Term::Size: **\n");
+  $termsize_installed=0;
+  sleep 2;
+} else {
+  $termsize_installed=1;
+}
 use POSIX;
-
-use LC::Config;
 
 my %attrs = ('bold' => 0,
              'reverse' => 0);
@@ -39,7 +45,11 @@ sub term_init ($) {
     my $self = shift;
     return if ($term_up);
     $resize_cb = $_[0];
-    ($term_cols, $term_lines) = Term::Size::chars;
+    if ($termsize_installed) {
+	($term_cols, $term_lines) = Term::Size::chars;
+    } else {
+	($term_cols, $term_lines) = (80,24);
+    }
 
     my $termios = new POSIX::Termios;
     $termios->getattr;
@@ -59,7 +69,20 @@ sub term_init ($) {
 
     $termios->setattr(0, &POSIX::TCSANOW);
 
-    $term = Tgetent Term::Cap { TERM => undef, OSPEED => $ospeed };
+    eval '`$term = Tgetent Term::Cap { TERM => undef, OSPEED => $ospeed };';
+
+    if ($@) {
+	if ($ENV{TERM} eq "vt100") {
+	    $ENV{TERMCAP}='vt100|vt100-am|vt100am|dec vt100:do=^J:co#80:li#24:cl=50\E[;H\E[2J:sf=5\ED:le=^H:bs:am:cm=5\E[%i%d;%dH:nd=2\E[C:up=2\E[A:ce=3\E[K:cd=50\E[J:so=2\E[7m:se=2\E[m:us=2\E[4m:ue=2\E[m:md=2\E[1m:mr=2\E[7m:mb=2\E[5m:me=2\E[m:is=\E[1;24r\E[24;1H:rf=/usr/share/lib/tabset/vt100:rs=\E>\E[?3l\E[?4l\E[?5l\E[?7h\E[?8h:ks=\E[?1h\E=:ke=\E[?1l\E>:ku=\EOA:kd=\EOB:kr=\EOC:kl=\EOD:kb=^H:ho=\E[H:k1=\EOP:k2=\EOQ:k3=\EOR:k4=\EOS:pt:sr=5\EM:vt#3:xn:sc=\E7:rc=\E8:cs=\E[%i%d;%dr:';
+	} elsif ($ENV{TERM} =~ /xterm/) {
+	    $ENV{TERM}="xterm";
+	    $ENV{TERMCAP}='xterm|vs100|xterm terminal emulator (X Window System):AL=\E[%dL:DC=\E[%dP:DL=\E[%dM:DO=\E[%dB:IC=\E[%d@:UP=\E[%dA:al=\E[L:am:bs:cd=\E[J:ce=\E[K:cl=\E[H\E[2J:cm=\E[%i%d;%dH:co#80:cs=\E[%i%d;%dr:ct=\E[3k:dc=\E[P:dl=\E[M:im=\E[4h:ei=\E[4l:mi:ho=\E[H:is=\E[r\E[m\E[2J\E[H\E[?7h\E[?1;3;4;6l\E[4l:rs=\E[r\E[m\E[2J\E[H\E[?7h\E[?1;3;4;6l\E[4l\E<:k1=\EOP:k2=\EOQ:k3=\EOR:k4=\EOS:kb=^H:kd=\EOB:ke=\E[?1l\E>:kl=\EOD:km:kn#4:kr=\EOC:ks=\E[?1h\E=:ku=\EOA:li#65:md=\E[1m:me=\E[m:mr=\E[7m:ms:nd=\E[C:pt:sc=\E7:rc=\E8:sf=\n:so=\E[7m:se=\E[m:sr=\EM:te=\E[2J\E[?47l\E8:ti=\E7\E[?47h:up=\E[A:us=\E[4m:ue=\E[m:xn:';
+	}  else {
+	    die "$@\n(no fallback termcap for $ENV{TERM}, try xterm or vt100)\n";
+	}
+	$term = Tgetent Term::Cap { TERM => undef, OSPEED => $ospeed };
+    }
+
     $term->Trequire(qw/cm/);
 
     my $term_flags = 0;
@@ -69,7 +92,7 @@ sub term_init ($) {
 
     $| = 1;
 
-    $config{mono} = 1;
+    $main::config{mono} = 1;
 
     $SIG{WINCH} = sub { $term_resize_flag = 1; };
 
@@ -260,7 +283,11 @@ sub term_select ($$$$) {
 
     if ($term_resize_flag) {
 	$term_resize_flag = 0;
-	($term_cols, $term_lines) = Term::Size::chars;
+	if ($termsize_installed) {
+	    ($term_cols, $term_lines) = Term::Size::chars;
+	} else {
+	    ($term_cols, $term_lines) = (80,24);
+	}
 	&$resize_cb if (defined $resize_cb);
     }
 
