@@ -36,8 +36,8 @@ sub send_handler {
 	send_version_info($event->{From});
     } else {
 	ui_output("(Denying version info request from " . $event->{From} .
-		  ")");
-	command("$event->{From};[auto] I'd rather not tell you that.");
+		  ".  See %help vinfo for details.  Use %vinfo send to explicitly send a response.)");
+#	command("$event->{From};[auto] I'd rather not tell you that.");
     }
 
     return 0;
