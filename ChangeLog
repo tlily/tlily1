@@ -1,4 +1,6 @@
 Version 0.6e
+  * [LC/parse.pm] Tweak for datestamps in reviews.  [DPN]
+  * [LC/parse.pm] Fix for signals in sends.  [DPN]
   * [LC/State.pm] Make @prefer ignore case.  [DPN]
 
 Version 0.6d

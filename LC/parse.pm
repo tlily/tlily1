@@ -237,7 +237,8 @@ sub parse_line($$) {
 
     if (($line =~ /^\#\s*$/) ||
 	($line =~ /^\#\s[\>\-\*\(]/) ||
-	($line =~ /^\# \\\</)) {
+	($line =~ /^\# \\\</) ||
+	($line =~ /^\# \#\#\#/)) {
 
 	if (substr($line, 2, 1) eq '*') {
 	    $line = substr($line, 2);
