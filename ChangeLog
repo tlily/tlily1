@@ -1,6 +1,7 @@
 Version 1.0.2-post
   * [LC/SubClient.pm] Changed use of IO::Select to ui_select() so we don't
     get any strange interactions between the two. [SMC]
+  * [LC/Bot.pm] Created, separating out the generic bot code from lilybot.PL.
 
 Version 1.0.2
   * [LC/UI/Native.pm] Don't replace the killbuffer with a zero-length
