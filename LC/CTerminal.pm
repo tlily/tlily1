@@ -167,7 +167,7 @@ Sounds an audible bell.
 use Exporter;
 use Curses;
 use POSIX;
-use LC::config;
+use LC::Config;
 
 @ISA = qw(Exporter);
 
