@@ -101,6 +101,13 @@ sub parse($) {
 }
 
 
+sub parse_connected($$) {
+    my($ev, $h) = @_;
+    @prompts = grep { $_ !~ /^-->/ } @prompts;
+    return 0;
+}
+
+
 # The big one: take a line from the server, and decide what it is.
 sub parse_line($$) {
     my($ev, $h) = @_;
@@ -721,6 +728,9 @@ sub parse_line($$) {
 sub init() {
     register_eventhandler(Type => 'serverline',
 			  Call => \&parse_line);
+
+    register_eventhandler(Type => 'connected',
+			  Call => \&parse_connected);
 
 #    register_eventhandler(Type => 'connected',
 #			  Call => sub { push @prompts, '\* $'; 0; }); # '})

@@ -1,3 +1,7 @@
+Version 0.6c
+  * [LC/parse.pm] Fixed a bug involving the characters --> at the end of
+                  a line.  [DPN]
+
 Version 0.6b
   * [extensions/misc.pl] Fixed !command handling.  [DPN]
   * [tlily.PL] Require perl 5.003_07.  [DPN]
