@@ -1,4 +1,7 @@
 Version 0.6b
+  * [extensions/info.pl] Removed dependancy on IO::File.
+  * [LC/Config.pm, extensions/autologin.pl] Added the 'noauto' option, to
+    suppress autologin.  [DPN]
   * [LC/Extend.pm, extensions/vinfo.pl] Added a 'vinfo' command, to allow
     automatic transmission of version information.  (Disabled by default.)
     [DPN]
