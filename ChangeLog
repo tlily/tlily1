@@ -25,7 +25,7 @@ Version 1.0
   * [extensions/source.pl] Added a %source extension to interpret a file as
     a list of user commands [SMC]
   * [LC/TTerminal.pm] Fixed so that you can load TTerminal with no
-    Term::Size and indeed no /etc/termcap :)
+    Term::Size and indeed no /etc/termcap :) [JDW]
 
 Version 0.9b
   * [LC/UI.pm] Possible fix for Josh's persistant prompt bug? [DPN]
