@@ -29,8 +29,8 @@ my %Extensions = ();
 my @loading_exts = ();
 
 
-sub extension($) {
-    my ($name)=@_;
+sub extension($;$) {
+    my ($name,$verbose)=@_;
     my $filename;
     my @share=();
 
@@ -43,7 +43,6 @@ sub extension($) {
 	ui_output("(Extension \"$name\" already loaded.)");
 	return ;
     }
-
 
     my @ext_dirs = ("$ENV{HOME}/.lily/tlily/extensions", $main::TL_EXTDIR);
     my $dir;
@@ -58,6 +57,8 @@ sub extension($) {
 	return;
     }
     
+    ui_output("*** loading \'$name\' from $filename") if ($verbose);
+
     my $safe=new Safe;
 
     # Since security isnt a primary concern, I allow all perl operators to be
@@ -84,7 +85,7 @@ sub extension($) {
     push @share,qw($TL_VERSION);
     
     $safe->share (@share);
-    $safe->share_from('main', [ qw(%ENV @INC %INC $@) ]);
+    $safe->share_from('main', [ qw(%ENV @INC %INC $@ $]) ]);
         
     my $old = $Extensions{/current/};
     $Extensions{$name} = { File => $filename,
@@ -176,7 +177,7 @@ sub extension_cmd($) {
     if ($cmd eq 'load') {
 	my $ext;
 	foreach $ext (@argv) {
-	    extension($ext);
+	    extension($ext,1);
 	}
     } elsif ($cmd eq 'unload') {
 	my $ext;
@@ -188,7 +189,7 @@ sub extension_cmd($) {
 	foreach $ext (@argv) {
 	    my $f = $Extensions{$ext}->{File};
 	    extension_unload($ext);
-	    extension($f);
+	    extension($f,1);
 	}
     } elsif ($cmd eq 'list') {
 	my $s = "(Loaded extensions:";

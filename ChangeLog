@@ -1,3 +1,8 @@
+Version 0.6b
+  * [LC/Extend.pm, extensions/vinfo.pl] Added a 'vinfo' command, to allow
+    automatic transmission of version information.  (Disabled by default.)
+    [DPN]
+
 Version 0.6a
   * [README] Documented the terminal features.  [DPN]
   * [LC/UI.pm, LC/CTerminal.pm, LC/TTerminal.pm, tlily.PL,
