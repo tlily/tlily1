@@ -1,4 +1,6 @@
 Version 1.0.1-post
+  * [LC/UI] Major overhaul of UI subsystem.  Created LC::UI:: modules for each
+    UI.  Also created a LC::UI::SSFE module as an example.
   * [extensions/url.pl] Bugfix: Netscape doesn't like commas in arguments
     to openURL, so replace them with %2c.  [DPN]
   * [extensions/program.pl] Preliminary version of an extension for 
