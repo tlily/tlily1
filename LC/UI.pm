@@ -152,6 +152,8 @@ use IO::Handle;
 
 use LC::Config;
 
+use integer;
+
 @ISA = qw(Exporter);
 
 @EXPORT = qw(&ui_start
@@ -767,7 +769,7 @@ sub ui_status($) {
 sub input_position_cursor() {
     my $xpos = length($input_prompt);
     $xpos += $input_pos unless ($password);
-    $term->term_move($term->term_lines - $input_height + floor(($xpos / $ui_cols)) - $input_fline,
+    $term->term_move($term->term_lines - $input_height + ($xpos / $ui_cols) - $input_fline,
 	      $xpos % $ui_cols);
 }
 
@@ -779,7 +781,7 @@ sub input_redraw() {
     my $l = $input_prompt;
     $l .= $input_line unless ($password);
 
-    my $height = floor((length($l) / $ui_cols)) + 1 - $input_fline;
+    my $height = (length($l) / $ui_cols) + 1 - $input_fline;
     $height = 1 if ($height < 1);
 
     $term->term_move($term->term_lines - 1, 0);
