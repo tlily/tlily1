@@ -5,6 +5,10 @@ register_help_long('eval', "usage: eval <perl code>");
 register_help_short('!', "run shell command");
 register_help_long('!', "usage: ! <command>");
 
+register_user_command_handler('version', \&version_handler);
+register_help_short('version', "Display the version of Tigerlily and the server");
+register_help_long('version', "usage: %version\n* Displays the version of Tigerlily and the server.\n");
+
 
 # %eval handler
 sub eval_handler($) {
@@ -28,4 +32,10 @@ sub bang_handler($$) {
     return 0;
 }
 
-
+# %version handler
+sub version_handler($$) {
+    my($event,$handler) = @_;
+    ui_output("(Tigerlily version $TL_VERSION)\n");
+    server_send("/display version");
+    return 0;
+}
