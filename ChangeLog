@@ -1,4 +1,5 @@
 Version 1.0.4-post
+  * [LC/Client.pm] Bugfix for  tlily not reporting version to the server. [MJR]
   * [extensions/parse.pl] Bugfix for /who output and names with spaces.  [DPN]
 
 Version 1.0.4
