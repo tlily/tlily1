@@ -6,7 +6,6 @@ use Safe;
 use File::Basename;
 use LC::UI;
 use LC::Server;
-use LC::parse;
 use LC::User;
 use LC::Command;
 use LC::State;

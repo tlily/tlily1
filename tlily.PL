@@ -12,7 +12,6 @@ use LC::Version;
 use LC::Config;
 use LC::UI;
 use LC::Server;
-use LC::parse;
 use LC::Command;
 use LC::User;
 use LC::State;
@@ -198,7 +197,9 @@ sub server_reader($) {
 	return 0;
     }
 
-    parse($buf);
+    dispatch_event({Type => 'serverinput',
+		    Text => $buf});
+
     return 0;
 }
 

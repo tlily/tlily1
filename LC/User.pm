@@ -147,6 +147,9 @@ sub init() {
     register_eventhandler(Order => 'after',
 			  Call => sub {
 			      my($event,$handler) = @_;
+			      if ($event->{Signal}) {
+				  ui_bell();
+			      }
 			      if ($event->{ToUser}) {
 				  if (($event->{Type} eq 'send') ||
 				      (($event->{Type} eq 'review') &&
@@ -160,9 +163,6 @@ sub init() {
 						WrapChar =>
 						$event->{WrapChar});
 				  }
-			      }
-			      if ($event->{Signal}) {
-				  ui_bell();
 			      }
 			      return 0;
 			  });

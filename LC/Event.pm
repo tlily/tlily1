@@ -318,9 +318,11 @@ sub event_loop {
 	}
 	@time_handlers = @new_ths;
 
-	#log_info("Going into select: to = $timeout - ");
+	print STDERR "Going into select: to = $timeout - \n"
+	    if ($config{edebug});
 	my($r, $w, $e) = ui_select(\@sel_r, \@sel_w, \@sel_e, $timeout);
-	#log_info("Exiting select.");
+	print STDERR "Exiting select.\n"
+	    if ($config{edebug});
 	
 	#
 	# What follows is really nasty.  Fix this, please.
@@ -331,6 +333,8 @@ sub event_loop {
 	    foreach $h (@io_handlers) {
 		if (fileno($fh) == fileno($h->{Handle})) {
 		    if (index($h->{Mode}, 'r') != -1) {
+			print STDERR "Readable on $h->{Handle}\n"
+			    if ($config{edebug});
 			eval { my $rc = &{$h->{Call}}($h); };
 			warn("Event error: $@") if ($@);
 		    }
@@ -342,6 +346,8 @@ sub event_loop {
 	    foreach $h (@io_handlers) {
 		if (fileno($fh) == fileno($h->{Handle})) {
 		    if (index($h->{Mode}, 'w') != -1) {
+			print STDERR "Writable on $h->{Handle}\n"
+			    if ($config{edebug});
 			eval { my $rc = &{$h->{Call}}($h); };
 			warn("Event error: $@") if ($@);
 		    }
@@ -353,6 +359,8 @@ sub event_loop {
 	    foreach $h (@io_handlers) {
 		if (fileno($fh) == fileno($h->{Handle})) {
 		    if (index($h->{Mode}, 'e') != -1) {
+			print STDERR "Exception on $h->{Handle}\n"
+			    if ($config{edebug});
 			eval { my $rc = &{$h->{Call}}($h); };
 			warn("Event error: $@") if ($@);
 		    }

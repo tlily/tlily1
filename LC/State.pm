@@ -121,7 +121,6 @@ Resynchronizes the user and discussion databases with the server.
 use Exporter;
 use LC::UI;
 use LC::Command;
-use LC::parse;
 use LC::Event;
 use LC::StatusLine;
 use LC::User;

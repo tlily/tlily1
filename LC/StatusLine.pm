@@ -30,7 +30,6 @@ use Exporter;
 use Tie::Hash;
 use LC::Server;
 use LC::UI;
-use LC::parse;
 use LC::Config;
 use LC::Event;
 

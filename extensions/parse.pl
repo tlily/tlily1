@@ -1,9 +1,7 @@
 # -*- Perl -*-
-package LC::parse;
-
 =head1 NAME
 
-LC::parse - The lily event parser
+parse.pl - The lily event parser
 
 =head1 DESCRIPTION
 
@@ -16,17 +14,6 @@ each line of server output.  The parse module catches 'serverline' events
 in the 'during' phase (so a 'before' handler can process these before
 the parser), and generates appropriate events for each line.  See
 the EVENTS section for a complete description of the generated events.
-
-=head2 Functions
-
-=over 10
-
-=item parse()
-
-Takes a chunk of raw server output, and processes it.  The output is
-divided into lines, and a 'serverline' event is generated for each line.
-
-=back
 
 =head1 EVENTS
 
@@ -43,17 +30,6 @@ The exact server output for the line.
 =back
 
 =cut
-
-
-use Exporter;
-use Text::ParseWords;
-use LC::UI;
-use LC::Event;
-
-@ISA = qw(Exporter);
-
-@EXPORT = qw(&parse);
-
 
 @prompts = ('-->\s*$',
 	    '\(Y\/n\)\s*$',
@@ -75,11 +51,11 @@ my $msg_signal = 0;
 
 # Take raw server output, and deal with it.
 my $crumb = '';
-sub parse($) {
-    my($buf) = @_;
+sub parse_server_data($$) {
+    my($event, $handler) = @_;
 
     # Divide into lines.
-    $buf = $crumb . $buf;
+    my $buf = $crumb . $event->{Text};
     my @lines = split /\r?\n/, $buf, -1;
     $crumb = pop @lines;
 
@@ -761,6 +737,9 @@ sub parse_user() {
 
 
 sub init() {
+    register_eventhandler(Type => 'serverinput',
+			  Call => \&parse_server_data);
+
     register_eventhandler(Type => 'serverline',
 			  Call => \&parse_line);
 

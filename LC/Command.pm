@@ -3,7 +3,6 @@ package LC::Command;
 
 use Exporter;
 use LC::Server;
-use LC::parse;
 use LC::Event;
 
 @ISA = qw(Exporter);
