@@ -3,6 +3,15 @@
 register_eventhandler(Type => "send",
 		      Call => \&run_command_event);
 register_user_command_handler('run_command', \&run_command_cmd);
+register_help_short('run_command', "run a shell command for certain messages");
+register_help_long('run_command', 
+"Runs a given shell command when messages are received from a certain user.  The message body is passed to standard input of that command.
+
+ usage: %run_command [user] [command]
+        %run_command list
+        %run_command clear
+        %help [topic]");
+
 
 sub run_command_event($$) {
     my($event,$handler) = @_;
