@@ -39,26 +39,10 @@ cmd_init();
 
 ui_set(Hide => [ 'intern' ]);
 
-ui_attr('sender','bold');
-ui_attr('dest','bold');
-ui_attr('b','bold');
-if (! $config{mono}) {
-    ui_attr('status_line',  'fg:yellow',  'bg:blue',  'bold');
-    ui_attr('input_line',   'fg:white',   'bg:black');
-    ui_attr('text_window',  'fg:white',   'bg:black', 'normal');
-    ui_attr('privhdr',      'fg:green',   'bg:black');
-    ui_attr('privmsg',      'fg:green',   'bg:black');
-    ui_attr('pubhdr',       'fg:cyan',    'bg:black');
-    ui_attr('pubmsg',       'fg:white',   'bg:black');
-    ui_attr('emote',        'fg:cyan',    'bg:black');
-    ui_attr('review',       'fg:magenta', 'bg:black');
-    ui_attr('usersend',     'fg:red',     'bg:black');
-    ui_attr('whiteblue',    'fg:white',   'bg:blue');
-    ui_attr('greenblue',    'fg:green',   'bg:blue',  'bold');
-    ui_attr('yellow',       'fg:yellow',  'bg:black',  'bold');
-    ui_attr('green',        'fg:green',   'bg:black',  'bold');
-} else {
-    ui_attr('status_line', 'reverse');
+# Set colors from what the config files read
+my($k,$v);
+while (($k,$v) = each %{$config{($mono?'mono':'color').'_attrs'}}) {
+    ui_attr($k, @{$v});
 }
 
 statusline_init();
