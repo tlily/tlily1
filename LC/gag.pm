@@ -1,12 +1,14 @@
 # -*- Perl -*-
 package LC::gag;
 
+use LC::parse;
+
 use POSIX;
 use Exporter;
 
 @ISA = qw(Exporter);
 
-@EXPORT = qw(&muffle %gagged);
+@EXPORT = qw(&gag_init %gagged);
 
 
 %gagged = ();
@@ -27,6 +29,18 @@ sub muffle ($) {
     }
 
     return $new;
+}
+
+sub gag_handler (\%) {
+    my($event) = @_;
+
+    $event->{Line} = muffle($event->{Line})
+	if ($gagged{tolower($event->{From})});
+    return 0;
+}
+
+sub gag_init () {
+    LC::parse::register_eventhandler("send", \&gag_handler);
 }
 
 1;
