@@ -1,4 +1,4 @@
-Version 0.2d
+Version 0.3a
   * Build script now asks what paths you want to use and caches them,
     rather than making you edit Build.PL to set them.
   * Build script makes all generated files read-only to discourage editing.
