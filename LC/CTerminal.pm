@@ -1,5 +1,5 @@
 # -*- Perl -*-
-# $Header: /data/cvs/tlily/LC/CTerminal.pm,v 2.1 1998/06/12 08:56:03 albert Exp $
+# $Header: /data/cvs/tlily/LC/CTerminal.pm,v 2.2 1998/12/09 01:49:51 albert Exp $
 package LC::CTerminal;
 
 =head1 NAME
@@ -166,7 +166,7 @@ Sounds an audible bell.
 
 
 use Curses;
-use POSIX;
+use POSIX qw(iscntrl);
 use IO::Select;
 use LC::Config;
 eval "use Term::Size";
