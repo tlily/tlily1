@@ -1,4 +1,8 @@
 Version 0.3c
+  * [extensions/expand.pl] added code to reset the sendlist more appropriately
+    when /oops-ing or /also-ing; enabled with $config{oops} and $config{also};
+    when set to "/", intercepts /oops and /also, when set to "%", adds
+    commands %oops and %also, when set to "/%" or "%/", does both.
   * Commented out some unused variables and fixed some typos to make
     perl -w happier. [CWS]
   * The parser should now catch sends from the user.  (<< and <-)  [DPN]

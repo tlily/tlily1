@@ -100,3 +100,70 @@ register_eventhandler(Type => 'privhdr',
 			  }
 			  return 0;
 		      });
+
+sub oops_cmd ($) {
+	my($args) = @_;
+	&oops_proc($args);
+	server_send("/oops ".$args."\r\n");
+}
+
+sub also_cmd ($) {
+	my($args) = @_;
+	&also_proc($args);
+	server_send("/also ".$args."\r\n");
+}
+
+sub oops_proc ($) {
+	my($recips) = @_;
+	my(@dests) = split(/,/, $recips);
+	foreach (@dests) {
+	    my $full = expand_name($_);
+	    next unless ($full);
+	    $_ = $full;
+	    $_ =~ tr/ /_/;
+	}
+	exp_set('recips', join(",", @dests));
+}
+
+sub also_proc ($) {
+	my($recips) = @_;
+	my(@dests) = split(/,/, $recips);
+	foreach (@dests) {
+	    my $full = expand_name($_);
+	    next unless ($full);
+	    $_ = $full;
+	    $_ =~ tr/ /_/;
+	}
+	exp_set('recips', join(",", $expansions{'recips'}, @dests));
+}
+
+if ($config{oops} =~ m|/|o) {
+	register_eventhandler(Type => 'userinput',
+		Call => sub {
+			my($event,$handler) = @_;
+			if($event->{Text} =~ m|^\s*/oops\s*(.*?)\s*$|io) {
+				oops_proc($1);
+			}
+			return 0;
+		}
+	);
+}
+elsif ($config{also} =~ m|/|o) {
+	register_eventhandler(Type => 'userinput',
+		Call => sub {
+			my($event,$handler) = @_;
+			if($event->{Text} =~ m|^\s*/also\s*(.*?)\s*$|io) {
+				also_proc($1);
+			}
+			return 0;
+		}
+	);
+}
+if ($config{oops} =~ m|%|o) {
+	register_user_command_handler('oops', \&oops_cmd);
+}
+if ($config{also} =~ m|%|o) {
+	register_user_command_handler('also', \&also_cmd);
+}
+
+1;
