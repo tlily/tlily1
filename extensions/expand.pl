@@ -181,5 +181,9 @@ if (config_ask("also")) {
 }
 register_user_command_handler('oops', \&oops_cmd);
 register_user_command_handler('also', \&also_cmd);
+register_help_short('oops', "/oops with fixed sendlist");
+register_help_long('oops', qq(/oops does not fix your sendlist correctly.  This command will send your /oops to the server, as well as fix your sendlist so ; expands correctly afterwards.  If you have 'oops' in your \@slash configuration option, /oops will do the same as %oops.));
+register_help_short('also', "/also with fixed sendlist");
+register_help_long('also', qq(/also does not fix your sendlist correctly.  This command will send your /also to the server, as well as fix your sendlist so ; expands correctly afterwards.  If you have 'also' in your \@slash configuration option, /also will do the same as %also.));
 
 1;
