@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# $Header: /data/cvs/tlily/Build.PL,v 2.1 1998/06/12 08:55:48 albert Exp $
+# $Header: /data/cvs/tlily/Build.PL,v 2.2 1998/12/09 01:52:52 albert Exp $
 
 use Config;
 use Carp;
@@ -10,6 +10,8 @@ use File::Copy;
 use File::Path;
 use Getopt::Std;
 use LC::Version;
+
+use subs qw(&install);
 
 # You no longer have to edit the paths here to configure tigerlily.
 # This build script will ask you where you want to put tigerlily
@@ -60,8 +62,14 @@ $moddir="LC";
 $extdir="extensions";
 $modext='\.pm';
 $extext='\.pl';
+@modsubdirs = qw(UI);
 @modfiles = &get_files($moddir, $modext);
 @extfiles = &get_files($extdir, $extext);
+
+foreach(@modsubdirs) {
+    push @modfiles, map {$_ = "UI/$_"} get_files("$moddir/$_", $modext)
+}
+
 print join("\n", @modfiles), "\n" if $debug;
 print join("\n", @extfiles), "\n" if $debug;
 
@@ -166,6 +174,9 @@ elsif($target eq 'install') {
 
     print "Installing tlily internal modules...\n";
     &install('DIR' => "$LIBDIR/$moddir", 'MODE' => 0755);
+	foreach(@modsubdirs) {
+		install('DIR' => "$LIBDIR/$moddir/$_", 'MODE' => 0755);
+	}
 
     my($file);
     foreach $file (@modfiles) {
