@@ -1,5 +1,5 @@
 # -*- Perl -*-
-# $Header: /data/cvs/tlily/LC/UI/Native.pm,v 1.3 1998/10/24 20:25:06 josh Exp $
+# $Header: /data/cvs/tlily/LC/UI/Native.pm,v 1.4 1998/10/24 22:27:50 josh Exp $
 package LC::UI::Native;
 
 =head1 NAME
@@ -41,6 +41,9 @@ my $FOnewline   = 3;
 my $FOattr      = 4;
 my $FOpopattr   = 5;
 my $FOtext      = 6;
+
+# count of how many LC::UI::Native's are running.
+my $native_ui_running = 0;
 
 sub new {    
     my $class = shift;
@@ -134,6 +137,12 @@ sub new {
 sub ui_start() {
     my ($self)=@_;
 
+    if ($native_ui_running) {
+	die "Error:  Only one LC::UI::Native UI can be run at a time.\n";
+    }
+
+    $native_ui_running++;
+
     $config{'terminal'} ||= 'LC::CTerminal';
     eval "use $config{'terminal'};";
     if ($@) {
@@ -216,6 +225,8 @@ sub ui_end() {
     my ($self)=@_;
 
     $self->{term}->term_end();
+
+    $native_ui_running--;
 }
 
 

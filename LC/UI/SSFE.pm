@@ -28,6 +28,9 @@ use LC::Config;
 use vars qw(@ISA);
 @ISA = ("LC::UI::Basic");
 
+# count of how many LC::UI::Native's are running.
+my $ssfe_ui_running = 0;
+
 sub new {
     my ($class)=@_;
     
@@ -48,11 +51,18 @@ sub ui_start {
 	exec @SSFE, $0, @::ORIGINAL_ARGV;
 	exit(0);
     }
+
+    if ($ssfe_ui_running) {
+	die "Error:  Only one LC::UI::SSFE UI can be run at a time.\n";
+    }
+
+    $ssfe_ui_running++;
 }
 
 sub ui_end {
     my ($self)=@_;
 
+    $ssfe_ui_running--;
 }
 
 sub ui_status {

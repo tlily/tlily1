@@ -1,5 +1,5 @@
 # -*- Perl -*-
-# $Header: /data/cvs/tlily/LC/Extend.pm,v 2.3 1998/10/21 04:42:46 mjr Exp $
+# $Header: /data/cvs/tlily/LC/Extend.pm,v 2.4 1998/10/24 22:27:49 josh Exp $
 package LC::Extend;
 
 use Exporter;
@@ -319,13 +319,13 @@ BEGIN {
 	    list_remove @{$Extensions{/current/}->{LongHelp}}, $cmd;
 	}
 
-        sub ui_callback($$) {
+        sub ui_callback {
 	    my($key, $cmd) = @_;
 	    &LC::UI::ui_callback($key, $cmd); 
 	    push @{$Extensions{/current/}->{UICallbacks}}, [ $key, $cmd ];
 	}
 
-        sub ui_remove_callback($$) {
+        sub ui_remove_callback {
 	    my($key, $cmd) = @_;
 	    &LC::UI::ui_remove_callback($key, $cmd); 
 	    my $l = $Extensions{/current/}->{UICallbacks};

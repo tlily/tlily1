@@ -9,7 +9,7 @@ BEGIN {
 	require LC::UI;  LC::UI->import();
 	require LC::User; LC::User->import();
     } else {
-        sub ui_password($) { 0; }
+        sub ui_password { 0; }
 	sub user_password($) { 0; }
     }
 }

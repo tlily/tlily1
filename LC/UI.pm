@@ -15,15 +15,19 @@
 #
 # Event direction will be performed by adding a Target to the events,
 # and passing that into ui_output.
-# Lots of details to be worked out there..
 #
-# Of course, none of that is written yet.  For now, i'm happy to just get the
-# native ui (the old UI.pm) rewritten into module form so that multiple 
-# instances could be instantiated in the future.
-# 
+# All the other functions that don't take hash-style arguments can now
+# optionally take an extra argument (the first one) indicating the target.
+#
+# If it is not supplied, the default target is used.
+#
 # For example, with a graphical UI, multiple windows could be instantiated
 # as multiple UI instances.
 #
+
+# NOTE:  Need to handle select loops more intelligently!  For now we just use
+# the select loop of the default UI.  In addition, $ui_cols is bound to the
+# default UI.
 
 package LC::UI;
 
@@ -54,35 +58,132 @@ use strict;
 	     &ui_escape
 	    );
 
-my ($UI);
+my (%ui_map);
 
-sub ui_start       { 
+sub ui_start { 
+    my ($target,$type)=@_;
+    if (! $target) {
+	if ($ui_map{default}) {
+	    die "A default UI has already been registered!\n";
+	} else {
+	    $target='default';
+	}
+    }
+    
     $config{'UI'} ||= 'Native';
+    $type ||= $config{'UI'};
 
-    eval "use LC::UI::$config{'UI'}; \$UI=new LC::UI::$config{'UI'}()";
+    my $UI; 
+
+    eval "use LC::UI::$type; \$UI=new LC::UI::$type()";
     die "Unable to load UI module: $@\n" if $@;
-    die "Error instantiating LC::UI::config{'UI'}\n" unless ($UI);
+    die "Error instantiating LC::UI::$type\n" unless ($UI);
     
     $UI->ui_start(); 
     # need to use a tied scalar here, for the time being.  $ui_cols should
     # die..
     tie $ui_cols, 'ui_col_tie';
+
+    $ui_map{$target}=$UI;
 }
 
-sub ui_end                 { $UI->ui_end(@_); }
-sub ui_attr                { $UI->ui_attr(@_); }
-sub ui_filter              { $UI->ui_filter(@_); }
-sub ui_resetfilter         { $UI->ui_resetfilter(@_); }
-sub ui_status              { $UI->ui_status(@_); }
-sub ui_process             { $UI->ui_process(@_); }
-sub ui_callback($$)        { $UI->ui_callback(@_); }
-sub ui_remove_callback($$) { $UI->ui_remove_callback(@_); }
-sub ui_bell                { $UI->ui_bell(@_); }
-sub ui_password($)         { $UI->ui_password(@_); }
-sub ui_prompt              { $UI->ui_prompt(@_); }
-sub ui_select($$$$)        { $UI->ui_select(@_); }
+sub ui_end {
+    my ($target)=@_;
+    
+    $target ||= "default";
 
-sub ui_output              {
+    $ui_map{$target}->ui_end();
+    delete $ui_map{$target};
+}
+
+sub ui_attr {     
+    my ($target,@args)=("default",@_);
+    if (@_ == 3) { ($target,@args)=@_; } 
+
+    $target="default" unless $ui_map{$target};
+    $ui_map{$target}->ui_attr(@args);
+}
+
+sub ui_filter {
+    my ($target,@args)=("default",@_);
+    if (@_ == 3) { ($target,@args)=@_; } 
+
+    $target="default" unless $ui_map{$target};
+    $ui_map{$target}->ui_filter(@args);
+}
+
+sub ui_resetfilter {
+    my ($target,@args)=("default",@_);
+    if (@_ == 2) { ($target,@args)=@_; } 
+
+    $target="default" unless $ui_map{$target};
+    $ui_map{$target}->ui_resetfilter(@args);
+}
+
+sub ui_status { 
+    my ($target,@args)=("default",@_);
+    if (@_ == 2) { ($target,@args)=@_; } 
+
+    $target="default" unless $ui_map{$target};
+    $ui_map{$target}->ui_status(@args);
+}
+
+sub ui_process {
+    my ($target)=@_;
+
+    $target ||= "default";
+
+    $target="default" unless $ui_map{$target};
+    $ui_map{$target}->ui_process();
+}
+
+sub ui_callback {
+    my ($target,@args)=("default",@_);
+    if (@_ == 3) { ($target,@args)=@_; } 
+
+    $target="default" unless $ui_map{$target};
+    $ui_map{$target}->ui_callback(@args);
+}
+
+sub ui_remove_callback {
+    my ($target,@args)=("default",@_);
+    if (@_ == 3) { ($target,@args)=@_; } 
+
+    $target="default" unless $ui_map{$target};
+    $ui_map{$target}->ui_remove_callback(@args);
+}
+
+sub ui_bell {
+    my ($target)=@_;
+
+    $target ||= "default";
+
+    $target="default" unless $ui_map{$target};
+    $ui_map{$target}->ui_bell();
+}
+
+sub ui_password {
+    my ($target,@args)=("default",@_);
+    if (@_ == 2) { ($target,@args)=@_; } 
+        
+    $target="default" unless $ui_map{$target};
+    $ui_map{$target}->ui_password(@args);
+}
+
+sub ui_prompt {
+    my ($target,@args)=("default",@_);
+    if (@_ == 2) { ($target,@args)=@_; } 
+
+    $target="default" unless $ui_map{$target};
+    $ui_map{$target}->ui_prompt(@args);
+}
+
+sub ui_select($$$$) {
+    # FIX ME
+    $ui_map{default}->ui_select(@_);
+}
+
+sub ui_output {
     my %h;
     if (@_ == 1) {
 	%h = (Text => $_[0]);
@@ -90,7 +191,10 @@ sub ui_output              {
 	%h = @_;
     }
 
-    $UI->ui_output(%h); 
+    my $target = $h{Target} || 'default';
+
+    $target="default" unless $ui_map{$target};
+    $ui_map{$target}->ui_output(%h); 
 }
 
 sub ui_escape($) {
@@ -110,7 +214,7 @@ require Tie::Scalar;
 use vars qw(@ISA);
 @ISA = ("Tie::StdScalar");
 
-sub FETCH { $UI->{ui_cols}; }
+sub FETCH { $ui_map{default}->{ui_cols}; }
 
 1;
 
@@ -156,6 +260,7 @@ to associate with this name.  (See the CTerminal documentation for a list
 of attributes.)
 
     ui_attr('b', 'bold');
+ or ui_attr($Target, 'b', 'bold');
 
 =item ui_output()
 
