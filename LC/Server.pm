@@ -54,7 +54,7 @@ sub server_send($) {
 	my $bytes = syswrite($server_sock,$s,length($s),$written);
 	if (!defined $bytes) {
 	    next if ($errno == EAGAIN);
-	    log_err("syswrite: $!"); 
+	    die("syswrite: $!"); 
 	    return;
 	}
 	$written += $bytes;
