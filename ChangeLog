@@ -1,9 +1,16 @@
 Version 0.5
   * [Build.PL] Bugfix:  The perl library 'use lib (...' line shouldn't have
     the trailing "/LC" on it [CWS]
-  * The @load and @slash lists weren't being evaluated correctly
-    for "-" entries [CWS]
   * Mention 'perl Build.PL -h' in the README [CWS]
+  * [LC/Config.pm] The @load and @slash lists weren't being evaluated
+    correctly for "-" entries [CWS]
+  * [Build.PL] Add -f option to force overwrite when installing files.
+    It actually removes each existing file before installing the new
+    one [CWS]
+  * [Build.PL] When releasing, update the first line of the changelog to
+    reflect the version being released [CWS]
+  * Colors are now set from the %color_attrs and %mono_attrs arrays set
+    in the config files [CWS]
 
 Version 0.5
   * Major Change:  Config files; See README for more details.  [CWS]
