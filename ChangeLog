@@ -1,4 +1,4 @@
-Version 0.9a-post
+Version 0.9b
   * [LC/UI.pm] Possible fix for Josh's persistant prompt bug? [DPN]
   * [extensions/expand.pl] Fixed a minor expansion bug. [DPN]
   * [extensions/look.pl] Added some () messages to look. [JDW]
