@@ -218,9 +218,15 @@ sub term_init ($) {
     cbreak();
     keypad(1);
     nodelay(1);
+    timeout(1000);
     $config{mono} = 1 unless (has_colors());
     start_color() unless ($config{mono});
     $SIG{WINCH} = \&term_winch;
+
+    # If we don't specify this, curses may snarf characters before we ever
+    # have a chance to notice them.
+    typeahead(-1);
+
     $term_up = 1;
 }
 
