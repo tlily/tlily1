@@ -99,11 +99,16 @@ elsif($target eq 'install') {
 	    &make_tlily;
 	}
 	else {
-	    $inp = &ask("Do you really want to install tigerlily?", "n");
-	    if($inp =~ /(n|no)/i) {
-		print "OK, bailing out of install.  Use the -i option to this script to ignore the\n";
-		print "build.cache.\n";
-		exit(1);
+	    if($yesdamnit) {
+		$inp = &ask("Do you really want to install tigerlily?", "n");
+		if($inp =~ /(n|no)/i) {
+		    print "OK, bailing out of install.  Use the -i option to this script to ignore the\n";
+		    print "build.cache.\n";
+		    exit(1);
+		}
+		else {
+		    print "I hope you know what you're doing..\n";
+		}
 	    }
 	    else {
 		print "I hope you know what you're doing..\n";
@@ -152,14 +157,25 @@ elsif($target eq 'release') {
 
     $VERSION = &next_version($VERSION);
     &ask_version;
+
     &make_version_file($VERSION);
-	
-    $cmd = "cvs commit -m 'Automatic commit of version file' LC/Version.pm";
+    $cmd = "cvs commit -m 'Automatic precommit of version file' LC/Version.pm";
     if($nonono) {
 	print "Would have executed: $cmd\n";
     }
     else {
 	print "Committing LC/Version.pm with:\n$cmd\n";
+	$rc = system($cmd);
+	if($rc) { die "Command returned error!\n"; }
+    }
+
+    &make_changelog($VERSION);
+    $cmd = "cvs commit -m 'Automatic commit of ChangeLog file' ChangeLog";
+    if($nonono) {
+	print "Would have executed: $cmd\n";
+    }
+    else {
+	print "Committing ChangeLog with:\n$cmd\n";
 	$rc = system($cmd);
 	if($rc) { die "Command returned error!\n"; }
     }
@@ -229,7 +245,7 @@ elsif($target eq 'release') {
     }
 
     &make_version_file($VERSION."-post");
-    $cmd = "cvs commit -m 'Automatic commit of version file' LC/Version.pm";
+    $cmd = "cvs commit -m 'Automatic postcommit of version file' LC/Version.pm";
     if($nonono) {
 	print "Would have executed: $cmd\n";
     }
@@ -292,6 +308,9 @@ sub install {
 	    printf("%o\n", $mode);
 	}
 	else {
+	    if($yesdamnit && -e $dest) {
+		unlink($dest);
+	    }
 	    $rc = copy($file, $dest);
 	    if(!$rc) { croak $file,": ",$!; }
 
@@ -329,7 +348,7 @@ Library directory:  $LIBDIR
 
     while(<$ifh>) {
 	s|\@\@PERL\@\@|$PERL|;
-	s|\@\@LIBMODDIR\@\@|$LIBDIR/$moddir|;
+	s|\@\@LIBMODDIR\@\@|$LIBDIR|;
 	s|\@\@LIBEXTDIR\@\@|$LIBDIR/$extdir|;
 	s|\@\@LIBDIR\@\@|$LIBDIR|;
 	s|\@\@ETCDIR\@\@|$ETCDIR|;
@@ -346,6 +365,7 @@ Usage: perl Build.PL [-n][-h][-i][tlily|install|release|clean]
 	-n: Show what would have been done without actually doing it.
 	-i: Ignore build.cache file.
 	-c: Use current directories.
+	-f: Force overwrite of previous install.
 	-h: Show this help
 	Targets:
 	tlily:   ask for paths and do path substitutions, generating tlily
@@ -584,7 +604,6 @@ sub tilde_expand {
 }
 
 sub install_site_cf {
-    my($ver) = @_;
     if($nonono) {
 	print "Would have made an initial $ETCDIR/tlily.site.\n";
 	return;
@@ -598,4 +617,30 @@ sub install_site_cf {
 );
     close $fh;
     chmod(0644, "$ETCDIR/tlily.site");
+}
+
+sub make_changelog {
+    my($ver,$flag) = @_;
+    if($nonono) {
+	print "Would have made ChangeLog with the version number $ver.\n";
+	return;
+    }
+    print "Writing ChangeLog, version $ver\n";
+
+    my($fh) = new FileHandle("ChangeLog", "r");
+    if(!$fh) { die $!; }
+    my @lines = $fh->getlines();
+    undef $fh;
+
+    my $rc = unlink('ChangeLog');
+    if(!$rc) { die $!; }
+
+    $fh = new FileHandle("ChangeLog", "w");
+    if(!$fh) { die $!; }
+
+    $lines[0] = "Version $ver\n";
+
+    print $fh @lines;
+    undef $fh;
+    chmod(0644, "ChangeLog");
 }
