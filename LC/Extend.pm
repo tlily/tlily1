@@ -81,6 +81,7 @@ sub extension($;$) {
     push @share,@LC::State::EXPORT;
     push @share,@LC::Config::EXPORT;
     push @share,@LC::Event::EXPORT;
+    push @share,@LC::StatusLine::EXPORT;
 
     $safe->share(@share);
     # This only works in perl 5.003_07+
@@ -148,6 +149,12 @@ sub extension_unload($) {
     foreach $x (@a) {
 	deregister_handler($x);
     }
+
+    @a = (@{$ext->{StatusLines}});
+    foreach $x (@a) {
+	deregister_statusline($x);
+    }
+    redraw_statusline();
 
     @a = (@{$ext->{UICallbacks}});
     foreach $x (@a) {
@@ -237,6 +244,24 @@ sub register_iohandler(%) {
     my $id = &LC::Event::register_iohandler(%h);
     push @{$Extensions{/current/}->{EventHandlers}}, $id;
     return $id;
+}
+
+sub register_statusline {
+    my(%h) = @_;
+    my $id = &LC::StatusLine::register_statusline(%h);
+    push @{$Extensions{/current/}->{StatusLines}}, $id;
+    redraw_statusline();
+    return $id;
+}
+
+sub deregister_statusline {
+    my($id) = @_;
+    &LC::StatusLine::deregister_statusline($id);
+    list_remove @{$Extensions{/current/}->{StatusLines}}, $id;
+}
+
+sub redraw_statusline {
+    &LC::StatusLine::redraw_statusline();
 }
 
 sub register_timedhandler(%) {

@@ -375,7 +375,10 @@ sub state_sync () {
 
     my $decr_sync = sub {
 	$state_sync_count--;
-	$status{SyncState} = '' if ($state_sync_count == 0);
+	if ($state_sync_count == 0) {
+	    $status_SyncState = '';
+	    redraw_statusline();
+	}
     };
 
     if ($state_sync_count > 0) {
@@ -383,7 +386,10 @@ sub state_sync () {
 	return;
     }
 
-    $status{SyncState} = 'sync' if ($state_sync_count == 0);
+    if ($state_sync_count == 0) {
+	$status_SyncState = 'sync';
+	redraw_statusline();
+    }
     $state_sync_count = 4;
 
     cmd_process('/who me', sub {
@@ -544,8 +550,6 @@ END
 		      );
 }
 
-
 state_init();
-
 
 1;

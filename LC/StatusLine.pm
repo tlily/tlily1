@@ -9,33 +9,180 @@ use LC::parse;
 use LC::Config;
 use LC::Event;
 
-@ISA = qw(Exporter Tie::StdHash);
+@ISA = qw(Exporter);
 
 @EXPORT = qw(&statusline_init
-	     %status);
+	     %status
+	     &register_statusline
+	     &deregister_statusline
+	     &redraw_statusline
+	     $status_SyncState
+	     );
 
+my $current_id=42;
+my ($status_Pseudo, $status_Blurb, $status_State, $status_Server);
+my $status_SyncState;
+my $lastredraw;
 
-%status = (Server => $config{server},
-	   Pseudo => '',
-	   Blurb => '',
-	   State => '',
-	   SyncState => '');
-
-
-sub render() {
+sub redraw_statusline() {
     my(@left,@right);
 
-    my $name = $status{Pseudo};
-    $name .= " [$status{Blurb}]" if (defined($status{Blurb}));
-    push @left, $name if (length($name));
+    # limit updates to 1 per second.
+    return if (time()-$lastredraw < 1);
+    $lastredraw=time();
 
-    push @right, $status{Server} if (defined($status{Server}));
-    if ($status{SyncState}) {
-	push @right, $status{SyncState};
-    } else {
-	push @right, $status{State} if (defined($status{State}));
+#    ($package,$filename,$line)=caller();
+#    ui_output("* REDRAW called from $package ($filename:$line) *");
+
+    foreach $id (keys %data) {
+	if (ref($data{$id})) {
+	    $d=$data{$id};
+	    my $val=${$d->{Var}};
+   	    if (! $val && $d->{Call}) {		
+		$val=&{$d->{Call}};
+            } 
+            next unless length($val);
+	    
+   	    my $position=$d->{Position};
+	    if ($position eq "PACKLEFT") {
+		push (@left,$val);
+    	    } elsif ($position eq "PACKRIGHT") {		
+		push (@right,$val);		
+	    } else {		
+		ui_output("*WARNING: Unknown StatusLine Position \"$position\"") if ! $warned{$id};
+		$warned{$id}=1;
+	    }
+	}
+	
     }
 
+    my $left=join ' | ',reverse @left;
+    my $right=join ' | ',reverse @right;
+    my $ll=length($left);
+    my $lr=$ui_cols-$ll;
+
+    # favor things on the left over the right.
+    my $fmt="%-$ll.$ll" . "s%$lr.$lr" . "s";
+    my $status_line=sprintf($fmt,$left,$right);
+       
+    $status_line =~ s/(<\\)/\\$1/g;
+    $status_line =~ s:\|:<whiteblue>\|</whiteblue>:g;
+
+    ui_status($status_line);
+
+    return 0;
+}
+
+
+
+sub statusline_init() {
+    $status_Server=$config{server};
+
+    register_statusline(Call => \&status_username,
+			Position => "PACKLEFT");
+
+    register_statusline(Call => \&status_time,
+			Position => "PACKRIGHT");
+
+    register_statusline(Call => \&status_state,
+			Position => "PACKRIGHT");  
+
+    register_statusline(Var => \$status_Server,
+			Position => "PACKRIGHT");
+
+    register_eventhandler(Type => 'serverline',
+			  Order => 'before',
+			  Call => sub {
+	my($event, $handler) = @_;
+	if ($event->{Text} =~ /^Welcome to \w* at\s+(.*?)\s*$/) {
+	    $status_Server = $1;
+	    deregister_handler($handler->{Id});
+	    redraw_statusline();	    
+	}
+	return 0;
+    });
+
+    register_eventhandler(Type => 'userstate',
+			  Order => 'after',
+			  Call => sub {
+	my($event, $handler) = @_;
+	if ($event->{IsUser}) {
+	    $status_State = $event->{To};
+	    redraw_statusline();       
+	}
+	return 0;
+    });
+
+    register_eventhandler(Type => 'who',
+			  Order => 'after',
+			  Call => sub {
+	my($event, $handler) = @_;
+	if ($event->{IsUser}) {
+	    $status_Pseudo = $event->{User};
+	    $status_State = $event->{State};
+	    redraw_statusline();	    
+	}
+	return 0;
+    });
+
+    register_eventhandler(Type => 'rename',
+			  Order => 'after',
+			  Call => sub {
+	my($event, $handler) = @_;
+	if ($event->{IsUser}) {
+	    $status_Pseudo = $event->{To};
+	    redraw_statusline();	
+	}
+	return 0;
+    });
+
+    register_eventhandler(Type => 'blurb',
+			  Order => 'after',
+			  Call => sub {
+	my($event, $handler) = @_;
+	if ($event->{IsUser}) {
+	    $status_Blurb = $event->{Blurb};
+	    redraw_statusline();	
+	}
+	return 0;
+    });
+
+    register_eventhandler(Type => 'who',
+			  Order => 'after',
+			  Call => sub {
+	my($event, $handler) = @_;
+	if ($event->{IsUser}) {
+	    $status_Pseudo = $event->{User};
+	    $status_Blurb = $event->{Blurb};
+	    redraw_statusline();
+	}
+	return 0;
+    });
+
+    register_timedhandler(Interval => 15,
+			  Repeat => 1,
+			  Call => \&redraw_statusline);
+
+    redraw_statusline();
+}
+
+sub register_statusline {
+    my(%h)=@_;
+    $current_id++;
+    $data{$current_id}=\%h;
+    $h{Id}=$current_id;
+    push @{$registered_status_vars{$cmd}},\%h;
+    return $h{Id};
+}
+
+
+sub deregister_statusline {
+    my($id)=@_;
+    delete $data{$current_id};
+    return 0;
+}
+
+sub status_time {
     my @a = localtime;
     if(defined $config{clockdelta}) {
 	my($t) = ($a[2] * 60) + $a[1] + $config{clockdelta};
@@ -53,103 +200,25 @@ sub render() {
 	    $ampm = 'a';
 	}
     }
-    push @right, sprintf("%02d:%02d%s", $a[2], $a[1], $ampm);
+    sprintf("%02d:%02d%s", $a[2], $a[1], $ampm);
+}
 
-    my $left=join ' | ',@left;
-    my $right=join ' | ',@right;
-    my $ll=length($left);
-    my $lr=$ui_cols-$ll;    
+sub status_username {
+    my $name = $status_Pseudo;
+    $name .= " [$status_Blurb]" if (defined($status_Blurb));
+    return $name;
+}
 
-    # favor things on the left over the right.
-    my $fmt="%-$ll.$ll" . "s%$lr.$lr" . "s";
-    my $status_line=sprintf($fmt,$left,$right);
-
-    $status_line =~ s/(<\\)/\\$1/g;
-    $status_line =~ s:\|:<whiteblue>\|</whiteblue>:g;
-
-    # -- MORE -- prompt
-    if (length($status{page_status})) {
-	$status_line="                                 -- $status{page_status} -- ";
+sub status_state {
+    my $ret;
+    if ($status_SyncState) {
+	$ret=$status_SyncState;
+    } else {
+	$ret=$status_State if (defined($status_State));
     }
-    
-    ui_status($status_line);
-
-    return 0;
-}
-
-
-sub STORE($$$) {
-    my($this,$key,$value) = @_;
-    return if ($this->{$key} eq $value);
-    $this->{$key} = $value;
-    render;
-}
-
-
-sub statusline_init() {
-    tie %status, 'LC::StatusLine';
-
-    register_eventhandler(Type => 'serverline',
-			  Order => 'before',
-			  Call => sub {
-	my($event, $handler) = @_;
-	if ($event->{Text} =~ /^Welcome to \w* at\s+(.*?)\s*$/) {
-	    $status{Server} = $1;
-	    deregister_handler($handler->{Id});
-	}
-	return 0;
-    });
-
-    register_eventhandler(Type => 'who',
-			  Order => 'after',
-			  Call => sub {
-	my($event, $handler) = @_;
-	if ($event->{IsUser}) {
-	    $status{Pseudo} = $event->{User};
-	    $status{State} = $event->{State};
-	}
-	return 0;
-    });
-
-    register_eventhandler(Type => 'rename',
-			  Order => 'after',
-			  Call => sub {
-	my($event, $handler) = @_;
-	$status{Pseudo} = $event->{To} if ($event->{IsUser});
-	return 0;
-    });
-
-    register_eventhandler(Type => 'blurb',
-			  Order => 'after',
-			  Call => sub {
-	my($event, $handler) = @_;
-	$status{Blurb} = $event->{Blurb} if ($event->{IsUser});
-	return 0;
-    });
-
-    register_eventhandler(Type => 'userstate',
-			  Order => 'after',
-			  Call => sub {
-	my($event, $handler) = @_;
-	$status{State} = $event->{To} if ($event->{IsUser});
-	return 0;
-    });
-
-    register_eventhandler(Type => 'who',
-			  Order => 'after',
-			  Call => sub {
-	my($event, $handler) = @_;
-	$status{Pseudo} = $event->{User} if ($event->{IsUser});
-	$status{Blurb} = $event->{Blurb} if ($event->{IsUser});
-	return 0;
-    });
-
-    register_timedhandler(Interval => 15,
-			  Repeat => 1,
-			  Call => \&render);
-
-    render();
+    $ret;
 }
 
 
 1;
+

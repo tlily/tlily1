@@ -1112,8 +1112,7 @@ sub scroll_info() {
 	}
 	$page_status = 'more';
 	$status_intern = "-- MORE ($lines) --";
-	$status_intern = (' ' x int(($term->term_cols - length($status_intern)) / 2)) .
-	    $status_intern;
+	$status_intern = (' ' x int(($term->term_cols - length($status_intern)) / 2)) . $status_intern;
 	sline_redraw();
 	$term->term_refresh();
     } else {
