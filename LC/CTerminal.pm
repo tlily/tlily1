@@ -406,7 +406,7 @@ sub term_get_char () {
     if (defined $key_map{$ch}) {
 	$res = $key_map{$ch};
     } elsif (iscntrl($ch)) {
-	$res = "C-" . (ord($ch) + ord('a') - 1);
+	$res = "C-" . chr(ord($ch) + ord('a') - 1);
     } else {
 	$res = $ch;
     }
