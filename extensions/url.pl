@@ -1,4 +1,4 @@
-# $Header: /data/cvs/tlily/extensions/url.pl,v 2.4 1998/10/23 21:06:53 neild Exp $
+# $Header: /data/cvs/tlily/extensions/url.pl,v 2.5 1998/11/04 22:06:57 neild Exp $
 #
 # URL handling
 #
@@ -21,6 +21,8 @@ sub handler {
 sub url_cmd {
     ($arg,$num)=split /\s+/, "@_";
     my $url;
+
+    $arg = "show" if ($arg eq "view");
     
     if ($arg eq "clear") {
        ui_output("(cleared URL list)");

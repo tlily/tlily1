@@ -1,4 +1,5 @@
 Version 1.0.1-post
+  * [extensions/url.pl] Made "view" a synonym for "show".  [DPN]
   * [LC/UI/Native.pm] Fixed a bug which caused C-w to stop working.  [DPN]
   * [extensions/httpd.pl] Simple http daemon, the first stage in my
     client-to-client communications project. [SMC]
