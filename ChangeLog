@@ -1,4 +1,9 @@
 Version 0.7b
+  * [extensions/set.pl] Make space the default separation character [CWS]
+  * [extensions/expand.pl, extensions/info.pl] Make changes to @slash effective
+    immediately  [CWS]
+  * [LC/Config.pm] Fixed some command line parsing problems that would
+                   cause infinite loops  [CWS]
   * [LC/State.pm] Handle 'me' as a destination.  [DPN]
   * [extensions/parse.pl] Yet another attempt at making /info set work.  [DPN]
   * [LC/parse.pm, extensions/parse.pl] Made the parser an extension.  [DPN]
