@@ -1,4 +1,4 @@
-Version 0.5
+Version 0.5a
   * [Build.PL] Bugfix:  The perl library 'use lib (...' line shouldn't have
     the trailing "/LC" on it [CWS]
   * Mention 'perl Build.PL -h' in the README [CWS]
