@@ -1,5 +1,5 @@
 # -*- Perl -*-
-# $Header: /data/cvs/tlily/extensions/gag.pl,v 1.9 1998/06/02 23:07:45 steve Exp $
+# $Header: /data/cvs/tlily/extensions/gag.pl,v 1.10 1998/06/02 23:11:20 steve Exp $
 
 #
 # The gag extension adds the ability to `gag' all sends from a given user.
@@ -77,9 +77,10 @@ sub init() {
     register_help_short('gag', 'affix a gag to a user');
     register_help_long('gag',
     "The %gag command replaces the text of all sends from a user with an
-    amusing string of mrfls.
+    amusing string of mrfls.  If the optional word 'clear' is used, then
+    all previous gagged sends will be changed to their cleartext versions.
     usage: %gag
-	   %gag [user]");
+	   %gag [user] [clear]");
 } 
 
 init();
