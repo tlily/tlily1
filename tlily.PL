@@ -23,6 +23,15 @@ use Curses;
 use POSIX;
 $|=1;
 
+if ( -f 'tlily.PL' ) {
+    my @tstat = stat('tlily.PL');
+    my @mstat = stat($0);
+    if ($tstat[9] > $mstat[9]) {
+	print "tlily.PL is newer than $0 -- rerun Build.PL.\n";
+	exit;
+    }
+}
+
 LC::config::init();
 ui_start();
 cmd_init();
@@ -55,15 +64,33 @@ my $state;
 my $ctrlcpress;
 
 #$SIG{__DIE__} = sub { ui_output("DIE: " . $_[0]); };
-$SIG{__WARN__} = sub { ui_output("WARNING: " . $_[0]); };
-$SIG{INT} = sub { 
-    if (time()-$ctrlcpress < 5) {
-	die ("Ctrl-C Pressed\n");
-    } else {	
-	ui_output("(press ctrl-c again within 5 seconds to log off)");
-	$ctrlcpress=time();
+
+
+$SIG{__WARN__} = \&sig_warn;
+sub sig_warn {
+    $SIG{__WARN__} = \&sig_warn;
+    ui_output("WARNING: " . $_[0]);
+}
+
+
+my $int_active = 0;
+$SIG{INT} = \&sig_int;
+sub sig_int {
+    $SIG{INT} = \&sig_int;
+    if (!$int_active) {
+	ui_output("(hit ctrl-c again within 5 seconds to exit)");
+	$int_active = 1;
+	register_timedhandler(Interval => 5,
+			      Call => sub {
+            $int_active = 0;
+	    ui_output("(you waited to long to hit ctrl-c; exit aborted)");
+	});
+    } else {
+	ui_end();
+	exit;
     }
-};
+}
+
 
 main();
 
