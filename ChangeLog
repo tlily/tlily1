@@ -1,4 +1,11 @@
 Version 0.5
+  * [Build.PL] Bugfix:  The perl library 'use lib (...' line shouldn't have
+    the trailing "/LC" on it [CWS]
+  * The @load and @slash lists weren't being evaluated correctly
+    for "-" entries [CWS]
+  * Mention 'perl Build.PL -h' in the README [CWS]
+
+Version 0.5
   * Major Change:  Config files; See README for more details.  [CWS]
   * [Build.PL] Improved version number handling. [CWS]
   * [Build.PL] Added -i option to ignore the build cache. [CWS]
