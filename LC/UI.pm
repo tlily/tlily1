@@ -150,6 +150,7 @@ use Exporter;
 
 use IO::Handle;
 use POSIX;
+#require 'LC/dumpvar.pl';
 
 use LC::Config;
 
@@ -158,6 +159,7 @@ use LC::Config;
 @EXPORT = qw(&ui_start
 	     &ui_end
 	     &ui_attr
+	     &ui_clearattr
 	     &ui_output
 	     &ui_status
 	     &ui_process
@@ -227,7 +229,7 @@ my %key_trans = ('kl'   => [ \&input_left ],
 		 'C-y'  => [ \&input_yank ],
 		 'C-w'  => [ \&input_killword ],
 		 'C-l'  => [ \&input_refresh ],
-		 'M-l'  => [ \&input_pastemode ],
+		 'M-p'  => [ \&input_pastemode ],
 		 'C-d'  => [ \&input_del ],
 		 'C-h'  => [ \&input_bs ],
 		 'bs'   => [ \&input_bs ]
@@ -315,7 +317,63 @@ sub ui_start() {
 	&redraw;
     });
     $ui_cols = $term->term_cols;
+
+    # Set colors from what the config files read
+    if($config{mono}) {
+	my($k,$v);
+	while (($k,$v) = each %{$config{'mono_attrs'}}) {
+	    ui_attr($k, @{$v});
+	}
+    }
+    else {
+	my($k,$v);
+	while (($k,$v) = each %{$config{'color_attrs'}}) {
+	    ui_attr($k, @{$v});
+	}
+    }
     &redraw;
+
+    # This has to be here because it is after the ui is initialized.
+    config_register_callback(Variable => 'mono', State => 'STORE',
+			     Call => sub {
+	my($tr, %ev) = @_;
+	if($config{mono} == 0 && ${$ev{Value}} == 1) {
+	    ui_clearattr();
+	    while (($k,$v) = each %{$config{'mono_attrs'}}) {
+		ui_attr($k, @{$v});
+	    }
+	    redraw();
+	    redraw(); # Hack!
+	} elsif($config{mono} == 1 && ${$ev{Value}} == 0) {
+	    ui_clearattr();
+	    while (($k,$v) = each %{$config{'color_attrs'}}) {
+		ui_attr($k, @{$v});
+	    }
+	    redraw();
+	}
+	return 0;
+    });
+    config_register_callback(Variable => '-ALL-',
+                             List => 'color_attrs',
+                             State => 'STORE',
+                             Call => sub {
+	my($tr, %ev) = @_;
+	if($config{mono}==0) {
+	    ui_attr(${$ev{Key}}, @{${$ev{Value}}});
+	    redraw();
+	}
+    });
+    config_register_callback(Variable => '-ALL-',
+                             List => 'mono_attrs',
+                             State => 'STORE',
+                             Call => sub {
+	my($tr, %ev) = @_;
+	if($config{mono}==1) {
+	    ui_attr(${$ev{Key}}, @{${$ev{Value}}});
+	    redraw();
+	}
+    });
+
 }
 
 
@@ -331,6 +389,10 @@ sub ui_attr($@) {
     $attr_list{$name} = \@attrs;
 }
 
+# Clear all attributes.
+sub ui_clearattr() {
+    %attr_list = ();
+}
 
 # Selects an attribute for use.
 sub attr_use($) {
