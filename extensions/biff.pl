@@ -1,4 +1,4 @@
-# $Header: /data/cvs/tlily/extensions/biff.pl,v 1.1 1998/06/13 18:07:56 mjr Exp $
+# $Header: /data/cvs/tlily/extensions/biff.pl,v 1.2 1998/06/13 21:57:28 mjr Exp $
 #
 # A Biff module
 #
@@ -12,18 +12,24 @@ my $biff = '';     # Statusline variable
 # contains the type of the drop.  The current types supported are:
 #  mbox - Standard  Unix mailbox.
 #   path => Absolute pathname of the mbox
-#   mtime => mtime of mbox when last checked, as retuned by -M
+#   mtime => mtime of mbox when last checked, as returned by -M
 #  maildir - Unix maildir.
 #   path => Absolute pathname of the maildir
 #   mtime => mtime of most recent new message when last checked, as returned
 #            by -M
 my @drops;
 
+# Check functions.  Each function is named check_<type>, and is passed a
+# hashRef, and must return one of:
+#  0  - No unread new mail in drop.
+#  1  - Unread new mail in drop
+#  3  - Mail has just arrived - causes a bell
+
 sub check_mbox($) {
   my $mboxRef = shift;
   my $retval = 0;  # Default return value is no unread mail
   my $mtime = -M $mboxRef->{path};
-  if (-f $mboxRef->{path} && -s $mboxRef->{path} && ($mtime < -A $mboxRef->{path}) ) {
+  if (-f _ && -s _ && ($mtime < -A _) ) {
     if (($mboxRef->{mtime} == 0) || ($mtime < $mboxRef->{mtime})) {
       $mboxRef->{mtime} = $mtime;
       $retval = 3;  # Ring bell
@@ -41,7 +47,7 @@ sub check_maildir($) {
   opendir(DH, "$mdirRef->{path}/new/");
   foreach (readdir(DH)) {
     next if /^\./;
-    $mtime = ($mtime < -M "$mdirRef->{path}/new/$_")?$mtime:-M "$mdirRef->{path}/new/$_";
+    $mtime = ($mtime < -M "$mdirRef->{path}/new/$_")?$mtime:-M _;
   }
   closedir(DH);
   if (defined($mtime)) {
@@ -54,6 +60,18 @@ sub check_maildir($) {
   }
 }
 
+# Passed a hashref, outputs info about a drop to the UI.
+sub print_drop($) {
+  my %drop = %{shift()};
+
+  if ($drop{type} == 'mbox' || $drop{type} == 'maildir') {
+    ui_output("($drop{type} $drop{path})");
+  } else {
+    ui_output("(Unknown maildrop type $drop{type})");
+  }
+}
+
+# Goes through the list of drops, checking each one.
 sub check_drops {
   my $status = 0;
   my $drop;
@@ -67,16 +85,6 @@ sub check_drops {
     $biff = '';
   }
   redraw_statusline();
-}
-
-sub print_drop($) {
-  my %drop = %{shift()};
-
-  if ($drop{type} == 'mbox' || $drop{type} == 'maildir') {
-    ui_output("($drop{type} $drop{path})");
-  } else {
-    ui_output("(Unknown maildrop type $drop{type})");
-  }
 }
 
 sub biff_cmd($) {

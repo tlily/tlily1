@@ -1,9 +1,9 @@
 # -*- Perl -*-
-# $Header: /data/cvs/tlily/LC/Extend.pm,v 2.1 1998/06/12 08:56:10 albert Exp $
+# $Header: /data/cvs/tlily/LC/Extend.pm,v 2.2 1998/06/13 21:57:27 mjr Exp $
 package LC::Extend;
 
 use Exporter;
-use Safe;
+use LC::ExoSafe;
 use File::Basename;
 use LC::Server;
 use LC::Command;
@@ -32,7 +32,7 @@ BEGIN {
 # initial version, 10/24/97, Josh Wilmes
 
 # Provide a secure environment for user extensions to TigerLily.  We use
-# a Safe to provide strict control over what the extensions have access to.
+# an ExoSafe to provide strict control over what the extensions have access to.
 
 
 my %Extensions = ();
@@ -72,19 +72,7 @@ sub extension($;$) {
     
     ui_output("(loading \"$name\" from \"$filename\")") if ($verbose);
 
-    my $safe=new Safe;
-
-    # Since security isnt a primary concern, I allow all perl operators to be
-    # used.
-    # note that due to changes in the safe module in 5.002 vs newer versions,
-    # and my lack of an old version to test on, things might not quite work
-    # on older perls.
-    if ($Safe::VERSION >= 2) {
-	$safe->deny_only("system");
-	$safe->permit("system");
-    } else {
-	$safe->mask($safe->emptymask());
-    }
+    my $safe=new ExoSafe;
 
     push @share,@LC::UI::EXPORT;
     push @share,@LC::Server::EXPORT;
