@@ -1,4 +1,5 @@
 Version 1.0.1-post
+  * [tlily.global] Added examples for autoreview.  [DPN]
   * [extensions/autoreview.pl] Added the 'autoreview' extension.  [DPN]
   * [extensions/pipes.pl] Create temp files with mode 0600, and delete them
     when finished with them.  [DPN]
