@@ -99,7 +99,7 @@ elsif($target eq 'install') {
 	    &make_tlily;
 	}
 	else {
-	    if($yesdamnit) {
+	    if(!$yesdamnit) {
 		$inp = &ask("Do you really want to install tigerlily?", "n");
 		if($inp =~ /(n|no)/i) {
 		    print "OK, bailing out of install.  Use the -i option to this script to ignore the\n";
@@ -310,6 +310,24 @@ sub install {
 	else {
 	    if($yesdamnit && -e $dest) {
 		unlink($dest);
+	    }
+	    elsif(!$yesdamnit && -e $dest) {
+		my $inp = &ask("\n$dest exists.  Overwrite? (Yes/No/All/Quit)",'y');
+		if($inp =~ /(y|yes)/i) {
+		    unlink($dest);
+		}
+		elsif($inp =~ /(n|no)/i) {
+		    print "Not overwriting $dest.\n";
+		    return 1;
+		}
+		elsif($inp =~ /(a|all)/i) {
+		    $yesdamnit = 1;
+		    unlink($dest);
+		}
+		elsif($inp =~ /(q|quit)/i) {
+		    print "Ok, Bailing out of install.\n";
+		    exit(0);
+		}
 	    }
 	    $rc = copy($file, $dest);
 	    if(!$rc) { croak $file,": ",$!; }
