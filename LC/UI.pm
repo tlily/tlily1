@@ -804,7 +804,7 @@ sub ui_output {
     my ($fr)=grep /^from:/,@{$h{Tags}};	    
     my ($from)=($fr=~/from:(.*)/);	    
 
-    if ($from && $gagged{$from} && $line=~/^\s*\-/) { 
+    if ($from && $gagged{$from} && $line=~/^\s*\-[^>]/) { 
 	unshift @$fmt, $FOgag, $from;
     }
 
