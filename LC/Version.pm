@@ -4,5 +4,5 @@ package LC::Version;
 use Exporter;
 @ISA = qw(Exporter);
 @EXPORT = qw($TL_VERSION);
-$TL_VERSION = '1.0.1';
+$TL_VERSION = '1.0.1-post';
 1;
