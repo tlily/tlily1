@@ -1,5 +1,5 @@
 @@PERL@@
-# $Header: /data/cvs/tlily/tlily.PL,v 1.38 1998/05/29 06:09:26 josh Exp $
+# $Header: /data/cvs/tlily/tlily.PL,v 1.39 1998/06/01 02:19:54 neild Exp $
 
 require 5.00307;
 
@@ -45,8 +45,6 @@ robably something wrong with your installation.",
     ui_output("***");
 }
 
-ui_set(Hide => [ 'intern' ]);
-
 statusline_init();
 
 #$SIG{__DIE__} = sub { ui_output("DIE: " . $_[0]); };
@@ -87,7 +85,9 @@ sub sig_int {
 }
 
 
-main();
+eval { main(); };
+ui_end();
+print STDERR $@ if ($@);
 
 
 ##############################################################################
@@ -127,7 +127,7 @@ sub main() {
 	
 	# Oh, well.  Guess we have a problem.
 	ui_end();
-	die $@;
+	die;
     }
 }
 

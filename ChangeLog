@@ -1,7 +1,12 @@
 Version 0.8c-post
+  * [tlily.PL] Better error handling on failed connect to server. [DPN]
+  * [extensions/parse.pl] Eliminated spurious quoting of event elements. [DPN]
+  * [LC/StatusLine.pm] Fixed bug with UI chars in blurbs. [DPN]
+  * [LC/UI.pm] Added filters. [DPN]
+  * [LC/UI.pm, LC/User.pm, extensions/parse.pl] Pulled out tags code [DPN]
   * [extensions/info.pl] Tiny change to properly clean up. [SMC]
   * [misc] Added lilybot to distribution. [JDW]
-  # [LC/Client.pm] Separated from tlily.PL [JDW]
+  * [LC/Client.pm] Separated from tlily.PL [JDW]
   * [misc] Major hacks to make it possible to load tlily with no UI [JDW]
   * [extensions/smartexit.pl] Made UI output "conformant" [()'s] [WJC]
   * [extensions/gag.pl] Made UI output "conformant" [()'s] [WJC]

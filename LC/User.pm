@@ -1,5 +1,5 @@
 # -*- Perl -*-
-# $Header: /data/cvs/tlily/LC/User.pm,v 1.18 1998/05/29 05:12:24 mjr Exp $
+# $Header: /data/cvs/tlily/LC/User.pm,v 1.19 1998/06/01 02:19:56 neild Exp $
 package LC::User;
 
 use Exporter;
@@ -119,8 +119,7 @@ sub output_send($) {
 
     if ($event->{First}) {
 	ui_output(Text => $event->{Text},
-		  WrapChar => $event->{WrapChar},
-		  Tags => $event->{Tags});
+		  WrapChar => $event->{WrapChar});
     }
 
     my $s;
@@ -133,8 +132,7 @@ sub output_send($) {
     $s = '<review>#</review>' . $s if ($event->{Type} eq 'review');
 
     ui_output(Text => $s,
-	      WrapChar => ' - ',
-	      Tags => $event->{Tags});
+	      WrapChar => ' - ');
 }
 
 
@@ -165,7 +163,6 @@ sub init() {
 				      ui_output($s);
 				  } else {
 				      ui_output(Text => $event->{Text},
-						Tags => $event->{Tags},
 						WrapChar =>
 						$event->{WrapChar});
 				  }

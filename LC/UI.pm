@@ -1,5 +1,5 @@
 # -*- Perl -*-
-# $Header: /data/cvs/tlily/LC/UI.pm,v 1.53 1998/05/29 05:12:22 mjr Exp $
+# $Header: /data/cvs/tlily/LC/UI.pm,v 1.54 1998/06/01 02:19:55 neild Exp $
 package LC::UI;
 
 
@@ -46,6 +46,29 @@ to associate with this name.  (See the CTerminal documentation for a list
 of attributes.)
 
     ui_attr('b', 'bold');
+
+=item ui_filter()
+
+Defines a filter tag.  Filters specify a section of text which should be
+filtered through a function prior to output.  Filter tags are specified
+with <<double>> angle brackets.
+
+A filter function will be called with one argument: the text enclosed
+by the <<tag>>s.  It should return a replacement string.  This replacement
+may itself contain <tag>s or <<filter>>s.
+
+A filter function may be called any number of times, in any order, on
+any text.  Assume nothing.
+
+Filters are a hack.  Expect them to change radically someday.
+
+    ui_filter('hidden', sub { my $s = shift; $s =~ s/./*/g; $s });
+
+=item ui_resetfilter()
+
+Invalidates any cached results of a filter.
+
+    ui_resetfilter('hidden');
 
 =item ui_output()
 
@@ -160,6 +183,8 @@ use LC::Config;
 @EXPORT = qw(&ui_start
 	     &ui_end
 	     &ui_attr
+	     &ui_filter
+	     &ui_resetfilter
 	     &ui_clearattr
 	     &ui_output
 	     &ui_status
@@ -170,16 +195,9 @@ use LC::Config;
 	     &ui_password
 	     &ui_prompt
 	     &ui_select
-	     &ui_set
-	     &ui_gag
-	     &ui_gagged
-	     &ui_ungag
-	     &ui_gaglist
 	     $ui_cols
 	     &ui_escape
 	    );
-
-my %gagged;
 
 my $term;
 
@@ -244,8 +262,10 @@ my @attr_stack = ();
 my $attr_cur_bg = COLOR_BLACK;
 my $attr_cur_fg = COLOR_WHITE;
 
+my %filter_list = ();
+my %filter_lines = ();
 
-#
+
 # What is a line?  A line is a text string, with attached formatting
 # information.  A single line may span multiple rows on the screen; if
 # so, it must be word-wrapped.  The internal representation of a line
@@ -256,18 +276,16 @@ my $attr_cur_fg = COLOR_WHITE;
 #   FOwrap
 #   FOnewline
 #   FOattr <attr>
-#   FOpopattr <attr>
+#   FOpopattr
 #   FOtext <length>
-#   FOgag
 
-my $FOnull     = 0;
-my $FOwrapchar = 1;
-my $FOwrap     = 2;
-my $FOnewline  = 3;
-my $FOattr     = 4;
-my $FOpopattr  = 5;
-my $FOtext     = 6;
-my $FOgag      = 7;
+my $FOnull      = 0;
+my $FOwrapchar  = 1;
+my $FOwrap      = 2;
+my $FOnewline   = 3;
+my $FOattr      = 4;
+my $FOpopattr   = 5;
+my $FOtext      = 6;
 
 # A list of lines in the text window.  These lines are stored unformatted.
 my @text_lines = (" ");
@@ -275,13 +293,16 @@ my @text_lines = (" ");
 # A list of formatting information for the text window.
 my @text_fmts = ( [] );
 
-# A list of tags to identify lines by.
-my @text_tags = ();
-
 # A list of line heights.  This is a cache; any line's height as stored
 # in here may be undef.  (We don't seem to be able to my this one; we need
 # to use it in a handler passed down to the terminal module.)
-@text_heights = ();
+@text_heights = ( 1 );
+
+# A list of filters associated with each line.
+my @text_filters = ( [] );
+
+# A list of unparsed lines.  Lines only appear in here if they contain filters.
+my @text_unparsed = ( " " );
 
 # The line and row in said line which are anchored to the bottom of the
 # text window.
@@ -291,9 +312,6 @@ my $text_r = 0;
 # The number of rows which have been scrolled up since the user last
 # examined the screen.
 my $scrolled_rows = 0;
-
-my @text_show_tags = ();
-my @text_hide_tags = ();
 
 
 sub min($$) {
@@ -388,8 +406,36 @@ sub ui_end() {
 
 # Define a new attribute.
 sub ui_attr($@) {
-    my ($name,@attrs) = @_;
+    my($name, @attrs) = @_;
     $attr_list{$name} = \@attrs;
+}
+
+# Invalidate a filter.
+sub ui_resetfilter($) {
+    my($name) = @_;
+    my $i;
+    for ($i = 0; $i <= @text_lines; $i++) {
+	next unless (grep { $_ eq $name } @{$text_filters[$i]});
+	
+	my($line, $fmt, $filters);
+	($line, $fmt, $filters) = fmtline($text_unparsed[$i]);
+	unshift @$fmt, @{$text_fmts[$i]}[0,1]
+	    if ($text_fmts[$i]->[0] == $FOwrapchar);
+
+	$text_lines[$i] = $line;
+	$text_fmts[$i] = $fmt;
+	$text_filters[$i] = $filters;
+	$text_heights[$i] = undef;
+    }
+
+    win_redraw();
+}
+
+# Define a new filter.
+sub ui_filter($$) {
+    my($name, $sub) = @_;
+    $filter_list{$name} = $sub;
+    ui_resetfilter($name);
 }
 
 # Clear all attributes.
@@ -444,12 +490,6 @@ sub win_draw_line($$$@) {
 
     my $i;
     for ($i = 0; $i < scalar(@$fmt); $i++) {
-	if ($fmt->[$i] == $FOgag) {
-	    $from=$fmt->[++$i];
-	    if ($gagged{$from}) {
-		$line=muffle($line);	 
-	    }
-	}
 	if ($fmt->[$i] == $FOwrapchar) {
 	    $wrapchar = $fmt->[++$i];
 	} elsif (($fmt->[$i] == $FOwrap) || ($fmt->[$i] == $FOnewline)) {
@@ -492,7 +532,7 @@ sub win_draw_line($$$@) {
 }
 
 # fmtline is called with a line of <tag>formatted</tag> text.  It returns
-# ($line, $fmt).
+# ($line, $fmt, $filters).
 sub fmtline($) {
     my($text) = @_;
 
@@ -505,28 +545,47 @@ sub fmtline($) {
     my $line = '';
     my @fmt = ();
 
+    my %filters = ();
+
     while (length $text) {
-	if ($text =~ /^\/([^\>]*)\>/) {
+	if ($text =~ /^(([^\>]*)\>\>)/) {
+	    # <<filter>>
+	    $text = substr($text, length $1);
+	    my $tag = $2;
+	    my $m;
+	    if ($text =~ /^((.*?)\/$tag\>\>)/) {
+		$text = substr($text, length $1);
+		$m = $2;
+	    } else {
+		$m = $text;
+		$text = '';
+	    }
+
+	    $m = &{$filter_list{$tag}}($m) if ($filter_list{$tag});
+	    $text = $m . $text;
+
+	    $filters{$tag}++;
+	} elsif ($text =~ /^(\/([^\>]*)\>)/) {
 	    # </tag>
-	    $text = substr($text, length $&);
+	    $text = substr($text, length $1);
 	    push @fmt, $FOpopattr;
-	} elsif ($text =~ /^([^\>]*)\>/) {
+	} elsif ($text =~ /^(([^\>]*)\>)/) {
 	    # <tag>
-	    $text = substr($text, length $&);
-	    push @fmt, $FOattr, $1;
-	} elsif ($text =~ /^\r?\n/) {
+	    $text = substr($text, length $1);
+	    push @fmt, $FOattr, $2;
+	} elsif ($text =~ /^(\r?\n)/) {
 	    # newline
-	    $text = substr($text, length $&);
+	    $text = substr($text, length $1);
 	    push @fmt, $FOnewline;
-	} elsif ($text =~ /^[^\r\n]+/) {
+	} elsif ($text =~ /^([^\r\n]+)/) {
 	    # text
-	    $text = substr($text, length $&);
-	    $line .= $&;
-	    push @fmt, $FOtext, length $&;
+	    $text = substr($text, length $1);
+	    $line .= $1;
+	    push @fmt, $FOtext, length $1;
 	}
     }
 
-    return ($line, \@fmt);
+    return ($line, \@fmt, [keys %filters]);
 }
 
 
@@ -577,10 +636,6 @@ sub line_wrap($$) {
 	    next;
 	} elsif ($t == $FOtext) {
 	    $len += shift @$fmt;
-	    next;
-	} elsif ($t == $FOgag) {
-	    my $from=shift @$fmt;
-	    push @fmt,$t,$from;
 	    next;
 	}
 
@@ -643,47 +698,16 @@ sub line_height($) {
 }
 
 
-# Determines if a given line should be shown or not.
-sub win_showline($) {
-    my($l) = @_;
-
-    my $show = 1;
-    my $tag;
-    if (@text_show_tags) {
-	$show = 0;
-	foreach $tag (@text_show_tags) {
-	    $show = 1 if (grep { $_ eq $tag } @{$text_tags[$l]});
-	}
-    }
-
-    if (@text_hide_tags && $show) {
-	foreach $tag (@text_hide_tags) {
-	    $show = 0 if (grep { $_ eq $tag } @{$text_tags[$l]});
-	}
-    }
-
-    return $show;
-}
-
-
 # Redraws the text window.
 sub win_redraw() {
     my $y = win_height() - $text_r;
     my $l = $text_l;
-
-    while (($l > 0) && (!win_showline($l))) {
-	$l--;
-    }
 
     while (($y > 0) && ($l > 0)) {
 	win_draw_line($y, $text_lines[$l], $text_fmts[$l],
 		      0, win_height() - $y + 1);
 
 	$l--;
-	while (($l > 0) && (!win_showline($l))) {
-	    $l--;
-	}
-
 	$y -= line_height($l) if ($l > 0);
     }
 
@@ -712,9 +736,6 @@ sub win_scroll($) {
 	    if ($text_r >= line_height($text_l)) {
 		$text_r = 0;
 		$text_l++;
-		while (($text_l <= $#text_lines) && (!win_showline($text_l))) {
-		    $text_l++;
-		}
 		last if ($text_l > $#text_lines);
 	    }
 
@@ -735,9 +756,6 @@ sub win_scroll($) {
 	    $top_r--;
 	    if ($top_r < 0) {
 		$top_l--;
-		while (($top_l >= 0) && (!win_showline($top_l))) {
-		    $top_l--;
-		}
 		$top_r = ($top_l < 0) ? 0 : line_height($top_l) - 1;
 	    }
 	}
@@ -746,9 +764,6 @@ sub win_scroll($) {
 	    $text_r--;
 	    if ($text_r < 0) {
 		$text_l--;
-		while (($text_l >= 0) && (!win_showline($text_l))) {
-		    $text_l--;
-		}
 		last if ($text_l < 0);
 		$text_r = line_height($text_l) - 1;
 	    }
@@ -756,9 +771,6 @@ sub win_scroll($) {
 	    $top_r--;
 	    if ($top_r < 0) {
 		$top_l--;
-		while (($top_l >= 0) && (!win_showline($top_l))) {
-		    $top_l--;
-		}
 		$top_r = ($top_l < 0) ? 0 : line_height($top_l) - 1;
 	    }
 
@@ -797,21 +809,14 @@ sub ui_output {
 	%h = @_;
     }
 
-    my($line, $fmt);
-    ($line, $fmt) = fmtline($h{Text});
+    my($line, $fmt, $filters);
+    ($line, $fmt, $filters) = fmtline($h{Text});
     unshift @$fmt, $FOwrapchar, $h{WrapChar} if ($h{WrapChar});
-    
-    # There has GOT to be a better way to do this ;)
-    my ($fr)=grep /^from:/,@{$h{Tags}};	    
-    my ($from)=($fr=~/from:(.*)/);	    
-
-    if ($from && $gagged{$from} && $line=~/^\s*\-[^>]/) { 
-	unshift @$fmt, $FOgag, $from;
-    }
 
     push @text_lines, $line;
     push @text_fmts, $fmt;
-    $text_tags[$#text_lines] = [ @{$h{Tags}} ] if (defined $h{Tags});
+    push @text_filters, $filters;
+    push @text_unparsed, (@{$filters} ? $h{Text} : undef);
 
     my $h = line_height($#text_lines);
 
@@ -1287,78 +1292,10 @@ sub ui_prompt($) {
     $term->term_refresh();
 }
 
-sub ui_set(%) {
-    my(%h) = @_;
-
-    my $key;
-    foreach $key (keys %h) {
-	if ($key eq 'Show') {
-	    @text_show_tags = @{$h{$key}};
-	    win_redraw();
-	    $term->term_refresh();
-	} elsif ($key eq 'Hide') {
-	    @text_hide_tags = @{$h{$key}};
-	    win_redraw();
-	    $term->term_refresh();
-	}
-	
-    }
-}
-
 
 sub ui_select($$$$) {
     my($r, $w, $e, $t) = @_;
     return $term->term_select($r, $w, $e, $t);
-}
-
-
-# Gag handling!
-
-sub isupper {
-    my($c) = @_;
-    return ((ord($c) >= 'A') && (ord($c) <= 'Z')) ? 1 : 0;
-}
-
-sub muffle($) {
-    my($line) = @_;
-    my $new = $line;
-
-    $new =~ s/\b\w\b/m/g;
-    $new =~ s/\b\w\w\b/mm/g;
-    $new =~ s/\b\w\w\w\b/mrm/g;
-    $new =~ s/\b(\w+)\w\w\w\b/'m'.('r'x length($1)).'fl'/ge;
-
-    my $i;
-    for ($i = 0; $i < length($line); $i++) {
-	substr($new, $i, 1) = uc(substr($new, $i, 1))
-	    if (isupper(substr($line, $i, 1)));
-    }
-
-    return $new;
-}
-
-
-sub ui_gag($) {
-    my ($name)=@_;
-    
-    $gagged{$name}=1;
-    redraw();
-}
-
-sub ui_ungag($) {
-    my ($name)=@_;
-    
-    delete $gagged{$name};
-    redraw();
-}
-
-sub ui_gagged($) {
-    my ($name)=@_;
-    return $gagged{$name};
-}
-
-sub ui_gaglist() {    
-    return keys %gagged;
 }
 
 sub ui_escape {

@@ -1,5 +1,5 @@
 # -*- Perl -*-
-# $Header: /data/cvs/tlily/LC/StatusLine.pm,v 1.22 1998/05/29 19:50:07 josh Exp $
+# $Header: /data/cvs/tlily/LC/StatusLine.pm,v 1.23 1998/06/01 02:19:54 neild Exp $
 package LC::StatusLine;
 
 =head1 NAME
@@ -98,7 +98,7 @@ sub redraw_statusline {
     my $fmt="%-$ll.$ll" . "s%$lr.$lr" . "s";
     my $status_line=sprintf($fmt,$left,$right);
        
-#    $status_line =~ s/(<\\)/\\$1/g;
+    $status_line = ui_escape($status_line);
     $status_line =~ s:\|:<whiteblue>\|</whiteblue>:g;
 
     ui_status($status_line);
@@ -241,7 +241,7 @@ sub status_time {
 sub status_username {
     my $name = $status_Pseudo;
     $name .= " [$status_Blurb]" if (defined($status_Blurb));
-    $name=ui_escape($name);
+    #$name=ui_escape($name);
 
     return $name;    
 }
