@@ -258,10 +258,11 @@ sub rename_user ($$) {
     $old = lc($old);
     $old =~ tr/ /_/;
 
-    $new = lc($new);
-    $new =~ tr/ /_/;
+    my $newt = lc($new);
+    $newt =~ tr/ /_/;
 
-    $Users{$new} = $Users{$old};
+    $Users{$newt} = $Users{$old};
+    $Users{$newt}->{Name} = $new;
     delete $Users{$old};
 }
 

@@ -1,4 +1,5 @@
 Version 0.6c
+  * [LC/State.pm] Bugfix: handle renames properly.  [DPN]
   * [LC/StatusLine.pm] Bugfix for blurbs containing a < or \.  [DPN]
   * [extensions/misc.pl] Added an %echo command.  [DPN]
   * [LC/State.pm] New configuration variable: 'prefer'.  See the README.  [DPN]
