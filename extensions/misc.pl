@@ -72,6 +72,9 @@ sub set_handler($) {
 	    }
 	}
     }
+    else {
+	ui_output("(Syntax error: see %help set for usage)");
+    }
     return 0;
 }
 register_user_command_handler('set', \&set_handler);
