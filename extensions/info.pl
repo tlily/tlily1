@@ -2,29 +2,31 @@
 
 sub info_set($;\@) {
     my($disc,$lref) = @_;
+
+    local(*FH);
     
     my $tmpfile = "/tmp/tlily.$$";
     my $EDITOR = $ENV{VISUAL} || $ENV{EDITOR} || "vi";
 
     unlink($tmpfile);
     if ($lref) {
-	my $fh = IO::File->new(">$tmpfile");
-	foreach (@$lref) { chomp; $fh->print("$_\n"); }
-	$fh->close();
+	open(FH, ">$tmpfile") or die "$tmpfile: $!";
+	foreach (@$lref) { chomp; print FH "$_\n"; }
+	close FH;
     }
 
     ui_end();
     system("$EDITOR $tmpfile");
     ui_start();
 
-    my $fh = IO::File->new("<$tmpfile");
-    unless ($fh) {
+    my $rc = open(FH, "<$tmpfile");
+    unless ($rc) {
 	ui_output("(info buffer file not found)");
 	return;
     }
 
-    my @lines = $fh->getlines();
-    $fh->close();
+    my @lines = <FH>;
+    close FH;
     unlink($tmpfile);
 
     my $size=@lines;
