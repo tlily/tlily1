@@ -1,18 +1,16 @@
-package LC::parse;                  # -*- Perl -*-
+# -*- Perl -*-
+package LC::parse;
 
 use Exporter;
 use LC::config;
 use LC::UI;
 use LC::log;
+use LC::Event;
 use POSIX;
 
 @ISA = qw(Exporter);
 
-@EXPORT = qw(&register_preparser
-	     &deregister_preparser
-	     &register_eventhandler
-	     &deregister_eventhandler
-	     &parse);
+@EXPORT = qw(&parse);
 
 
 %time_prefixes = (' -> ' => 1,
@@ -33,48 +31,14 @@ use POSIX;
 	    '^password:');
 
 
-my $crumb = '';
 my $msg_state = undef;
 my $msg_sender;
 my @msg_dest;
 
-my @preparsers = ();
-my $token = 0;
 
-my %event_handlers = ();
-
-
-sub register_preparser (&) {
-    my($cmd) = @_;
-    $token++;
-    push @preparsers, [$token, $cmd];
-    return $token;
-}
-
-
-sub deregister_preparser ($) {
-    my($t) = @_;
-    @preparsers = grep { $$_[0] != $t } @preparsers;
-}
-
-
-sub register_eventhandler ($&) {
-    my($event, $cmd) = @_;
-
-    $token++;
-    push @{$event_handlers{$event}}, [$token, $cmd];
-    return $token;
-}
-
-
-sub deregister_eventhandler ($$) {
-    my($event, $t) = @_;
-    @{$event_handlers{$event}} =
-	grep { $$_[0] != $t } @{$event_handlers{$event}};
-}
-
-
-sub parse ($) {
+# Take raw server output, and deal with it.
+my $crumb = '';
+sub parse($) {
     my($buf) = @_;
 
     # Divide into lines.
@@ -82,6 +46,10 @@ sub parse ($) {
     my @lines = split /\r?\n/, $buf, -1;
     $crumb = pop @lines;
 
+    # Try to handle prompts; a prompt is a non-newline terminated line.
+    # The difficulty is that we need to distinguish between prompts (which
+    # are lines lacking newlines) and partial lines (which are lines which
+    # we haven't completely read yet).
     my $prompt;
     foreach $prompt (@prompts) {
 	if ($crumb =~ /$prompt/) {
@@ -90,47 +58,26 @@ sub parse ($) {
 	}
     }
 
+    # Spin off an event for each line.
     foreach (@lines) {
-	my $pp;
-	foreach $pp (@preparsers) {
-	    my $f = $pp->[1];
-	    &$f($_, $pp->[0]);
-	}
-
-	dispatch_event(parse_line($_));
+	dispatch_event({Type => 'serverline',
+			Text => $_});
     }
 }
 
 
-sub dispatch_event ($) {
-    my($event) = @_;
+# The big one: take a line from the server, and decide what it is.
+sub parse_line($$) {
+    my($ev, $h) = @_;
 
-    foreach $eh (@{$event_handlers{'all'}}) {
-	my $f = $eh->[1];
-	&$f($event, $eh->[0]);
-    }
-
-    if ($event->{Type}) {
-	my $eh;
-	foreach $eh (@{$event_handlers{$event->{Type}}}) {
-	    my $f = $eh->[1];
-	    &$f($event, $eh->[0]);
-	}
-    }
-
-    ui_bell() if ($event->{Signal});
-    ui_output($event->{Line}) unless ($event->{Invisible});
-}
-
-
-sub parse_line ($) {
-    my($line) = @_;
+    $line = $ev->{Text};
     $line =~ s/[\<\\]/\\$&/g;
     chomp $line;
 
     my $signal = undef;
     my $cmdid = undef;
     my $review = undef;
+    my $hidden = undef;
     my %event = ();
 
 
@@ -138,18 +85,18 @@ sub parse_line ($) {
     # %begin, 2.2a1 cores.
     if ($line =~ /^%begin \((.*)\) \[(\d+)\]/) {
 	$cmdid = $2;
+	$hidden = 1;
 	%event = (Type => 'begincmd',
-		  Command => $1,
-		  Invisible => 1);
+		  Command => $1);
 	goto found;
     }
 
     # %begin, RPI core.
     if ($line =~ /^%begin \[(\d+)\] (.*)/) {
 	$cmdid = $1;
+	$hidden = 1;
 	%event = (Type => 'begincmd',
-		  Command => $2,
-		  Invisible => 1);
+		  Command => $2);
 	goto found;
     }
 
@@ -162,22 +109,22 @@ sub parse_line ($) {
     # %end, all cores.
     if ($line =~ /^%end \[(\d+)\]/) {
 	$cmdid = $1;
-	%event = (Type => 'endcmd',
-		  Invisible => 1);
+	$hidden = 1;
+	%event = (Type => 'endcmd');
 	goto found;
     }
 
     # %beginmsg
     if ($line =~ /^%beginmsg/) {
-	%event = (Type => 'beginmsg',
-		  Invisible => 1);
+	$hidden = 1;
+	%event = (Type => 'beginmsg');
 	goto found;
     }
 
     # %endmsg
     if ($line =~ /^%endmsg/) {
-	%event = (Type => 'endmsg',
-		  Invisible => 1);
+	$hidden = 1;
+	%event = (Type => 'endmsg');
 	goto found;
     }
 
@@ -189,9 +136,9 @@ sub parse_line ($) {
 
     # %export_file
     if ($line =~ /^%export_file (\w+)/) {
+	$hidden = 1;
 	%event = (Type => 'export',
-		  Response => $1,
-		  Invisible => 1);
+		  Response => $1);
 	goto found;
     }
 
@@ -203,8 +150,8 @@ sub parse_line ($) {
 
     # The options notification.  (OK, not a %command...but it fits here.)
     if ($line =~ /^\[Your options are/) {
-	%event = (Type => 'options',
-		  Invisible => 1);
+	$hidden = 1;
+	%event = (Type => 'options');
 	goto found;
     }
 
@@ -425,6 +372,7 @@ sub parse_line ($) {
 	if ($name) {
 	    %event = (Type => 'who',
 		      User => $name,
+		      Blurb => $blurb,
 		      State => $state);
 	    goto found;
 	}
@@ -598,11 +546,22 @@ sub parse_line ($) {
 	$event{Type} = 'review';
     }
 
+    $event{ToUser} = 1 unless ($hidden);
     $event{Signal} = 'default' if ($signal);
     $event{Id} = $cmdid;
-    $event{Line} = $line;
-    return \%event;
+    $event{Text} = $line;
+    
+    dispatch_event(\%event);
+    return 0;
 }
+
+
+sub init() {
+    register_eventhandler(Type => 'serverline',
+			  Call => \&parse_line);
+}
+
+init();
 
 
 1;

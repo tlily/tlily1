@@ -3,6 +3,7 @@ package LC::Server;
 
 use Exporter;
 use LC::log;
+use LC::Event;
 use IO::Socket;
 use POSIX;
 
@@ -15,7 +16,7 @@ use POSIX;
 
 
 # Contact a lily server at a given host/port.
-sub server_connect ($$) {
+sub server_connect($$) {
     my($host, $port) = @_;
 
     $server_sock = IO::Socket::INET->new(PeerAddr => $host,
@@ -30,7 +31,7 @@ sub server_connect ($$) {
 
 
 # Read a chunk of data from the lily server.
-sub server_read () {
+sub server_read() {
     my $buf;
     if (sysread($server_sock,$buf,4096) < 1) {
 	if ($errno != EAGAIN) {
@@ -44,7 +45,7 @@ sub server_read () {
 
 
 # Send a chunk of data to the server.
-sub server_send ($) {
+sub server_send($) {
     my($s) = @_;
     my $written = 0;
     while ($written < length($s)) {
@@ -57,6 +58,21 @@ sub server_send ($) {
 	$written += $bytes;
     }
 }
+
+
+# Register a handler to route data to the server.
+sub init() {
+    register_eventhandler(Order => 'after',
+			  Call => sub {
+			      my($event,$handler) = @_;
+			      if ($event->{ToServer}) {
+				  server_send($event->{Text});
+			      }
+			      return 0;
+			  });
+}
+
+init();
 
 
 1;

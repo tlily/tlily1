@@ -3,12 +3,11 @@ package LC::User;
 
 use Exporter;
 use LC::UI;
+use LC::Event;
 
 @ISA = qw(Exporter);
 
-@EXPORT = qw(&register_user_input_handler
-	     &deregister_user_input_handler
-	     &register_user_command_handler
+@EXPORT = qw(&register_user_command_handler
 	     &deregister_user_command_handler
 	     &user_showline
 	     &user_accept
@@ -21,26 +20,11 @@ use LC::UI;
 	     );
 
 
-@handlers = ();
 %commands = ();
 my $token = 0;
 
 
-sub register_user_input_handler (&) {
-    my($fn) = @_;
-    $token++;
-    push @handlers, [$token, $fn];
-    return $token;
-}
-
-
-sub deregister_user_input_handler ($) {
-    my($t) = @_;
-    @handlers = grep { $_->[0] != $t } @handlers;
-}
-
-
-sub register_user_command_handler ($&) {
+sub register_user_command_handler($&) {
     my($cmd, $fn) = @_;
     $commands{$cmd} = $fn;
 }
@@ -80,59 +64,66 @@ sub register_help_long {
 }
 
 
-sub deregister_user_command_handler ($) {
+sub deregister_user_command_handler($) {
     my($cmd) = @_;
     delete $commands{$cmd};
 }
 
 
-sub user_showline ($) {
+sub user_showline($) {
     my($line) = @_;
     $line =~ s/[\<\\]/\\$&/g;
     ui_output("<usersend>" . $line . "</usersend>");
 }
 
 
-sub user_accept () {
+sub user_accept() {
     my @to_server = ();
-  LINE:
+
     while (1) {
-	my %iev = (Line => ui_process,
-		   Server => 1,
-		   UI => 1);
-	last unless (defined $iev{Line});
-
-	my $eh;
-	foreach $eh (@handlers) {
-	    my $f = $eh->[1];
-	    my $r = &$f(\%iev);
-	    next LINE if ($r);
-	}
-
-	user_showline($iev{Line}) if ($iev{UI});
-	push @to_server, ($iev{Line} . "\r\n") if ($iev{Server});
+	my $text = ui_process();
+	last unless (defined $text);
+	user_showline($text);
+	dispatch_event({Type => 'userinput',
+			Text => $text . "\r\n",
+			ToServer => 1});
+	user_showline($iev{Text}) if ($iev{UI});
     }
 
     return @to_server;
 }
 
 
-sub user_init () {
-    register_user_input_handler(sub {
-	my($iev) = @_;
-	if ($iev->{Line} =~ /^%(\w*)\s*(.*)/) {
-	    my($cmd, $args) = ($1, $2);
-	    user_showline($iev->{Line});
-	    if (defined $commands{$cmd}) {
-		my $f = $commands{$cmd};
-		&$f($args);
-	    } else {
-		ui_output("(The '$cmd' command is unknown.)");
-	    }
-	    return 1;
-	}
-    });
+sub init() {
+    register_eventhandler(Order => 'after',
+			  Call => sub {
+			      my($event,$handler) = @_;
+			      if ($event->{ToUser}) {
+				  ui_output($event->{Text});
+			      }
+			      return 0;
+			  });
+
+    register_eventhandler(Type => 'userinput',
+			  Order => 'before',
+			  Call => sub {
+			      my($event,$handler) = @_;
+			      if ($event->{Text} =~ /^%(\w*)\s*(.*)/) {
+				  my($cmd, $args) = ($1, $2);
+				  if (defined $commands{$cmd}) {
+				      $event->{ToServer} = 0;
+				      my $f = $commands{$cmd};
+				      &$f($args);
+				  } else {
+				      ui_output("(The '$cmd' command is unknown.)");
+				  }
+				  return 1;
+			      }
+			      return 0;
+			  });
 }
+
+init();
 
 
 1;

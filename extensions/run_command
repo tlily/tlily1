@@ -1,15 +1,16 @@
 # -*- Perl -*-
 ui_output("%%% Loading %run_command extension");
 
-register_eventhandler("send", \&run_command_event);
+register_eventhandler(Type => "send",
+		      Call => \&run_command_event);
 register_user_command_handler('run_command', \&run_command_cmd);
 
-sub run_command_event (\%) {
-    my($event) = @_;
+sub run_command_event($$) {
+    my($event,$handler) = @_;
 
     $from=$event->{From};
     $from=~tr/A-Z/a-z/;
-    $msg=$event->{Line};
+    $msg=$event->{Text};
     $cmd=$run_cmd{$from};
 
     if ($cmd) {

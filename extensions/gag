@@ -30,10 +30,10 @@ sub muffle($) {
     return $new;
 }
 
-sub gag_event_handler(\%) {
-    my($event) = @_;
+sub gag_event_handler(\%\%) {
+    my($event,$handler) = @_;
 
-    $event->{Line} = muffle($event->{Line})
+    $event->{Text} = muffle($event->{Text})
 	if ($gagged{$event->{From}});
     return 0;
 }
@@ -67,7 +67,8 @@ sub gag_command_handler($) {
     return;
 }
 
-register_eventhandler('send', \&gag_event_handler);
+register_eventhandler(Type => 'send',
+		      Call => \&gag_event_handler);
 register_user_command_handler('gag', \&gag_command_handler);
 register_help_short('gag', 'affix a gag to a user');
 register_help_long('gag',

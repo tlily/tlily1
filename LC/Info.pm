@@ -8,6 +8,7 @@ use LC::parse;
 use LC::User;
 use LC::Command;
 use LC::State;
+use LC::Event;
 use LC::log;
 use IO::File;
 
@@ -35,7 +36,7 @@ sub info_set($;\@) {
 
     my $fh = IO::File->new("<$tmpfile");
     unless ($fh) {
-	log_notice("(info buffer file not found)");
+	ui_output("(info buffer file not found)");
 	return;
     }
 
@@ -45,16 +46,17 @@ sub info_set($;\@) {
 
     my $size=@lines;
 
-    my $eh;
-    $eh = register_eventhandler('export', sub {
-	my($event) = @_;
+    register_eventhandler(Type => 'export',
+			  Call => sub {
+	my($event,$handler) = @_;
 	if ($event->{Response} eq 'OKAY') {
 	    my $l;
 	    foreach $l (@lines) {
 		server_send($l);
 	    }
 	}
-	deregister_eventhandler('export', $eh);
+	deregister_eventhandler($handler->{Id});
+	return 0;
     });
     
     server_send("\#\$\# export_file info $size $disc\n");
@@ -69,27 +71,29 @@ sub info_edit($) {
     my @lines = ();
     cmd_process("/info $itarget", sub {
 	my($event) = @_;
-	$event->{Invisible} = 1;
-	if ($event->{Line} =~ /^\* (.*)/) {
+	$event->{ToUser} = 1;
+	if ($event->{Text} =~ /^\* (.*)/) {
 	    return if ((@lines == 0) &&
-		       ($event->{Line} =~ /^\* Last Update: /));
-	    push @lines, substr($event->{Line},2);
+		       ($event->{Text} =~ /^\* Last Update: /));
+	    push @lines, substr($event->{Text},2);
 	} elsif ($event->{Type} eq 'endcmd') {
 	    info_set($target, @lines);
 	}
+	return 0;
     });
 }
 
 
 sub info_init() {
-    register_user_input_handler(sub {
-	my($event) = @_;
-	if ($event->{Line} =~ m|^\s*/info\s+set\s*(.*?)\s*$|) {
+    register_eventhandler(Type => 'userinput',
+			  Call => sub {
+	my($event,$handler) = @_;
+	if ($event->{Text} =~ m|^\s*/info\s+set\s*(.*?)\s*$|) {
 	    info_set($1);
-	    $event->{Server} = 0;
-	} elsif ($event->{Line} =~ m|^\s*/info\s+edit\s*(.*?)\s*$|) {
+	    $event->{ToServer} = 0;
+	} elsif ($event->{Text} =~ m|^\s*/info\s+edit\s*(.*?)\s*$|) {
 	    info_edit($1);
-	    $event->{Server} = 0;
+	    $event->{ToServer} = 0;
 	}
 	return 0;
     });

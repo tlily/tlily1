@@ -4,6 +4,7 @@ package LC::Command;
 use Exporter;
 use LC::Server;
 use LC::parse;
+use LC::Event;
 use LC::log;
 
 @ISA = qw(Exporter);
@@ -19,7 +20,8 @@ use LC::log;
 sub cmd_init () {
     # The order of these handlers is important!
 
-    register_eventhandler('begincmd', sub {
+    register_eventhandler(Type => 'begincmd',
+			  Call => sub {
 	my($e) = @_;
 	my $cmd = $e->{Command};
 	my $id = $e->{Id};
@@ -27,20 +29,24 @@ sub cmd_init () {
 	    $active_commands{$id} = $pending_commands{$cmd};
 	    delete $pending_commands{$cmd};
 	}
+	return 0;
     });
 
-    register_eventhandler('all', sub {
+    register_eventhandler(Call => sub {
 	my($e) = @_;
 	my $f = $active_commands{$e->{Id}};
 	&$f($e) if (defined $f);
+	return 0;
     });
 
-    register_eventhandler('endcmd', sub {
+    register_eventhandler(Type => 'endcmd',
+			  Call => sub {
 	my($e) = @_;
 	my $id = $e->{Id};
 	if (defined $active_commands{$id}) {
 	    delete $active_commands{$id};
 	}
+	return 0;
     });
 }
 
@@ -48,7 +54,7 @@ sub cmd_init () {
 sub cmd_process ($$) {
     my($c, $f) = @_;
     $pending_commands{$c} = $f;
-    server_send($c . "\n");
+    server_send($c . "\r\n");
 }
 
 

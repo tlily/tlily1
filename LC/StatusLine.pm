@@ -7,6 +7,7 @@ use LC::Server;
 use LC::UI;
 use LC::parse;
 use LC::config;
+use LC::Event;
 use LC::log;
 
 @ISA = qw(Exporter Tie::StdHash);
@@ -62,35 +63,55 @@ sub STORE($$$) {
 sub statusline_init() {
     tie %status, 'LC::StatusLine';
 
-    register_preparser(sub {
-	my($line, $id) = @_;
-	if ($line =~ /^Welcome to \w* at\s+(.*?)\s*$/) {
+    register_eventhandler(Type => 'serverline',
+			  Order => 'before',
+			  Call => sub {
+	my($event, $handler) = @_;
+	if ($event->{Text} =~ /^Welcome to \w* at\s+(.*?)\s*$/) {
 	    $status{Server} = $1;
-	    deregister_preparser($id);
+	    deregister_eventhandler($handler->{Id});
 	}
+	return 0;
     });
 
-    register_eventhandler('who', sub {
-	my($event, $id) = @_;
+    register_eventhandler(Type => 'who',
+			  Order => 'after',
+			  Call => sub {
+	my($event, $handler) = @_;
 	if ($event->{IsUser}) {
 	    $status{Pseudo} = $event->{User};
 	    $status{State} = $event->{State};
 	}
+	return 0;
     });
 
-    register_eventhandler('rename', sub {
-	my($event, $id) = @_;
+    register_eventhandler(Type => 'rename',
+			  Order => 'after',
+			  Call => sub {
+	my($event, $handler) = @_;
 	$status{Pseudo} = $event->{To} if ($event->{IsUser});
     });
 
-    register_eventhandler('blurb', sub {
-	my($event, $id) = @_;
+    register_eventhandler(Type => 'blurb',
+			  Order => 'after',
+			  Call => sub {
+	my($event, $handler) = @_;
 	$status{Blurb} = $event->{Blurb} if ($event->{IsUser});
     });
 
-    register_eventhandler('userstate', sub {
-	my($event, $id) = @_;
+    register_eventhandler(Type => 'userstate',
+			  Order => 'after',
+			  Call => sub {
+	my($event, $handler) = @_;
 	$status{State} = $event->{To} if ($event->{IsUser});
+    });
+
+    register_eventhandler(Type => 'who',
+			  Order => 'after',
+			  Call => sub {
+	my($event, $handler) = @_;
+	$status{Pseudo} = $event->{User} if ($event->{IsUser});
+	$status{Blurb} = $event->{Blurb} if ($event->{IsUser});
     });
 
     render();

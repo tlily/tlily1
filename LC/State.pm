@@ -5,6 +5,7 @@ use Exporter;
 use LC::UI;
 use LC::Command;
 use LC::parse;
+use LC::Event;
 use LC::StatusLine;
 use POSIX;
 
@@ -217,59 +218,79 @@ sub state_sync () {
 
     cmd_process('/who me', sub {
 	my($event) = @_;
-	$event->{Invisible} = 1;
+	$event->{ToUser} = 0;
 	if ($event->{Type} eq 'who') {
 	    $Me = $event->{User};
 	    $event->{IsUser} = 1;
 	}
+	return 0;
     });
 
     cmd_process('/who everyone', sub {
 	my($event) = @_;
-	$event->{Invisible} = 1;
+	$event->{ToUser} = 0;
+	return 0;
     });
 
     cmd_process('/what all', sub {
 	my($event) = @_;
-	$event->{Invisible} = 1;
+	$event->{ToUser} = 0;
+	return 0;
     });
 }
 
 
 # Registers the handlers required to maintain lily state information.
 sub state_init () {
-    register_eventhandler('rename', sub {
-	my($event) = @_;
+    register_eventhandler(Type => 'rename',
+			  Order => 'before',
+			  Call => sub {
+	my($event,$handler) = @_;
 	$event->{From} = $Me unless $event->{From};
 	if ($event->{From} eq $Me) {
 	    $event->{IsUser} = 1;
 	    $Me = $event->{To};
 	}
 	rename_user($event->{From}, $event->{To});
+	return 0;
     });
 
-    register_eventhandler('disccreate', sub {
-	my($event) = @_;
+    register_eventhandler(Type => 'disccreate',
+			  Order => 'before',
+			  Call => sub {
+	my($event,$handler) = @_;
 	set_disc_state(Name => $event->{Name});
+	return 0;
     });
 
-    register_eventhandler('discdestroy', sub {
-	my($event) = @_;
+    register_eventhandler(Type => 'discdestroy',
+			  Order => 'before',
+			  Call => sub {
+	my($event,$handler) = @_;
 	destroy_disc($event->{Name});
+	return 0;
     });
 
-    register_eventhandler('who', sub {
-	my($event) = @_;
+    register_eventhandler(Type => 'who',
+			  Order => 'before',
+			  Call => sub {
+	my($event,$handler) = @_;
 	set_user_state(Name => $event->{User});
+	return 0;
     });
 
-    register_eventhandler('what', sub {
-	my($event) = @_;
+    register_eventhandler(Type => 'what',
+			  Order => 'before',
+			  Call => sub {
+	my($event,$handler) = @_;
 	set_disc_state(Name => $event->{Disc});
+	return 0;
     });
 
-    register_eventhandler('userstate', sub {
-	my($event) = @_;
+    register_eventhandler(Type => 'userstate',
+			  Order => 'before',
+			  Call => sub {
+	my($event,$handler) = @_;
 	$event->{User} = $Me unless ($event->{User});
 	$event->{IsUser} = 1 if ($event->{User} eq $Me);
 	if ($event->{To} eq 'gone') {
@@ -277,12 +298,16 @@ sub state_init () {
 	} elsif ($event->{From} eq 'gone') {
 	    set_user_state(Name => $event->{User});
 	}
+	return 0;
     });
 
-    register_eventhandler('blurb', sub {
-	my($event) = @_;
+    register_eventhandler(Type => 'blurb',
+			  Order => 'before',
+			  Call => sub {
+	my($event,$handler) = @_;
 	$event->{User} = $Me unless ($event->{User});
 	$event->{IsUser} = 1 if ($event->{User} eq $Me);
+	return 0;
     });
 }
 

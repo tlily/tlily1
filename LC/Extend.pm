@@ -11,6 +11,7 @@ use LC::Command;
 use LC::State;
 use LC::log;
 use LC::config;
+use LC::Event;
 
 @ISA = qw(Exporter);
 
@@ -49,6 +50,7 @@ sub extension {
     push @share,@LC::State::EXPORT;
     push @share,@LC::log::EXPORT;
     push @share,@LC::config::EXPORT;
+    push @share,@LC::Event::EXPORT;
     $TL_VERSION=$main::TL_VERSION;
     push @share,qw($TL_VERSION);
     
