@@ -1,5 +1,5 @@
-@@PERL@@
-# $Header: /data/cvs/tlily/lilybot.PL,v 1.3 1998/06/02 20:05:34 josh Exp $
+@PERL@@
+# $Header: /data/cvs/tlily/lilybot.PL,v 1.4 1998/06/02 20:11:25 josh Exp $
 
 require 5.00307;
 
@@ -175,8 +175,6 @@ sub getquote {
 
     open (E,"lynx -dump $url |");
     foreach (<E>) {
-	print;
-
 	if (/____/) {
 	    $p=! defined($p);
 	    next;
