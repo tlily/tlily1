@@ -1,7 +1,6 @@
-#!/usr/local/bin/perl 
-#-w
+#!/usr/bin/perl
 
-$TL_VERSION="0.1b";
+$TL_VERSION="0.1d";
 $debug=0;
 
 use LC::log; 
@@ -25,6 +24,7 @@ $last_alarm=0;
 $next_alarm=0;
 $wakeup=10;     # how often to exit the select loop to do status processing,
                 # etc.
+$password_mode=0;
 
 ## main ##
 LC::config::init();
@@ -34,17 +34,19 @@ exp_init();
 ui_start();
 ui_attr('sender','bold');
 ui_attr('dest','bold');
-ui_attr('b',            'bold');
+ui_attr('b','bold');
 if (! $config{mono}) {
     ui_attr('status_line',  'fg:yellow',  'bg:blue',  'bold');
     ui_attr('input_line',   'fg:white',   'bg:black', 'bold');
     ui_attr('text_window',  'fg:white',   'bg:black', 'normal');
     ui_attr('privhdr',      'fg:green',   'bg:black');
     ui_attr('privmsg',      'fg:green',   'bg:black');
-    ui_attr('pubhdr',       'fg:cyan',    'bg:black', 'bold');
+    ui_attr('pubhdr',       'fg:cyan',    'bg:black');
     ui_attr('pubmsg',       'fg:white',   'bg:black');
     ui_attr('emote',        'fg:cyan',    'bg:black');
     ui_attr('review',       'fg:magenta', 'bg:black');
+    ui_attr('usersend',     'fg:red',     'bg:black');
+    ui_attr('time',         'fg:magenta', 'bg:black',  'bold');
     ui_attr('whiteblue',    'fg:white',   'bg:blue');
     ui_attr('greenblue',    'fg:green',   'bg:blue',  'bold');
     ui_attr('yellow',       'fg:yellow',  'bg:black',  'bold');
@@ -141,6 +143,12 @@ sub connect_until {
 		    # break out if we're at a prompt (--> or (y/n)
 		    if ($chunk =~ /-->\s*$/) { last; }
 		    if ($chunk =~ /\(Y\/n\)\s*$/i) { last; }
+		    if ($chunk =~ /^login:/) { last; }
+		    if ($chunk =~ /^password:/) {
+			$password_mode = 1;
+			ui_password(1);
+			last;
+		    }
 		}
 	        if ($debug && (time() > $endtime)) {
 		    log_notice("Chunk timeout\n"); 
@@ -178,8 +186,15 @@ sub connect_until {
 		    $line=ui_process();		
 		    if (defined($line)) {		    
 			my $qline = $line; $qline =~ s/[\<\\]/\\$&/g;
-			ui_output($qline);
 
+			if ($password_mode) {
+			    $password_mode = 0;
+			    ui_password(0);
+			    send_to_server($line . "\n");
+			    next;
+			}
+
+			ui_output("<usersend>" . $qline . "<usersend>");
 			if ($line =~ /^\!(.*)/) { 
 			    # !command handling
 			    ui_output(`$1`); 

@@ -3,6 +3,7 @@ package LC::parse;                  # -*- Perl -*-
 use Exporter;
 use LC::status_update;
 use LC::Expand;
+use LC::config;
 
 @ISA = qw(Exporter);
 
@@ -26,12 +27,35 @@ sub parse_output {
 
 }
 
+%time_prefixes = (' -> ' => 1,
+		  ' <- ' => 1,
+		  ' >> ' => 1,
+		  ' \<\< ' => 1,
+		  '# -> ' => 1,
+		  '# \<- ' => 1,
+		  '# >> ' => 1,
+		  '# \<\< ' => 1,
+		  '*** ' => 1,
+		  '# ***' => 1);
+
 sub parse_line {
     ($line)=@_;
     $line =~ s/[\<\\]/\\$&/g;
     $_=$line;
     
 #    main::log_debug("parse_line: \"$line\"");
+
+    # timezone munging #######################################################
+    if (/^(.*?)\((\d\d):(\d\d)\)(.*)$/) {
+	if ($time_prefixes{$1}) {
+	    $hour = $2;
+	    if ($config{'zonedelta'}) {
+		$hour += $config{'zonedelta'};
+	    }
+	    $_ = $line = sprintf("%s<time>(%02d:%02d)</time>%s",
+				 $1, $hour, $3, $4);
+	}
+    }
 
     # login stuff ############################################################
     if ($parse_state eq "login") {
@@ -271,7 +295,7 @@ sub parse_servercmd {
     if (/^%connected/) { main::alarm_handler(); return; }
 
     # beep commands
-    if (/^%g/) { printf("\007"); return; }
+    if (/^%g/) { ui_bell(); return; }
 
     # stupid thing we dont care about ;-)
     if (/%recip_regexp/) { return; }

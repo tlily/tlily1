@@ -1,5 +1,4 @@
 # -*- Perl -*-
-
 package LC::CTerminal;
 
 use Exporter;
@@ -23,7 +22,8 @@ use POSIX;
 	     &term_insert_char
 	     &term_delete_char
 	     &term_get_char
-	     &term_refresh);
+	     &term_refresh
+	     &term_bell);
 
 
 my $term_up = 0;
@@ -180,6 +180,12 @@ sub term_insert_char () {
 # Deletes the character at the current cursor position.
 sub term_delete_char () {
     delch();
+}
+
+
+# Rings the terminal bell
+sub term_bell () {
+    beep();
 }
 
 sub ALT_BACKSPACE () { return sprintf("%c",127); }

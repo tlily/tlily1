@@ -12,10 +12,12 @@ use LC::CTerminal;
 @ISA = qw(Exporter);
 
 @EXPORT = qw(&ui_start &ui_end &ui_attr &ui_output &ui_status &ui_process
-	     &ui_callback);
+	     &ui_callback &ui_bell &ui_password);
 
 
 my $ui_up = 0;
+
+my $password = 0;
 
 my @text_lines = ();
 my @text_sizes = ();
@@ -33,6 +35,8 @@ my $input_pos = 0;
 
 my @input_history = ('');
 my $input_curhistory = 0;
+
+my $input_killbuf = "";
 
 my $status_line = "";
 
@@ -55,6 +59,7 @@ my %key_trans = ('kl'   => \&input_left,
 		 'pgdn' => \&input_pagedown,
 		 'C-f'  => \&input_pagedown,
 		 'nl'   => \&input_accept,
+		 'C-y'  => \&input_yank,
 		 'C-w'  => \&input_killword,
 		 'C-l'  => \&input_refresh,
 		 'C-d'  => \&input_del,
@@ -380,6 +385,11 @@ sub ui_status ($) {
 
 # Positions the input cursor.
 sub input_position_cursor () {
+    if ($password) {
+	term_move($term_lines - $input_height, 0);
+	return;
+    }
+
     term_move($term_lines - $input_height + floor(($input_pos / 80)) - $input_fline,
 	      $input_pos % 80);
 }
@@ -394,6 +404,8 @@ sub input_redraw () {
 
     term_move($term_lines - 1, 0);
     term_delete_to_end();
+
+    return if ($password);
 
     my($i, $line);
     for ($i = 0; $i < length($input_line) / 80; $i += 1) {
@@ -428,6 +440,8 @@ sub input_normalize_cursor () {
 sub input_add ($$$) {
     my($key, $line, $pos) = @_;
     $line = substr($line, 0, $pos) . $key . substr($line, $pos);
+
+    return ($line, $pos + 1, 2) if ($password);
 
     if (length($line) % $term_cols == 0) {
 	return ($line, $pos + 1, 2);
@@ -482,6 +496,8 @@ sub input_bs ($$$) {
     return if ($pos == 0);
     $line = substr($line, 0, $pos - 1) . substr($line, $pos);
 
+    return ($line, $pos + 1, 2) if ($password);
+
     if (length($line) % $term_cols == 0) {
 	return ($line, $pos - 1, 2);
     }
@@ -509,11 +525,20 @@ sub input_del ($$$) {
 }
 
 
+# Yanks the kill bufffer back.
+sub input_yank ($$$) {
+    my ($key, $line, $pos) = @_;
+    $line = substr($line, 0, $pos) . $input_killbuf . substr($line, $pos);
+    return ($line, $pos + length($input_killbuf), 2);
+}
+
+
 # Deletes the word preceding the input cursor.
 sub input_killword ($$$) {
     my ($key, $line, $pos) = @_;
     my $oldlen = length $line;
-    substr($line, 0, $pos) =~ s/\S+\s*$//;
+    substr($line, 0, $pos) =~ s/(\S+\s*)$//;
+    $input_killbuf = $1;
     return ($line, $pos - (length($line) - $oldlen), 2);
 }
 
@@ -521,6 +546,7 @@ sub input_killword ($$$) {
 # Deletes all characters to the end of the line.
 sub input_killtoend ($$$) {
     my($key, $line, $pos) = @_;
+    $input_killbuf = substr($line, $pos);
     return (substr($line, 0, $pos), $pos, 2);
 }
 
@@ -528,6 +554,7 @@ sub input_killtoend ($$$) {
 # Deletes all characters to the beginning of the line.
 sub input_killtohome ($$$) {
     my($key, $line, $pos) = @_;
+    $input_killbuf = substr($line, 0, $pos);
     return (substr($line, $pos), 0, 2);
 }
 
@@ -666,6 +693,18 @@ sub ui_process () {
 
     attr_top();
     return shift @accepted_lines;
+}
+
+
+# Rings the bell.
+sub ui_bell () {
+    term_bell();
+}
+
+
+# Sets password (noecho) mode.
+sub ui_password ($) {
+    $password = $_[0];
 }
 
 1;

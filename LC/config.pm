@@ -24,6 +24,7 @@ sub init {
 	     's|server=s' => \$config{server},
 	       'p|port=i' => \$config{port},
    	          'xyzzy' => \$xyzzy,
+            'zonedelta=i' => \$config{zonedelta},
  	          'snrub' => \$snrub
 	       ) || die "\nUsage: $0 [-[m]ono] [-[s]erver servername] [-[p]ort number]\n\n";
 
