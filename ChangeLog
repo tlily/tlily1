@@ -1,4 +1,6 @@
 Version 0.6c-post
+  * [LC/UI.pm] Better error reporting when a terminal module fail.  [DPN]
+  * [LC/parse.pm] Bugfixes for parsing sends.  Removed quotewords.  [DPN]
   * [LC/UI.pm] Added a "paste mode", in which newlines are mapped into spaces.
     Use M-p to toggle it on and off.  [DPN]
   * [LC/CTerminal.pm, LC/TTerminal.pm] Better handling of terminal resizes.
