@@ -40,7 +40,6 @@ LC::config::init();
 ui_start();
 exp_init();
 cmd_init();
-state_init();
 info_init();
 
 ui_attr('sender','bold');
