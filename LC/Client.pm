@@ -4,6 +4,8 @@ package LC::Client;
 
 use LC::Event;
 use LC::Server;
+use LC::Version;
+
 BEGIN {
     if ($LC::UI::ui_loaded) {
 	LC::UI->import();
@@ -117,9 +119,9 @@ sub set_client_options() {
     # I send it anyway, just for the hell of it.
     #
 
-    server_send("\#\$\# client_version $TL_VERSION\n");
     server_send("\#\$\# client_name TigerLily\n");
     server_send("\#\$\# options +leaf-all +leaf +connected\n");
+    server_send("\#\$\# client_version $TL_VERSION\n");
 }
 
 
