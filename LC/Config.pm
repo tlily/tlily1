@@ -207,6 +207,8 @@ sub snarf_file {
 	$safe->mask($safe->emptymask());
     }
 
+    $safe->share_from('main', [ qw($TL_VERSION %ENV) ]);
+
 #    print STDERR "*** Pre-Dumping ", $safe->root, "($filename)\n";
 #    main::dumpvar($safe->root);
 #    print STDERR "*** Done pre-dumping ", $safe->root, "($filename)\n";

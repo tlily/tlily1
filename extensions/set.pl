@@ -12,6 +12,7 @@ sub dumpit {
 	    ui_output("\t"x$l."$k = ".join(", ", @$v));
 	}
 	elsif(ref($v) eq 'HASH') {
+            next if $k eq "ENV";
 	    ui_output("\t"x$l."$k = HASH");
 	    dumpit($l+1,%$v);
 	}
