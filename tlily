@@ -101,6 +101,7 @@ sub init_connection_handling() {
 	    $state = 'login';
 	    $ievent->{ToUser} = 0;
 	    ui_password(0);
+	    user_password(0);
 	} elsif (($event->{Type} eq 'userinput') && ($state eq 'blurb')) {
 	    $state = 'cxna';
 	} elsif (($event->{Type} eq 'userinput') && ($state eq 'reviewp')) {
@@ -113,6 +114,7 @@ sub init_connection_handling() {
 		 ($event->{Text} =~ /^password:/)) {
 	    $state = 'password';
 	    ui_password(1);
+	    user_password(1);
 	} elsif (($event->{Type} eq 'prompt') &&
 		 ($event->{Text} =~ /^-->/)) {
 	    $state = 'blurb';

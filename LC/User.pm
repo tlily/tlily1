@@ -12,6 +12,7 @@ use LC::Event;
 	     &user_showline
 	     &user_accept
 	     &user_init
+	     &user_password
 	     &help_get_list
 	     &help_get_short
 	     &help_get_long
@@ -22,6 +23,7 @@ use LC::Event;
 
 %commands = ();
 my $token = 0;
+my $password = 0;
 
 
 sub register_user_command_handler($&) {
@@ -83,14 +85,19 @@ sub user_accept() {
     while (1) {
 	my $text = ui_process();
 	last unless (defined $text);
-	user_showline($text);
+	user_showline($text) unless ($password);
 	dispatch_event({Type => 'userinput',
 			Text => $text . "\r\n",
 			ToServer => 1});
-	user_showline($iev{Text}) if ($iev{UI});
     }
 
     return @to_server;
+}
+
+
+# Too many password state variables...this needs to be cleaned up.
+sub user_password($) {
+    $password = $_[0];
 }
 
 
