@@ -10,8 +10,11 @@ use FileHandle;
 
 my $rawfd, $sockfd, $port;
 my $listenhandler;
-# Is there something to hash these on??
-my %cxns;
+# There is little to hash this on, so I will use an ever-increasing
+# scalar to hash on.
+my %cxns, %fds;
+
+my $name = "deadbeef";
 
 # This process accept()s an incoming connection
 sub httpd_accept ($) {
@@ -30,35 +33,38 @@ sub httpd_accept ($) {
 
     $newh = register_iohandler (Handle => $fd,
 				RealHandle => \*New,
+				Name => $name,
 				Mode => 'r',
 				Call => \&httpd_process);
 
-    $cxns{\*New} = $newh;
+    $fds{$name} = $fd;
+    $cxns{$name++} = $newh;
 }
 
 sub httpd_process ($) {
     my ($handler) = @_;
 
+    my $fd = $fds{$handler->{Name}};
     my $buf;
     my $s = new IO::Select;
-    $s->add($handler->{RealHandle});
+    $s->add($fd);
     return if (! ($s->can_read(0)));
 
-    my $rc = sysread($handler->{$RealHandle}, $buf, 4096);
+    my $rc = sysread($fd, $buf, 4096);
     if (($rc < 0)) {
 	return if $errno == EAGAIN;
-	close $handler->{$RealHandle};
+	close $fd;
+	delete $cxns{$handler->{Name}};
 	deregister_handler($handler);
-	delete $cxns{$handler->{RealHandle}};
 	ui_output("(httpd: Error reading socket: $!)");
 	return;
     }
 
 # Closed connection
     if ($rc == 0) {
-	close $cxns{$handler};
+	close $fd;
+	delete $cxns{$handler->{Name}};
 	deregister_handler($handler);
-	delete $cxns{$handler->{RealHandle}};
 	ui_output("(httpd: closing connection)");
 	return;
     }
@@ -103,8 +109,8 @@ sub unload {
     close($rawfd);
     deregister_handler($listenhandler);
     foreach $handler (keys (%cxns)) {
-	close($cxns{$handler}->{RealHandle});
-	deregister_handler($handler);
+	close($fd{$handler});
+	deregister_handler($cxns{$handler});
     }
 }
 
