@@ -189,6 +189,8 @@ my $input_curhistory = 0;
 
 my $input_killbuf = "";
 
+my $input_pastemode = 0;
+
 my $page_status = 'normal';
 my $status_line = "";
 my $status_intern = "";
@@ -219,6 +221,7 @@ my %key_trans = ('kl'   => [ \&input_left ],
 		 'C-y'  => [ \&input_yank ],
 		 'C-w'  => [ \&input_killword ],
 		 'C-l'  => [ \&input_refresh ],
+		 'M-l'  => [ \&input_pastemode ],
 		 'C-d'  => [ \&input_del ],
 		 'C-h'  => [ \&input_bs ],
 		 'bs'   => [ \&input_bs ]
@@ -980,6 +983,8 @@ sub input_nexthistory($$$) {
 sub input_accept($$$) {
     my($key, $line, $pos) = @_;
 
+    return input_add(' ', $line, $pos) if ($input_pastemode);
+
     if (($line eq '') && (($text_l != $#text_lines) ||
 			  ($text_r != line_height($text_l) - 1))) {
 	input_pagedown();
@@ -1005,6 +1010,21 @@ sub input_accept($$$) {
 sub input_refresh($$$) {
     my($key, $line, $pos) = @_;
     redraw();
+    return($line, $pos, 0);
+}
+
+
+# Toggles paste mode.
+sub input_pastemode() {
+    my($key, $line, $pos) = @_;
+    my $paste_prompt = "Paste: ";
+    if ($input_pastemode) {
+	ui_prompt("") if ($input_prompt eq $paste_prompt);
+	$input_pastemode = 0;
+    } else {
+	ui_prompt($paste_prompt) unless ($input_prompt);
+	$input_pastemode = 1;
+    }
     return($line, $pos, 0);
 }
 
