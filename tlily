@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl
+#!/usr/bin/perl
 
 $TL_VERSION="0.1f";
 $debug=0;
