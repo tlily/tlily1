@@ -3,6 +3,7 @@ package LC::parse;                  # -*- Perl -*-
 use Exporter;
 use LC::status_update;
 use LC::Expand;
+use LC::State;
 use LC::config;
 use LC::UI;
 use LC::gag;
@@ -129,7 +130,7 @@ sub parse_line {
     if ($parse_state eq "login") { goto found; }
 
     # /review ##########################################################
-    if (/^\#/) {
+    if (/^\#\s*$/ || /^\# [<>\-\*\(]/) {
 	$parse_state="review";
 	$line="<review>$line</review>";
 	goto found;
@@ -196,31 +197,57 @@ sub parse_line {
 #    }
 
     # /who output ######################################################
-    if (/Name.*On Since/) {
-	if ($cli_command eq "who me") { $parse_state="who me"; return; }
-	if ($cli_command =~ /who/)    { $parse_state="who";    return; }
-
-	$parse_state="who";
+    if (/^  Name.*On Since/) {
+	return if ($cli_command eq "who me");
 	goto found;
     }
-    if (/^\s+----/) {
-	if ($parse_state =~ /who/ && $cli_command =~ /who/) { return; }
+    if (/^\s+----\s+--------\s+----\s+-----\s*$/) {
+	return if ($cli_command eq "who me");
 	goto found;
     }
-    if ($parse_state eq "who me" && $cli_command eq "who me") {
-	my $me=substr($_,2,29);
-	my $blurb;
-	$me =~s/^\s*//g;
-	$me =~s/(\S)\s*$/$1/g;
-	if ($me=~/\[(.*)\]/) {
-	    $blurb=$1;
-	    $me=~s/\[.*\]//g;
+    if ((/^[\>\<\| ][ \-\=\+]/) && ((substr($_, 57, 6) eq '  here') ||
+				    (substr($_, 57, 6) eq '  away') ||
+				    (substr($_, 57, 6) eq 'detach'))) {
+	my($name, $blurb) = (undef, undef);
+	my $state = substr($_, 57, 6);
+	$state =~ s/^\s*//;
+	if (substr($_, 2, 39) =~ /^([^\[]+) \[(.*)\]/) {
+	    ($name, $blurb) = ($1, $2);
+	} else {
+	    $name = substr($_, 2, 39);
+	    $name =~ s/^\s*//;
+	    $name =~ s/\s*$//;
+	    undef $name if (length($name) == 0);
 	}
-	&main::set_status(pseudo => $me, blurb => $blurb);
-	$main::have_pseudo=1;
-	$cli_command=undef;
-	$parse_state=undef;
-	return
+	if ($name) {
+	    set_user_state(Name => $name,
+			   State => $state);
+	    if ($cli_command eq "who me") {
+		&main::set_status(pseudo => $name, blurb => $blurb);
+		$main::have_pseudo=1;
+		$cli_command=undef;
+		return;
+	    }
+	    goto found;
+	}
+    }
+
+    # /what output #####################################################
+    if (/^  Name\s*Users\s*Idle/) {
+	goto found;
+    }
+    if (/^  ----    -----  ----  ---- -----/) {
+	goto found;
+    }
+    if ((/^[\*\# ][ \+]\w/) && ((substr($_, 23, 1) eq 'c') ||
+				(substr($_, 23, 1) eq 'e'))) {
+	my $name = substr($_, 2, 10);
+	$name =~ s/\s*$//;
+	my $type = (substr($_, 23, 1) eq 'c') ? 'connect' : 'emote';
+	my $title = substr($_, 28);
+	set_disc_state(Name => $name,
+		       Type => $type);
+	goto found;
     }
 
     # /how output ######################################################
@@ -257,37 +284,60 @@ sub parse_line {
     
     # *** notices ############################################################
     if (/^\*\*\*/) {
-	s/^\*\*\*//;
+	s/^\*\*\* //;
+	s/^<time>\(\d\d:\d\d\)<\/time> //;
+	s/ \[.*\]//; # Don't really care about blurbs.
+	my $newstate, $oldstate;
 	if (/^(.*) has detached/) {
-	    &main::do_how();
+	    $newstate = 'detach';
+	} elsif (/^(.*) has been detached/) {
+	    $newstate = 'detach';
+	} elsif (/^(.*) has left lily/) {
+	    $newstate = 'gone';
+	} elsif (/^(.*) has idled to death/) {
+	    $newstate = 'gone';
+	} elsif (/^(.*) has idled \"away\"/) {
+	    $oldstate = 'here';
+	    $newstate = 'away';
+	} elsif (/^(.*) is now \"away\"/) {
+	    $oldstate = 'here';
+	    $newstate = 'away';
+	} elsif (/^(.*) has entered lily/) {
+	    $oldstate = 'gone';
+	    $newstate = 'here';
+	} elsif (/^(.*) has reattached/) {
+	    $oldstate = 'gone';
+	    $newstate = 'here';
+	} elsif (/^(.*) is now \"here\"/) {
+	    $oldstate = 'gone';
+	    $newstate = 'here';
 	}
-	if (/^(.*) has been detached/) {
-	    &main::do_how();
-	}
-	if (/^(.*) has entered lily/) {
-	    &main::set_status( here => "incr" );
-	}
-	if (/^(.*) has left lily/) {
-	    &main::do_how();
-	}
-	if (/^(.*) has idled to death/) {
-	    &main::do_how();
-	}
-	if (/^(.*) has idled \"away\"/) {
-	    &main::set_status( here => "decr" );
-	    &main::set_status( away => "incr" );
-	}
-	if (/^(.*) is now \"away\"/) {
-	    &main::set_status( here => "decr" );
-	    &main::set_status( away => "incr" );
-	}
-	if (/^(.*) has reattached/) {
-	    &main::set_status( detached => "decr" );
-	    &main::set_status( here => "incr" );
-	}
-	if (/^(.*) is now \"here\"/) {
-	    &main::set_status( here => "incr" );
-	    &main::set_status( away => "decr" );
+	if ($newstate) {
+	    my $user = $1;
+	    get_user_state(Name => $user, State => \$oldstate)
+		unless (defined($oldstate));
+	    log_info("$user: $oldstate -> $newstate");
+	    if ($oldstate eq 'here') {
+		&main::set_status(here => 'decr');
+	    } elsif ($oldstate eq 'away') {
+		&main::set_status(away => 'decr');
+	    } elsif ($oldstate eq 'detach') {
+		&main::set_status(detached => 'decr');
+	    }
+
+	    if ($newstate ne 'gone') {
+		set_user_state(Name => $user, State => $newstate);
+	    } else {
+		destroy_user($user);
+	    }
+
+	    if ($newstate eq 'here') {
+		&main::set_status(here => 'incr');
+	    } elsif ($newstate eq 'away') {
+		&main::set_status(away => 'incr');
+	    } elsif ($newstate eq 'detach') {
+		&main::set_status(detached => 'incr');
+	    }
 	}
     }
 
