@@ -62,6 +62,8 @@ use POSIX;
             '^login:',
 	    '^password:');
 
+my $partial;
+
 my $msg_state = undef;
 my $msg_sender;
 my @msg_dest;
@@ -330,23 +332,33 @@ sub parse_line($$) {
 
     # sends ##################################################################
 
-    # private headers
-    if (($line =~ /^ >>/) || ($line =~ /^ \\<\\</)) { 
+    if (($line =~ /^ >>/) || ($line =~ /^ \\<\\</) ||
+	($line =~ /^ ->/) || ($line =~ /^ \\<-/)) {
 	my($blurb);
 
-	if ($line =~ s|from ([^\[]*) \[(.*)\], to (.*):|from <sender>$1</sender> \[<blurb>$2</blurb>\], to <dest>$3</dest>:|) {
+	if (defined $partial) {
+	    $line = $partial . substr($line, 4);
+	    undef $partial;
+	}
+
+	if ($line !~ /:\s*$/) {
+	    $partial = $line;
+	    return 0;
+	}
+
+	if ($line =~ s|rom ([^\[]*) \[(.*)\], to (.*):|rom <sender>$1</sender> \[<blurb>$2</blurb>\], to <dest>$3</dest>:|) {
 	    $msg_sender = $1;
 	    $blurb = $2;
 	    @msg_dest = split /, /, $3;
-	} elsif ($line =~ s|from (.*), to (.*):|from <sender>$1</sender>, to <dest>$2</dest>:|) {
+	} elsif ($line =~ s|rom (.*), to (.*):|rom <sender>$1</sender>, to <dest>$2</dest>:|) {
 	    $msg_sender = $1;
 	    $blurb = undef;
 	    @msg_dest = split /, /, $2;
-	} elsif ($line =~ s|from ([^\[]*) \[(.*)\]:|from <sender>$1</sender> \[<blurb>$2</blurb>\]:|) {
+	} elsif ($line =~ s|rom ([^\[]*) \[(.*)\]:|rom <sender>$1</sender> \[<blurb>$2</blurb>\]:|) {
 	    $msg_sender = $1;
 	    $blurb = $2;
 	    @msg_dest = ();
-	} elsif ($line =~ s|from (.*):|from <sender>$1</sender>:|) {
+	} elsif ($line =~ s|rom (.*):|rom <sender>$1</sender>:|) {
 	    $msg_sender = $1;
 	    $blurb = undef;
 	    @msg_dest = ();
@@ -355,39 +367,25 @@ sub parse_line($$) {
 	    goto found;
 	}
 
-	%event = (Type => 'privhdr',
-		  From => $msg_sender,
-		  To => \@msg_dest);
+	if (($line =~ /^ >>/) || ($line =~ /^ \\<\\</)) { 
+	    # private headers
+	    %event = (Type => 'privhdr',
+		      From => $msg_sender,
+		      To => \@msg_dest);
 
-	$msg_state = 'private';
-	$line = "<privhdr>$line</privhdr>";
-	goto found;
-    }
-
-    # public headers
-    if (($line =~ /^ ->/) || ($line =~ /^ \\<-/)) {
-	my($blurb);
-
-	if ($line =~ s|From ([^\[]*) \[(.*)\], to (.*):|From <sender>$1</sender> \[<blurb>$2</blurb>\], to <dest>$3</dest>:|) {
-	    $msg_sender = $1;
-	    $blurb = $2;
-	    @msg_dest = split /, /, $3;
-	} elsif ($line =~ s|From (.*), to (.*):|From <sender>$1</sender>, to <dest>$2</dest>:|) {
-	    $msg_sender = $1;
-	    $blurb = undef;
-	    @msg_dest = split /, /, $2;
+	    $msg_state = 'private';
+	    $line = "<privhdr>$line</privhdr>";
+	    goto found;
 	} else {
-	    # Now what?
+	    # public headers
+	    %event = (Type => 'pubhdr',
+		      From => $msg_sender,
+		      To => \@msg_dest);
+
+	    $msg_state = 'public';
+	    $line = "<pubhdr>$line</pubhdr>";
 	    goto found;
 	}
-
-	%event = (Type => 'pubhdr',
-		  From => $msg_sender,
-		  To => \@msg_dest);
-
-	$msg_state = 'public';
-	$line = "<pubhdr>$line</pubhdr>";
-	goto found;
     }
 
     # message body
