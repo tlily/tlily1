@@ -1,5 +1,5 @@
 # -*- Perl -*-
-# $Header: /data/cvs/tlily/LC/Httpd.pm,v 2.4 1999/01/14 00:21:42 steve Exp $
+# $Header: /data/cvs/tlily/LC/Httpd.pm,v 2.5 1999/01/28 22:18:20 steve Exp $
 package LC::Httpd;
 
 =head1 NAME
@@ -111,6 +111,10 @@ my $listenhandle;
 # They are hashed on $handle->{Id}.
 my %fds, %handles;
 
+# %files contains the allowed files, hashed on their aliases.
+# %passive contains the allowed files to PUT, hashed on their aliases.
+my %files, %passive;
+
 # $timer is the handle to the timeout function.  it is deregistered if active
 # when registering a new file to serve.
 my $timer = 0;
@@ -132,7 +136,6 @@ sub httpd_listen() {
     }
     return "Could not find a free port to bind to." unless $sock;
 
-    # register the iohandler _before_ we listen, so we don't create a race.
     $listenhandle = register_iohandler( Handle => $sock,
 					Mode => 'r',
 					Call => \&httpd_accept
@@ -179,30 +182,30 @@ sub httpd_accept ($) {
 
 sub httpd_process ($) {
     my ($handle) = @_;
-
+	
     my $fd = $handle->{Handle};
     ui_output ("(Httpd.pm: Processing handle $handle)") if $config{debughttpd};
     return unless ((ui_select([$fd], [], [], 0)));
-
+	
     my $rc = sysread($fd, $buf, 4096);
     if ($rc < 0) {
-	return if $errno == EAGAIN();
-	close_webhandle ($handle);
-	ui_output ("(Httpd.pm: Error reading from client: $!)")
-	    if $config{debughttpd};
-	return;
+		return if $errno == EAGAIN();
+		close_webhandle ($handle);
+		ui_output ("(Httpd.pm: Error reading from client: $!)")
+		  if $config{debughttpd};
+		return;
     }
-
+	
     if ($rc == 0) {	# Closed connection
-	close_webhandle ($handle);
-	ui_output ("(Httpd.pm: Connection closed.)") if $config{debughttpd};
+		close_webhandle ($handle);
+	   	ui_output ("(Httpd.pm: Connection closed.)") if $config{debughttpd};
     }
 
     dispatch_event ( { Type => 'httpdinput',
-		       Text => $buf,
-		       Handle => $handle,
-		       ToUser => 0,
-		   } );
+					   Text => $buf,
+					   Handle => $handle,
+					   ToUser => 0,
+					 } );
 }
 
 # Close a socket, and clean up.
@@ -211,6 +214,11 @@ sub close_webhandle ($) {
     my ($handle) = @_;
 
     ui_output("(Httpd.pm: Closing handle $handle)") if $config{debughttpd};
+	# Let the parser know that this handle no longer exists
+	dispatch_event ( { Type => 'httpdclose',
+					   Handle => $handle,
+					   ToUser => 0,
+					 } );
     deregister_handler ($handle->{Id});
     $handle->{Handle}->close();
     delete $handles{$handle->{Id}};
@@ -221,12 +229,12 @@ sub close_webhandle ($) {
 
 sub httpd_shutdown () {
     return unless $port;
-
+	
     ui_output("(Httpd.pm: Cleaning up)") if $config{debughttpd};
     $sock->close();
     deregister_handler($listenhandle);
     foreach $handle (keys (%handles)) {
-	close_webhandle($handle);
+		close_webhandle($handle);
     }
     $port = 0;
 }
@@ -278,18 +286,22 @@ sub httpd_error(%) {
 sub register_webfile(%) {
     my (%args) = @_;
 
-    unless ($config{debughttpd}) {
-	return -1 unless -r $args{File};
+    unless ($config{debughttpd} || $args{Passive}) {
+		return -1 unless -r $args{File};
     }
-
+	
     # If there's a timer pending, stop it.
     deregister_handler($timer) if $timer;
     $timer = 0;
 
+    # Passive webfile.  In other words, this is something that we're going
+    # to accept for a PUT.
+    my $f = ($args{Passive}) ? \%passive : \%files;
+	
     if (defined ($args{Alias})) { 
-	$files{$args{Alias}} = $args{File};
+		$f->{$args{Alias}} = $args{File};
     } else {
-	$files{$args{File}} = $args{File};
+		$f->{$args{File}} = $args{File};
     }
 
     return $port if $port;
@@ -298,63 +310,72 @@ sub register_webfile(%) {
 
 sub deregister_webfile($) {
     my ($file) = @_;
-
+	
     delete $files{$file};
+    delete $passive{$file};
 
-    if (!(%files)) {
-	$timer = register_timedhandler(Interval => $config{httpdtimeout},
-		   		       Call => sub { httpd_shutdown(); });
+    if (!(%files || %passive)) {
+		$timer = register_timedhandler(Interval => $config{httpdtimeout},
+									   Call     => sub { httpd_shutdown(); });
     }
-
+	
     return;
 }
 
+sub check_passive($) {
+    my ($alias) = @_;
+	
+    return 1 if $passive{$alias};
+    return 0;
+}
+
+
 sub send_rawfile($) {
     my ($handle) = @_;
-
+	
     my $buf;
-
+	
     my $fd = $handle->{Handle};
     if (read $handle->{Fd}, $buf, 4096) {
-	print $fd $buf;
+		print $fd $buf;
     } else {
-	close_webhandle($handle->{WHand});
-	close $handle->{Fd};
-	# Send an event that the file is done
-	dispatch_event({ Type => 'httpdfiledone',
-			ToUser => 0,
-			File => $handle->{File}
-		      });
-	deregister_handler($handle->{Id});
+		close_webhandle($handle->{WHand});
+		close $handle->{Fd};
+		# Send an event that the file is done
+		dispatch_event({ Type => 'httpdfiledone',
+						 ToUser => 0,
+						 File => $handle->{File}
+					   });
+		deregister_handler($handle->{Id});
     }
 }
 
 sub send_webfile($$;$) {
     my ($file, $handle, $head) = @_;
-
+	
     ui_output("(Httpd.pm: Requested file $file)") if $config{debughttpd};
-
+	
     if ((!exists ($files{$file}))) {
-	httpd_error( Handle => $handle,
-		     ErrNo  => 404,
-		     Title  => "File not found",
-		     Long   => "The url $file is unavailable on this server.",
-		     Head   => $head,
-		   );
-	return 0;
+		httpd_error( Handle => $handle,
+					 ErrNo  => 404,
+					 Title  => "File not found",
+					 Long   => "The url $file is unavailable on this server.",
+					 Head   => $head,
+				   );
+		return 0;
     }
-
+	
     # Open the file, get the length, and set up (and send) the headers.
     if ((! -r $files{$file}) || !(open IN, $files{$file})) {
-	httpd_error( Handle => $handle,
-		     ErrNo  => 403,
-		     Title  => "Forbidden",
-		     Long   => "Unable to open $file.",
-		     Head   => $head,
-		   );
-	return 0;
+		httpd_error( Handle => $handle,
+					 ErrNo  => 403,
+					 Title  => "Forbidden",
+					 Long   => "Unable to open $file.",
+					 Head   => $head,
+				   );
+		return 0;
     }
-
+	
     my $fd = $handle->{Handle};
     print $fd "HTTP/1.0 200 OK\r\n";
     print $fd "Date: " . httpd_date() . "\r\n";
@@ -363,19 +384,19 @@ sub send_webfile($$;$) {
     print $fd "Content-Type: application/octet-stream\r\n";
     print $fd "Cache-Control: private\r\n";
     print $fd "\r\n";
-
+	
     # Then set up a iohandler to send the data itself in chunks.
-    if (! $head) {
-	register_iohandler ( Handle => $fd,
-			     WHand  => $handle,
-			     File   => $file,
-			     Fd     => \*IN,
-			     Mode   => 'w',
-			     Call   => \&send_rawfile
-			   );
-    }
-
+	unless ($head) {
+		register_iohandler ( Handle => $fd,
+							 WHand  => $handle,
+							 File   => $file,
+							 Fd     => \*IN,
+							 Mode   => 'w',
+							 Call   => \&send_rawfile
+						   );
+	}
+	
     return 1;
 }
-
+				 
 1;
