@@ -1,7 +1,7 @@
 Version 0.8b
   * [extensions/zone.pl, LC/StatusLine.pm] Fix overflows when $zonedelta or
-														 $clockdelta pushes the time over
-								                   24 hours. [SMC]
+                                           $clockdelta pushes the time over
+                                           24 hours. [SMC]
   * [LC/Extend.pm] Load extensions properly when a path is specified. [DPN]
   * [extensions/after.pl] %after lists afterids.  %after cancel <id>
                           cancels an after. [CWS]
