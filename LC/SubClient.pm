@@ -41,9 +41,6 @@ my (%opfx,%ipfx);
 my $subcli_num;
 $status="";
 
-# Or else we get big WARNING:s.
-$SIG{PIPE} = "IGNORE";
-
 register_statusline(Var => \$status,
                     Position => "FORCELEFT");
 
@@ -111,21 +108,16 @@ sub subclient_del {
 	    $rhandle{$subcli}->close;
 	    $whandle{$subcli}->close;
 	    $ehandle{$subcli}->close;
-		 ui_end();
 	    kill "TERM",$pid{$subcli};
-		 ui_start();
-# Handled now by the SIGCHLD handler
-#	    waitpid($pid{$subcli},&WNOHANG);
+	    waitpid($pid{$subcli},&WNOHANG);
 	}
     }
     @subcli=@newsubcli;
     $subcli_num=0;
     if ($#subcli == 0) {
 	$status="";
-	$SIG{CHLD} = "DEFAULT";
     } else {
 	$status=ui_escape("<$subcli[$subcli_num]>");
-	$SIG{CHLD} = \&sig_chld_handler;
     }
     redraw_statusline(1);       
 
@@ -152,19 +144,15 @@ sub subclient_add {
 			      Call => \&sc_userinput_handler);
     }
 
-    $SIG{CHLD} = \&sig_chld_handler;
-
     $rh=$rhandle{$subcli}=new FileHandle;
     $wh=$whandle{$subcli}=new FileHandle;
     $eh=$ehandle{$subcli}=new FileHandle;
     
     # fork off the process and hook it into tigerlily..
-	 ui_end();
-    eval { $pid = open3($wh, $rh, $eh, $proc); };
-	 ui_start();
-    if (! $pid || $@) {
+    $pid = open3($wh, $rh, $eh, $proc);
+    if (! $pid) {
 	ui_output("(Error starting subclient)");
-	exit;
+	return;
     }
 
     $ipfx{$subcli}=$ipfx;
@@ -201,9 +189,9 @@ sub subcli_input_process {
     }     
 
     my $buf;
-    my $s=new IO::Select;
-    $s->add($hdl);
-    if (! ($s->can_read(0))) { return; }
+#    my $s=new IO::Select;
+#    $s->add($hdl);
+#    if (! ($s->can_read(0))) { return; }
 
     my $rc = sysread($hdl,$buf,4096);
     if ($rc < 0) {
@@ -257,16 +245,7 @@ sub sc_userinput_handler {
     return 0;
 }
 
-sub sig_chld_handler {
-    my $child;
-	 my %pids = reverse %pid;
 
-    while ($child = waitpid(-1, WNOHANG)) {
-	last if (!$pids{$child});
-   subclient_del("remove", $pids{$child});
-	 }
 
-#	 if ($#subcli > 0) {
-#	$SIG{CHLD} = \&sig_chld_handler
-#	 }
-}
+
+
