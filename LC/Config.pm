@@ -7,31 +7,146 @@ use Exporter;
 #require "LC/dumpvar.pl";
 
 @ISA = qw(Exporter);
-@EXPORT = qw(&config_init &config_ask %config);
+@EXPORT = qw(&config_register_callback &config_init &config_ask %config);
+
+my %obj;
+my $nextid=1;
+
+sub TIEHASH {
+    my $self = shift;
+
+    my $it = {
+	LIST => {},
+	STORE_CALLBACKS => {},
+	FETCH_CALLBACKS => {},
+	DELETE_CALLBACKS => {},
+    };
+
+    return bless $it, $self;
+}
+
+sub FETCH {
+    my($self,$key) = @_;
+    foreach $tr (@{$self->{FETCH_CALLBACKS}{$key}},
+                 @{$self->{FETCH_CALLBACKS}{'-ALL-'}})
+    {
+	&{$tr->{Call}}($tr, Key => \$key);
+    }
+    return $self->{LIST}{$key};
+}
+
+sub STORE {
+    my($self,$key,$val) = @_;
+    my $tr;
+#    print STDERR "STORE key\n";
+#    main::dumpValue($key);
+#    print STDERR "STORE val\n";
+#    main::dumpValue($val);
+    foreach $tr (@{$self->{STORE_CALLBACKS}{$key}},
+                 @{$self->{STORE_CALLBACKS}{'-ALL-'}})
+    {
+	&{$tr->{Call}}($tr, Key => \$key, Value => \$val);
+    }
+#    print STDERR "STORE key after\n";
+#    main::dumpValue($key);
+#    print STDERR "STORE val after\n";
+#    main::dumpValue($val);
+    $self->{LIST}{$key} = $val;
+}
+
+sub DELETE {
+    my($self,$key) = @_;
+    foreach $tr (@{$self->{DELETE_CALLBACKS}{$key}},
+                 @{$self->{DELETE_CALLBACKS}{'-ALL-'}})
+    {
+	&{$tr->{Call}}($tr, Key => \$key);
+    }
+    delete $self->{LIST}{$key};
+}
+
+sub CLEAR {
+    my($self) = @_;
+    my $k;
+    foreach $k (keys %{$self->{LIST}}) {
+	$self->DELETE($k);
+    }
+}
+
+sub EXISTS {
+    my($self,$key) = @_;
+    return exists $self->{LIST}{$key};
+}
+
+sub FIRSTKEY {
+    my($self) = @_;
+    my $a = keys %{$self->{LIST}}; # Reset each() iterator.
+
+    return each %{$self->{LIST}};
+}
+
+sub NEXTKEY {
+    my($self,$lkey) = @_;
+    return each %{$self->{LIST}};
+}
+
+sub DESTROY {
+    my($self) = @_;
+}
+
+sub config_register_callback {
+    my %args = @_;
+    $args{Id} = $nextid++;
+    if(!$args{List}) { $args{List} = 'config'; }
+    push @{$obj{$args{List}}->{$args{State}."_CALLBACKS"}{$args{Variable}}},
+	\%args;
+    return $args{Id};
+}
+
+sub config_remove_callback {
+    1;
+#    my $id = @_;
+#    my($lst,$mode,$var);
+#    foreach $lst (keys %obj) {
+#	foreach $mode (qw(STORE FETCH DELETE)) {
+#	    foreach $var (keys %{$obj{$lst}->{$mode."_CALLBACKS"}}) {
+#		print STDERR "remove $id\n";
+#		main::dumpValue($obj{$lst}->{$mode."_CALLBACKS"}{$var});
+#		@{$obj{$lst}->{$mode."_CALLBACKS"}{$var}} =
+#		    grep {$_->{Id} != $id} @{$obj{$lst}->{$mode."_CALLBACKS"}{$var}};
+#	    }
+#	}
+#    }
+}
+
+sub collapse_tr {
+    my($tr, %ev) = @_;
+#    print STDERR "config(load)\n";
+#    main::dumpValue($config{load});
+#    print STDERR "collapse ev before\n";
+#    main::dumpValue(\%ev);
+    ${$ev{Value}} = collapse_list(${$ev{Value}});
+#    print STDERR "collapse ev after\n";
+#    main::dumpValue(\%ev);
+}
 
 sub config_init {
+    $obj{config}      = tie %config, LC::Config;
+    $obj{color_attrs} = tie %color_attrs, LC::Config;
+    $obj{mono_attrs}  = tie %mono_attrs, LC::Config;
+    $config{color_attrs} = \%color_attrs;
+    $config{mono_attrs}  = \%mono_attrs;
+
+    config_register_callback(Variable => 'load',
+                             List => 'config',
+                             State => 'STORE',
+                             Call => \&collapse_tr);
+    config_register_callback(Variable => 'slash',
+                             List => 'config',
+                             State => 'STORE',
+                             Call => \&collapse_tr);
+
     read_init_files();
     parse_command_line();
-
-#    print STDERR "*** load list ***\n";
-#    print STDERR join(", ", @{$config{load}}), "\n";
-#    print STDERR "*** Done load list ***\n";
-
-    $config{load} = collapse_list($config{load});
-
-#    print STDERR "*** Final load list ***\n";
-#    print STDERR join(", ", @{$config{load}}), "\n";
-#    print STDERR "*** Done final load list ***\n";
-
-#    print STDERR "*** slash list ***\n";
-#    print STDERR join(", ", @{$config{slash}}), "\n";
-#    print STDERR "*** Done slash list ***\n";
-
-    $config{slash} = collapse_list($config{slash});
-
-#    print STDERR "*** Final slash list ***\n";
-#    print STDERR join(", ", @{$config{slash}}), "\n";
-#    print STDERR "*** Done final slash list ***\n";
 }
 
 sub read_init_files {
@@ -41,7 +156,7 @@ sub read_init_files {
 	print STDERR "Warning: Global configuration file ",
 	    $main::TL_LIBDIR."/tlily.global", "\nnot found.  ";
 	print STDERR "TigerLily may not be properly installed.\n";
-	sleep 1;
+	sleep 2;
     }
 
     foreach $ifile ($main::TL_LIBDIR."/tlily.global",
@@ -64,7 +179,7 @@ sub read_init_files {
 		    $config{$key} = $entry;
 		}
 		if(defined @entry) {
-		    push(@{$config{$key}}, @entry);
+		    $config{$key} = [ @{$config{$key}}, @entry ];
 		}
 		if(defined %entry) {
 		    my($k);
@@ -84,6 +199,7 @@ sub read_init_files {
 sub snarf_file {
     my($filename, $safe) = @_;
 
+    # Copied from Expand.pm
     if ($Safe::VERSION >= 2) {
 	$safe->deny_only("system");
 	$safe->permit("system");
@@ -96,7 +212,7 @@ sub snarf_file {
 #    print STDERR "*** Done pre-dumping ", $safe->root, "($filename)\n";
 
     $safe->rdo($filename);
-    die "error: $@" if $@;
+    die "config error: $@" if $@;
 
 #    print STDERR "*** Dumping ", $safe->root, "($filename)\n";
 #    main::dumpvar($safe->root);
@@ -108,7 +224,7 @@ sub parse_command_line {
 
     while(@ARGV) {
 	if($ARGV[0] =~ /^-(h|help|\?)$/) {
-	    Usage; exit;
+	    &Usage; exit;
 	}
 	if($ARGV[0] =~ /^-(s|server)$/) {
 	    shift @ARGV; $config{server} = shift @ARGV; next;
@@ -118,15 +234,6 @@ sub parse_command_line {
 	}
 	if($ARGV[0] =~ /^-(m|mono)$/) {
 	    shift @ARGV; $config{mono} = 1; next;
-	}
-	if($ARGV[0] eq '-noauto') {
-	    shift @ARGV; $config{noauto} = 1; next;
-	}
-	if($ARGV[0] eq '-snrub') {
-	    shift @ARGV; $snrub = 1; next;
-	}
-	if($ARGV[0] eq '-xyzzy') {
-	    shift @ARGV; $xyzzy = 1; next;
 	}
 	if($ARGV[0] =~ /^-(\w+)=(\w+)$/) {
 	    my($var,$val) = ($1,$2);
@@ -139,21 +246,13 @@ sub parse_command_line {
 	    shift @ARGV; next;
 	}
     }
-#    GetOptions( 'm|mono!' => \$config{mono},
-#	     's|server=s' => \$config{server},
-#	       'p|port=i' => \$config{port},
-#	        'pager=i' => \$config{pager},
-#   	          'xyzzy' => \$xyzzy,
-#            'zonedelta=i' => \$config{zonedelta},
-# 	          'snrub' => \$snrub
-#	       ) || die "\nUsage: $0 [-[m]ono] [-zonedelta <delta>] [-[s]erver servername] [-[p]ort number] [-pager 0|1]\n\n";
 
-    if ($snrub) {
+    if ($config{snrub}) {
 	print "Now is the time for all good women to foo their bars at their nation.  Random text is indeed random, and foo bar baz to you and me.  Bizboz, barf, fooble the toys.  Narf.  Feeb.  Frizt the cat.  There is a chair.  Behind the chair is a desk.  Atop the desk is a computer.  Before the computer is a Kosh.  Below the Kosh is a chair.\nPerl is a computer language used by computer geeks, hackers, users, administrators, and other people of all stripes.  It was written by Larry Wall, and has been hacked on by many, many others.  http://www.rpi.edu/~neild/pictures/hot-sex-gif.I-dare-you-to-work-out-how-to-wrap-this\n";
 	exit(42);
     }	
 
-    if ($xyzzy) {
+    if ($config{xyzzy}) {
 	print "\nconfig options:\n";
 
 	foreach (keys %config) { print "$_: $config{$_}\n"; }
@@ -165,7 +264,9 @@ sub parse_command_line {
 sub collapse_list {
     my($lref) = @_;
     my($ext,%list);
-    foreach $ext (@$lref) {
+#    print STDERR "collapse lref\n";
+#    main::dumpValue($lref);
+    foreach $ext (@{$lref}) {
 	if($ext =~ /^-(.*)$/) {
 	    delete $list{$1};
 	} else {
@@ -174,10 +275,12 @@ sub collapse_list {
 #	print STDERR "*** interim list ($ext)***\n";
 #	print STDERR join(", ",keys(%list)), "\n";
 #	print STDERR "*** Done interim list ***\n";
-    }
+   }
     [keys %list];
 }
 
+# Tells the caller whether the named /command can
+# be intercepted.
 sub config_ask {
 	my($cmd) = @_;
 	return (grep($_ eq $cmd, @{$config{slash}}));
@@ -188,6 +291,86 @@ sub Usage {
 Usage: $0 [-m[ono]] [-zonedelta=<delta>] [-[s]erver servername] [-[p]ort number] [-pager=0|1] [-<configvar>[=<configvalue>]\n";
 );
 }
+
+=head1 NAME
+
+LC::Config - Configuration Handling
+
+=head1 SYNOPSIS
+
+    use LC::Config;
+
+    config_init();
+
+    $id = config_register_callback(State => STORE,
+				   Variable => mono,
+                                   List => 'config'
+				   Call => \&set_colors);
+
+    if(config_ask('info')) {
+	&do_something();
+    }
+
+    if($config{zonedelta} != 0) {
+	&do_something_else();
+    }
+
+=head1 DESCRIPTION
+
+The Config module is responsible for reading and holding all the user
+preferences of the tigerlily session.
+
+=head2 Configuration Files
+
+Configiration files are perl code.  After evaluation, all variables set
+in a configuration file are added as elements of the %config hash.
+
+=over 10
+
+=item Global
+
+The global configuration file is where all the defaults for all features are
+stored.  This should only be edited when new features requiring a new config
+option are needed, or when the default settings for a feature are changed.
+
+Default Location: /usr/local/lib/tlily/tlily.global
+
+=item Site
+
+The site configuration file is where the local sysadmin should put settings
+which should override/augment the global defaults for all the users at their
+site.
+
+Default Location: /usr/local/etc/tlily.site
+
+=item User
+
+The user configuration file is where each user can put settings which should
+override/augment the global and site configuration.
+
+Default Location: \$HOME/.lily/tlily/tlily.cf
+
+=item Command Line
+
+The last place which can override config options is the command line.  See
+F<The Command Line> below for more information.
+
+=back
+
+=head2 The Command Line
+
+Convenience options like [CB]<-p> for [CB]<-port> and [CB]<-s> for
+[CB]<-server> are special-cased in parse_command_line().  When adding a new
+config option, if -foo should set $config{foo}, do not add any code to
+parse_command_line(); it will be handled by the catch-all case which
+turns [CB]<-foo> into $config{foo} = 1 and [CB]<-foo=bar> into
+$config{foo} = bar.
+
+=head1 BUGS
+
+You can not currently remove a config callback.
+
+=cut
 
 
 1;
