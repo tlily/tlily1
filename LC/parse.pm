@@ -70,6 +70,7 @@ my $msg_wrapchar;
 my @msg_dest;
 my @msg_tags;
 my $msg_raw;
+my $msg_signal = 0;
 
 
 # Take raw server output, and deal with it.
@@ -110,6 +111,7 @@ sub parse_connected($$) {
 
 
 # The big one: take a line from the server, and decide what it is.
+my $signal = undef;
 sub parse_line($$) {
     my($ev, $h) = @_;
 
@@ -120,7 +122,6 @@ sub parse_line($$) {
     $line =~ s/([\<\\])/\\$1/g;
     chomp $line;
 
-    my $signal = undef;
     my $cmdid = undef;
     my $review = undef;
     my $hidden = undef;
@@ -699,6 +700,8 @@ sub parse_line($$) {
     $event{Signal} = 'default' if ($signal);
     $event{Id} = $cmdid;
     $event{Text} = $line;
+
+    $signal = undef;
 
     #
     # The "Raw" field contains the raw server output, except for the
