@@ -1,0 +1,25 @@
+Bugs to fix:
+- Make %version do an implicit /display version.
+
+- Lines with embedded newlines trigger a display bug.
+
+- Line tagging is useless.
+
+- Emote sends are not parsed properly during /reviews.
+
+
+Feature requests:
+- Make home/end do something.  (C-a/C-e or M-</M->)  (Honker suggests making
+  this dependant on the position of the cursor in the line.)
+
+- MOO programming features.
+
+- Update help text.
+
+- %set command.
+
+- From Josh: "a control key that toggles off <cr> detection. So (say it
+  was C-u), I could type C-u, then paste in a multiline quote, then C-u
+  again and enter.  While it was on, it would say something on the statys
+  line."
+
