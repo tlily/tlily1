@@ -1,5 +1,5 @@
 # -*- Perl -*-
-# $Header: /data/cvs/tlily/LC/Extend.pm,v 2.5 1998/10/25 18:50:32 mjr Exp $
+# $Header: /data/cvs/tlily/LC/Extend.pm,v 2.6 1998/12/04 01:10:49 josh Exp $
 package LC::Extend;
 
 use Exporter;
@@ -11,11 +11,11 @@ use LC::Config;
 use LC::Event;
 
 BEGIN {
-    if ($main::load_ui) {
+    if ($LC::UI::ui_loaded) {
 	require LC::User;      LC::User->import();
 	require LC::State;     LC::State->import();
 	require LC::SubClient; LC::SubClient->import();
-	require LC::UI;        LC::UI->import();
+	LC::UI->import();
     } else {
 	sub ui_output { print "@_\n"; } 
     }
@@ -89,7 +89,7 @@ sub extension($;$) {
 
     $safe->share(@share);
     # This only works in perl 5.003_07+
-    $safe->share_from('main', [ qw($TL_VERSION %ENV %INC @INC $@ $load_ui $] $$) ]);
+    $safe->share_from('main', [ qw($TL_VERSION %ENV %INC @INC $@ $] $$) ]);
         
     my $old = $Extensions{/current/};
     $Extensions{$name} = { File => $filename,
@@ -216,7 +216,7 @@ sub extension_cmd($) {
     }
 }
 
-if ($main::load_ui) {
+if ($LC::UI::ui_loaded) {
   LC::User::register_user_command_handler('extension', \&extension_cmd);
   LC::User::register_help_short('extension', "manage tlily extensions");
   LC::User::register_help_long('extension', "
@@ -266,7 +266,7 @@ sub deregister_handler($) {
 
 
 BEGIN {
-    if ($main::load_ui) {
+    if ($LC::UI::ui_loaded) {
 	sub register_statusline {
 	    my(%h) = @_;
 	    my $id = &LC::StatusLine::register_statusline(%h);

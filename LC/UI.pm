@@ -36,8 +36,10 @@ use LC::Config;
 use Exporter;
 @ISA = qw(Exporter);
 
-use vars qw(@ISA @EXPORT $ui_cols);
+use vars qw(@ISA @EXPORT $ui_cols $ui_loaded);
 use strict;
+
+$ui_loaded = 1;
 
 @EXPORT = qw(&ui_start
 	     &ui_end

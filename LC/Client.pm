@@ -5,8 +5,8 @@ package LC::Client;
 use LC::Event;
 use LC::Server;
 BEGIN {
-    if ($main::load_ui) {
-	require LC::UI;  LC::UI->import();
+    if ($LC::UI::ui_loaded) {
+	LC::UI->import();
 	require LC::User; LC::User->import();
     } else {
         sub ui_password { 0; }
@@ -17,7 +17,7 @@ BEGIN {
 use Exporter;
 @ISA=qw(Exporter);
 @EXPORT=qw(&client_init &register_exithandler);
-use vars qw($exit_handler);
+use vars qw($exit_handler $server_iohandler);
 
 sub register_exithandler {
     my ($handler)=@_;
@@ -32,7 +32,7 @@ sub client_init() {
 		       Mode => 'r',
 		       Name => 'a',
 		       Call => \&server_reader);
-
+    
     register_eventhandler(Call => sub {
 	my($event,$handler) = @_;
 	my $os = $state;

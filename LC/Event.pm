@@ -1,5 +1,5 @@
 # -*- Perl -*-
-# $Header: /data/cvs/tlily/LC/Event.pm,v 2.3 1998/11/19 01:25:00 steve Exp $
+# $Header: /data/cvs/tlily/LC/Event.pm,v 2.4 1998/12/04 01:10:48 josh Exp $
 package LC::Event;
 
 # NOTES ON MEMORY LEAKS
@@ -162,8 +162,8 @@ use IO::Select;
 
 use LC::Config;
 BEGIN {
-    if ($main::load_ui) {
-	require LC::UI;  LC::UI->import();	
+    if ($LC::UI::ui_loaded) {
+	LC::UI->import();	
     } else {
 	sub ui_select ($$$$) {
 	    my($sel_r,$sel_w,$sel_e,$timeout)=@_;
@@ -182,6 +182,7 @@ BEGIN {
 	     &register_iohandler
 	     &register_timedhandler
 	     &deregister_handler
+	     &deregister_all_handlers
 	     &dispatch_event
 	     &event_loop);
 
@@ -234,7 +235,6 @@ sub deregister_handler($) {
 
     print STDERR "EV: deregistered: id=$h{Id}\n" if ($config{edebug});
 }
-
 
 sub register_iohandler(%) {
     my(%h) = @_;
