@@ -17,7 +17,9 @@ use LC::Event;
 	     &help_get_short
 	     &help_get_long
 	     &register_help_short
+	     &deregister_help_short
 	     &register_help_long
+	     &deregister_help_long
 	     );
 
 
@@ -54,6 +56,11 @@ sub register_help_short {
     $helpshort{$cmd}=$help;
 }
 
+sub deregister_help_short {
+    my($cmd) = @_;
+    delete $helpshort{$cmd};
+}
+
 sub help_get_long {
     my($cmd) = @_;
     $cmd=~s/^\%//g;
@@ -63,6 +70,11 @@ sub help_get_long {
 sub register_help_long {
     my($cmd,$help) = @_;
     $helplong{$cmd}=$help;
+}
+
+sub deregister_help_long {
+    my($cmd) = @_;
+    delete $helplong{$cmd};
 }
 
 

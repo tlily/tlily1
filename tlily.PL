@@ -210,7 +210,8 @@ sub main() {
     });
 
 
-    LC::config::dotfile_init();
+    dotfile_init();
+    load_extensions();
 
     log_notice("Connecting to $config{server} $config{port}.");
     server_connect($config{server}, $config{port});
@@ -238,6 +239,31 @@ sub main() {
 	# Oh, well.  Guess we have a problem.
 	ui_end();
 	die $@;
+    }
+}
+
+
+sub dotfile_init() {
+    if ( -f "$ENV{HOME}/.lily/lclient/autologin" ) {
+	#rpi lily.acm.rpi.edu 7777 user password
+	my $f=new FileHandle("<$ENV{HOME}/.lily/lclient/autologin");
+	if (defined $f) {
+	    log_notice("Loading config from ~/.lily/lclient/autologin");
+	    my ($l)=grep /\S/, grep ! /^\s*\#/, <$f>;
+	    $l=~s/^\s*//g;
+	    ($config{site},$config{server},$config{port},
+	     $config{login},$config{password})=split /\s+/,$l;
+	}
+	
+    }
+    
+    # The init file should be used to configure the various extensions that 
+    # have been loaded.
+    if ( -f "$ENV{HOME}/.lily/tlily/init" ) {
+	log_notice("Loading config from ~/.lily/tlily/init");
+	extension("<$ENV{HOME}/.lily/tlily/init");
+    } else {
+	log_notice("(You may add perl code in ~/.lily/tlily/init)");
     }
 }
 

@@ -5,7 +5,6 @@ use Getopt::Long;
 use FileHandle;
 use Exporter;
 use LC::log;
-use LC::Extend;
 
 
 @ISA = qw(Exporter);
@@ -46,40 +45,6 @@ sub init {
 	exit(0);
     }
 
-}
-
-sub dotfile_init {
-    if ( -f "$ENV{HOME}/.lily/lclient/autologin" ) {
-	#rpi lily.acm.rpi.edu 7777 user password
-	my $f=new FileHandle("<$ENV{HOME}/.lily/lclient/autologin");
-	if (defined $f) {
-	    log_notice("Loading config from ~/.lily/lclient/autologin");
-	    my ($l)=grep /\S/, grep ! /^\s*\#/, <$f>;
-	    $l=~s/^\s*//g;
-	    ($config{site},$config{server},$config{port},
-	     $config{login},$config{password})=split /\s+/,$l;
-	}
-	
-    }
-    
-    log_notice("(Searching ~/.lily/tlily/extensions for extensions)");
-    foreach (grep /[^~]$/, glob "$ENV{HOME}/.lily/tlily/extensions/*.pl") {
-	extension($_);
-    }   
-
-    log_notice("(Searching ", $main::TL_EXTDIR, " for extensions)");
-    foreach (grep /[^~]$/, glob $main::TL_EXTDIR."/*.pl") {
-	extension($_);
-    }   
-
-    # The init file should be used to configure the various extensions that 
-    # have been loaded.
-    if ( -f "$ENV{HOME}/.lily/tlily/init" ) {
-	log_notice("Loading config from ~/.lily/tlily/init");
-	extension("<$ENV{HOME}/.lily/tlily/init");
-    } else {
-	log_notice("(You may add perl code in ~/.lily/tlily/init)");
-    }
 }
 
 
