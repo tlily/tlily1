@@ -1,0 +1,49 @@
+Version 0.2b
+  * Redesigned the event model.
+  * Began documenting; Event.pm and State.pm have manpages.
+  * Added a README and ChangeLog.
+  * Loadable extensions, thanks to Josh.
+  * Build script, thanks to Albert.
+
+Version 0.2a
+  * /info edit 
+  * complete redesign of parsing engine and event handling. 
+  * here/away status on status line. 
+
+Version 0.1f
+  * full /who and /what parsing 
+  * tab completion 
+
+Version 0.1e
+  * Help now mentions -zonedelta option. 
+  * A few more server messages are recognized, thanks to Silent Bob. 
+  * Network input routines are rewritten. 
+  * A truly obscure bug involving printing the sequence '\<' is now fixed. 
+  * Gagging is implemented: %gag <user> 
+  * Perl code now requires %eval <code>, instead of just %code. 
+
+
+Version 0.1d
+  * password no longer echos. 
+  * user-entered text now has an attribute 
+  * timezone rewriting added 
+
+
+Version 0.1c
+  * Silly me. I made a foolish error when merging Josh's info patch. Fixed. 
+  * /info set now works for discussions. Really. 
+
+
+Version 0.1b
+  * /info set now works for discussions. 
+  * Private messages to multiple destinations are parsed correctly. 
+  * C-d deletes the character following the cursor. 
+  * Turning your blurb off is noticed. 
+  * C-w deletes the word preceding the cursor. 
+  * The status line is drawn in reverse when in mono mode. 
+  * C-u now repositions the cursor properly. 
+  * Internal handling of control characters is cleaner. 
+  * Backslashes are no longer invisible.
+
+Version 0.1a
+  * It has many, many bugs. Tell us about them.

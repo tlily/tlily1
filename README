@@ -9,6 +9,9 @@ note that curses color handling is atrocious at best, and unspeakable at
 worst -- any color problems you experience are probably the fault of
 your curses.
 
+To create a usable tlily executable, run the command:
+   perl Build.PL
+
 
 CVS access
 ----------
