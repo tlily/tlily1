@@ -1,4 +1,4 @@
-Version 1.0.1-post
+Version 1.0.2
   * [LC/UI/Native.pm] Don't replace the killbuffer with a zero-length
     string.  (i.e., ^U when point is at the start of line shouldn't
     update the killbuffer.)  [DPN]
