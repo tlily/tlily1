@@ -58,7 +58,10 @@ sub sig_warn {
 $SIG{PIPE} = \&sig_pipe;
 sub sig_pipe {
     $SIG{PIPE} = \&sig_pipe;
-    ui_output("WARNING: Caught SIGPIPE.");
+    my ($package, $filename, $line, $subroutine,
+                  $hasargs, $wantarray, $evaltext, $is_require) = caller(1);
+
+    ui_output("WARNING: Caught SIGPIPE. (from $package::$subroutine)");
 }
 
 

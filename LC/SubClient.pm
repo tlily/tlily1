@@ -78,7 +78,7 @@ sub subclient_cmd {
 	my $opfx="<subc>$subcli></subc>";
 	subclient_start(name => $subcli,
 			run => $proc,
-			prefix => $opfx);
+			prefix => $opfx);	
     } elsif ($cmd eq "remove" || $cmd eq "del") {
 	subclient_del(@_);
     } else {
@@ -96,13 +96,13 @@ sub subclient_del {
 	if ($_ ne $subcli) {
 	    push @newsubcli,$_;
 	} else {
-	    $dereg++;
+	    $dereg++;	    
+	    my $pid=$pid{$subcli};
+	    delete $pid{$subcli};   # so that we don't get called again
+	                            # when we kill the client (by the sigchld)
 	    deregister_handler($rhid{$subcli});
 	    deregister_handler($ehid{$subcli});
-	    $rhandle{$subcli}->close;
-	    $whandle{$subcli}->close;
-	    $ehandle{$subcli}->close;
-	    kill "TERM",$pid{$subcli};
+	    kill "TERM",$pid;	    
 	    # the SIGCHLD handler will take care of the zombies.
 	}
     }
@@ -115,6 +115,7 @@ sub subclient_del {
 	$status= ui_escape("<$subcli[$subcli_num]>");
 	$SIG{CHLD} = \&sig_chld_handler;
     }
+
     redraw_statusline(1);       
 
     if ($dereg) {
@@ -138,7 +139,12 @@ sub subclient_start {
     my %args=@_;
     my ($subcli,$proc,$opfx)=($args{name},$args{run},$args{prefix});
     my $pid;
-    
+
+    if ($pid{$subcli}) {
+	ui_output("($subcli is already running.  Use %subclient remove $subcli to stop it first.)");
+	return;
+    }
+   
     if (! $callbacks_setup) {
 	$callbacks_setup=1;
 	ui_callback("`",\&sc_toggle_key);
@@ -176,7 +182,7 @@ sub subclient_start {
 				      Name => "SC$subcli",
 				      Call => \&sc_input_process);
     
-    $ehid{subcli}=register_iohandler(Handle => $eh,
+    $ehid{$subcli}=register_iohandler(Handle => $eh,
 				     Mode => 'r',
 				     Name => "SCE$subcli",
 				     Call => \&sc_input_process);
@@ -203,7 +209,6 @@ sub sc_input_process {
     if (! ($s->can_read(0))) { return; }
 
 	 return if ($del_hack{$subcli});
-
     my $rc = sysread($hdl,$buf,4096);
     if ($rc < 0) {
         if ($errno != EAGAIN) {
@@ -265,10 +270,10 @@ sub sig_chld_handler {
 
     while ($child = waitpid(-1, WNOHANG)) {
 	last if (!$pids{$child});
-	ui_output("(Subclient $pids{$child} terminated abnormally)")
+	ui_output("(Subclient $pids{$child} terminated)")
 	    if ($? == WIFSIGNALED);
-	subclient_del("remove", $pids{$child});
-	&{$exited{$child}} if $exited{$child}
+	subclient_del("del", $pids{$child});
+	&{$exited{$child}} if $exited{$child};
     }
 }
 

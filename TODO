@@ -3,6 +3,8 @@ Bugs to fix:
 %eval ui_output("\r") causes a cool lockup :)
 statusline code messes up spacing when < >'s are in the statusline..
 
+only once subclient with a given name works per session.
+
 
 Feature requests:
 - Make home/end do something.  (C-a/C-e or M-</M->)  (Honker suggests making
