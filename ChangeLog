@@ -1,4 +1,8 @@
 Version 0.9b-post
+  * [extensions/helper.pl] Added a %helper extension for editing help text
+    with ?gethelp and ?sethelp [SMC]
+  * [extensions/source.pl] Added a %source extension to interpret a file as
+    a list of user commands [SMC]
   * [LC/TTerminal.pm] Fixed so that you can load TTerminal with no
     Term::Size and indeed no /etc/termcap :)
 
