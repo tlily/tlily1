@@ -44,7 +44,9 @@ with the exception that discussions are returned with a preceding '-'.
 If the name is an exact match (modulo case) for a group, the group name
 is returned.  Substrings of groups are not, however, expanded.  This is
 in line with current lily behavior.
-Example:
+
+If $config{expand_group} is set, groups will be expanded into a
+comma-separated list of their members.
 
     expand_name('comp');
 
@@ -123,6 +125,7 @@ use LC::parse;
 use LC::Event;
 use LC::StatusLine;
 use LC::User;
+use LC::config;
 use POSIX;
 
 @ISA = qw(Exporter);
@@ -150,7 +153,11 @@ sub expand_name ($) {
 
     # Check for an exact match.
     if ($Groups{$name}) {
-	return $Groups{$name}->{Name};
+	if ($config{expand_group}) {
+	    return join(',', @{$Groups{$name}->{Members}});
+	} else {
+	    return $Groups{$name}->{Name};
+	}
     }
     if (!$disc && $Users{$name}) {
 	return $Users{$name}->{Name};
