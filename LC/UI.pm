@@ -29,6 +29,7 @@ my %key_trans = (
 		 '' => \&input_end,
 		 "\r" => \&input_accept,
 		 "\n" => \&input_accept,
+		 "" => \&input_refresh,
 		 (KEY_BACKSPACE) => \&input_bs
 		 );
 
@@ -70,7 +71,6 @@ sub fmtline ($) {
 
     my @lines = ();
     foreach $blk (split /\r?\n/, $text) {
-	push(@lines, ' ') if (length($blk) == 0);
 	my $line = '';
 	my $linelen = 0;
 	my $word;
@@ -227,9 +227,11 @@ sub win_scroll ($) {
 sub addline ($) {
     my($line) = @_;
     $line =~ s/[\r\n]//g;
+    $line = ' ' if ($line eq '');
     push @text_lines, $line;
     my $atend = ($text_lastline == $win_endline) ? 1 : 0;
     my @fmt = fmtline($line);
+    push(@fmt, '---') if (@fmt == 0);
     $text_lastline += scalar(@fmt);
     if ($atend) {
 	getyx($y,$x);
@@ -354,6 +356,12 @@ sub input_accept (;$) {
     $input_pos = 0;
     $input_fchar = 0;
     input_redraw; refresh;
+}
+
+
+# Redraw the UI screen.
+sub input_refresh (;$) {
+    redraw();
 }
 
 
