@@ -1,4 +1,4 @@
-Version 0.4b
+Version 0.5
   * Major Change:  Config files; See README for more details.  [CWS]
   * [Build.PL] Improved version number handling. [CWS]
   * [Build.PL] Added -i option to ignore the build cache. [CWS]
