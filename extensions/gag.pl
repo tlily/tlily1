@@ -1,5 +1,5 @@
 # -*- Perl -*-
-# $Header: /data/cvs/tlily/extensions/gag.pl,v 1.7 1998/06/02 18:13:25 steve Exp $
+# $Header: /data/cvs/tlily/extensions/gag.pl,v 1.8 1998/06/02 20:33:53 steve Exp $
 
 #
 # The gag extension adds the ability to `gag' all sends from a given user.
@@ -47,12 +47,7 @@ sub init() {
 
 	return 0 unless ($gagged{$event->{From}});
 
-
-	if ($event->{First}) {
-	    $event->{Body} = "<<gag>>$event->{From}~$event->{Body}<</gag>>";
-	} else {
-	    $event->{Text} = "<<gag>>$event->{From}~$event->{Text}<</gag>>";
-	}
+	$event->{Body} = "<<gag>>$event->{From}~$event->{Body}<</gag>>";
 
 	return 0;
     });
