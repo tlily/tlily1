@@ -23,15 +23,15 @@ sub config_init {
 #    print STDERR join(", ", @{$config{load}}), "\n";
 #    print STDERR "*** Done final load list ***\n";
 
-    print STDERR "*** slash list ***\n";
-    print STDERR join(", ", @{$config{slash}}), "\n";
-    print STDERR "*** Done slash list ***\n";
+#    print STDERR "*** slash list ***\n";
+#    print STDERR join(", ", @{$config{slash}}), "\n";
+#    print STDERR "*** Done slash list ***\n";
 
     collapse_list($config{slash});
 
-    print STDERR "*** Final slash list ***\n";
-    print STDERR join(", ", @{$config{slash}}), "\n";
-    print STDERR "*** Done final slash list ***\n";
+#    print STDERR "*** Final slash list ***\n";
+#    print STDERR join(", ", @{$config{slash}}), "\n";
+#    print STDERR "*** Done final slash list ***\n";
 }
 
 sub read_init_files {
@@ -42,14 +42,14 @@ sub read_init_files {
 		    $ENV{HOME}."/.lily/tlily/tlily.cf")
     {
 	if(-f $ifile) {
-	    print STDERR "Loading $ifile\n";
+#	    print STDERR "Loading $ifile\n";
 
 	    my $safe=new Safe;
 	    snarf_file($ifile, $safe);
 
 	    local(*stab) = $safe->reval("*::");
 	    my $key;
-	    print STDERR "*** Examining ", $safe->root, "\n";
+#	    print STDERR "*** Examining ", $safe->root, "\n";
 	    foreach $key (keys %stab) {
 		next if($key =~ /^_/ || $key =~ /::/);
 		local(*entry) = $stab{$key};
@@ -66,10 +66,10 @@ sub read_init_files {
 		    }
 		}
 	    }
-	    print STDERR "*** Done examining ", $safe->root, "\n";
-	    print STDERR "*** \%config after $ifile:\n";
-	    main::dumpValue(\%config);
-	    print STDERR "*** Done \%config after $ifile\n";
+#	    print STDERR "*** Done examining ", $safe->root, "\n";
+#	    print STDERR "*** \%config after $ifile:\n";
+#	    main::dumpValue(\%config);
+#	    print STDERR "*** Done \%config after $ifile\n";
 	}
     }
 }
@@ -154,9 +154,9 @@ sub collapse_list {
 	} else {
 	    $list{$ext} = 1;
 	}
-	print STDERR "*** interim list ($ext)***\n";
-	print STDERR join(", ",keys(%list)), "\n";
-	print STDERR "*** Done interim list ***\n";
+#	print STDERR "*** interim list ($ext)***\n";
+#	print STDERR join(", ",keys(%list)), "\n";
+#	print STDERR "*** Done interim list ***\n";
     }
     $lref = [keys %list];
 }
