@@ -1,5 +1,5 @@
 # -*- Perl -*-
-# $Header: /data/cvs/tlily/LC/SubClient.pm,v 2.2 1998/06/23 20:25:04 steve Exp $
+# $Header: /data/cvs/tlily/LC/SubClient.pm,v 2.3 1998/06/23 20:27:54 steve Exp $
 package LC::SubClient;
 
 # bugs:
@@ -118,8 +118,6 @@ sub subclient_del {
     } else {
 #	$status= ui_escape("<$subcli[$subcli_num]>");
 	$status="<$subcli[$subcli_num]>";
-	# DEBUG
-#	ui_output($status);
 	$SIG{CHLD} = \&sig_chld_handler;
     }
 
@@ -196,8 +194,6 @@ sub subclient_start {
 
 #    $status=ui_escape("<$subcli>");
     $status=("<$subcli>");
-    # DEBUG
-#    ui_output($status);
     
     redraw_statusline();       
 }
@@ -253,8 +249,6 @@ sub sc_toggle_key {
     } else {
 #	$status=ui_escape("<$subcli[$subcli_num]>");
 	$status="<$subcli[$subcli_num]>";
-	# DEBUG
-#	ui_output($status);
     }
     redraw_statusline(1);       
 
