@@ -60,21 +60,6 @@ main();
 
 
 ##############################################################################
-sub eventloop() {
-    my $s = IO::Select->new($server_sock, \*STDIN);
-
-    while (1) {
-	foreach ($s->can_read()) {
-	    if ($_ == $server_sock) {
-		parse(server_read());
-	    } elsif ($_ == \*STDIN) {
-		user_accept();
-	    }
-	}
-    }
-}
-
-
 sub init_connection_handling() {
     my $state = 'login';
     my $set_opts = 0;
@@ -169,6 +154,26 @@ sub set_client_options() {
 }
 
 
+sub server_reader($) {
+    my($handler) = @_;
+
+    my $buf = server_read();
+    if (!defined $buf) {
+	ui_output("*** Lost connection to server: hit enter to quit ***");
+	register_eventhandler(Type => 'userinput',
+			      Order => 'before',
+			      Call => sub { ui_end(); exit; });
+
+	dispatch_event({Type => 'disconnected'});
+	deregister_handler($handler->{Id});
+	return 0;
+    }
+
+    parse($buf);
+    return 0;
+}
+
+
 sub main() {
     show_banner();
     
@@ -184,7 +189,7 @@ sub main() {
     register_iohandler(Handle => $server_sock,
 		       Mode => 'r',
 		       Name => 'a',
-		       Call => sub { parse(server_read()); });
+		       Call => \&server_reader);
     register_iohandler(Handle => \*STDIN,
 		       Mode => 'r',
 		       Name => 'b',

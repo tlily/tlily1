@@ -14,7 +14,6 @@ use POSIX;
 	     &server_send
 	     $server_sock);
 
-
 # Contact a lily server at a given host/port.
 sub server_connect($$) {
     my($host, $port) = @_;
@@ -33,11 +32,14 @@ sub server_connect($$) {
 # Read a chunk of data from the lily server.
 sub server_read() {
     my $buf;
-    if (sysread($server_sock,$buf,4096) < 1) {
+    my $rc = sysread($server_sock,$buf,4096);
+    if ($rc < 0) {
 	if ($errno != EAGAIN) {
-	    log_err("sysread: $!"); 
-	    next;
+	    die("sysread: $!"); 
 	}
+    } elsif ($rc == 0) {
+	$server_sock->close();
+	return undef;
     }
 
     return $buf;
