@@ -1,5 +1,5 @@
 # -*- Perl -*-
-# $Header: /data/cvs/tlily/LC/UI.pm,v 1.56 1998/06/09 23:51:50 neild Exp $
+# $Header: /data/cvs/tlily/LC/UI.pm,v 1.57 1998/06/12 05:36:18 albert Exp $
 package LC::UI;
 
 
@@ -253,7 +253,9 @@ my %key_trans = ('kl'   => [ \&input_left ],
 		 'M-p'  => [ \&input_pastemode ],
 		 'C-d'  => [ \&input_del ],
 		 'C-h'  => [ \&input_bs ],
-		 'bs'   => [ \&input_bs ]
+		 'bs'   => [ \&input_bs ],
+                 'home' => [ \&input_homekey ],
+                 'end'  => [ \&input_endkey ],
 		 );
 
 my %attr_list = ();
@@ -1184,6 +1186,24 @@ sub input_scrolllast($$$) {
     win_redraw();
     $term->term_refresh();
     return($line, $pos, 0);
+}
+
+sub input_homekey($$$) {
+    my($key,$line,$pos) = @_;
+    if($pos == 0) {
+      input_scrollfirst($key,$line,$pos);
+    } else {
+      input_home($key,$line,$pos);
+    }
+}
+
+sub input_endkey($$$) {
+    my($key,$line,$pos) = @_;
+    if($pos == length $line) {
+      input_scrolllast($key,$line,$pos);
+    } else {
+      input_end($key,$line,$pos);
+    }
 }
 
 
