@@ -116,6 +116,31 @@ sub user_password($) {
 }
 
 
+# Sends are wonky.
+sub output_send($) {
+    my($event) = @_;
+
+    if ($event->{First}) {
+	ui_output(Text => $event->{Text},
+		  WrapChar => $event->{WrapChar},
+		  Tags => $event->{Tags});
+    }
+
+    my $s;
+    if ($event->{Form} eq 'private') {
+	$s = '<privmsg> - ' . $event->{Body} . '</privmsg>';
+    } else {
+	$s = '<pubmsg> - ' . $event->{Body} . '</pubmsg>',
+    }
+
+    $s = '<review>#</review>' . $s if ($event->{Type} eq 'review');
+
+    ui_output(Text => $s,
+	      WrapChar => ' - ',
+	      Tags => $event->{Tags});
+}
+
+
 sub init() {
     register_eventhandler(Type => 'prompt',
 			  Call => sub {
@@ -128,9 +153,16 @@ sub init() {
 			  Call => sub {
 			      my($event,$handler) = @_;
 			      if ($event->{ToUser}) {
-				  ui_output(Text => $event->{Text},
-					    Tags => $event->{Tags},
-					    WrapChar => $event->{WrapChar});
+				  if (($event->{Type} eq 'send') ||
+				      (($event->{Type} eq 'review') &&
+				       ($event->{RevType} eq 'send'))) {
+				      output_send($event);
+				  } else {
+				      ui_output(Text => $event->{Text},
+						Tags => $event->{Tags},
+						WrapChar =>
+						$event->{WrapChar});
+				  }
 			      }
 			      if ($event->{Signal}) {
 				  ui_bell();

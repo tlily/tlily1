@@ -65,8 +65,12 @@ use POSIX;
 my $partial;
 
 my $msg_state = undef;
+my $msg_type = undef;
 my $msg_sender;
+my $msg_hdr = undef;
+my $msg_wrapchar;
 my @msg_dest;
+my @msg_tags;
 
 
 # Take raw server output, and deal with it.
@@ -150,15 +154,23 @@ sub parse_line($$) {
 
     # %beginmsg
     if ($line =~ /^%beginmsg/) {
-	%event = (Type => 'beginmsg',
-		  Tags => ['intern']);
-	goto found;
+	$msg_state = 'msg';
+	return 0;
     }
 
     # %endmsg
     if ($line =~ /^%endmsg/) {
-	%event = (Type => 'endmsg',
-		  Tags => ['intern']);
+	$line = $msg_hdr;
+	%event = (Type => 'send',
+		  Tags => [ @msg_tags ],
+		  From => $msg_sender,
+		  To => \@msg_dest,
+		  Form => $msg_type,
+		  Body => $partial,
+		  WrapChar => $msg_wrapchar,
+		  First => 1);
+	undef $partial;
+	undef $msg_state;
 	goto found;
     }
 
@@ -287,9 +299,11 @@ sub parse_line($$) {
 
     # you have created discussion...
     if ($line =~ /^\(you have created discussion (.*) \"/) {
+	ui_output("create");
 	%event = (Type => 'disccreate',
 		  Tags => [ 'paren' ],
 		  Name => $1);
+	goto found;
     }
 
     # you have destroyed discussion...
@@ -297,6 +311,7 @@ sub parse_line($$) {
 	%event = (Type => 'discdestroy',
 		  Tags => [ 'paren' ],
 		  Name => $1);
+	goto found;
     }
 
     # you have created group...
@@ -343,12 +358,25 @@ sub parse_line($$) {
 
     # sends ##################################################################
 
-    if (($line =~ /^ >>/) || ($line =~ /^ \\<\\</) ||
-	($line =~ /^ ->/) || ($line =~ /^ \\<-/)) {
+    if (($msg_state eq 'msg') && ($line =~ /^\s*$/)) {
+	$partial = "\n";
+	return 0;
+    }
+
+    if (($line =~ /^ >> /) || ($line =~ /^ \\<\\< /) ||
+	($line =~ /^ -> /) || ($line =~ /^ \\<- /)) {
 	my($blurb);
 
+	if ($msg_state ne 'msg') {
+	    $msg_state = 'first';
+	}
+
 	if (defined $partial) {
-	    $line = $partial . substr($line, 4);
+	    if (length($partial) > 5) {
+		$line = $partial . substr($line, 4);
+	    } else {
+		$line = $partial . $line;
+	    }
 	    undef $partial;
 	}
 
@@ -378,56 +406,55 @@ sub parse_line($$) {
 	    goto found;
 	}
 
-	my @tags = ( 'send', "from:$msg_sender" );
+	@msg_tags = ( 'send', "from:$msg_sender", $msg_type );
 	my $d;
 	foreach $d (@msg_dest) {
-	    push @tags, "to:$d";
+	    push @msg_tags, "to:$d";
 	}
 
-	if (($line =~ /^ >>/) || ($line =~ /^ \\<\\</)) { 
-	    # private headers
-	    %event = (Type => 'privhdr',
-		      Tags => [ 'private', @tags ],
-		      WrapChar => substr($line, 0, 4),
-		      From => $msg_sender,
-		      To => \@msg_dest);
-
-	    $msg_state = 'private';
+	if (($line =~ /^( >> )/) || ($line =~ /^( \\<\\< )/)) { 
+	    $msg_type = 'private';
 	    $line = "<privhdr>$line</privhdr>";
-	    goto found;
-	} else {
-	    # public headers
-	    %event = (Type => 'pubhdr',
-		      Tags => [ 'public', @tags ],
-		      WrapChar => substr($line, 0, 4),
-		      From => $msg_sender,
-		      To => \@msg_dest);
-
-	    $msg_state = 'public';
+	    $msg_wrapchar = $1;
+	} elsif (($line =~ /^( -> )/) || ($line =~ /^( \\<- )/)) {
+	    $msg_type = 'public';
 	    $line = "<pubhdr>$line</pubhdr>";
-	    goto found;
+	    $msg_wrapchar = $1;
 	}
+
+	# Oooh, a hack!
+	$msg_wrapchar =~ s/\\//g;
+
+	$msg_hdr = $line;
+	return 0;
     }
 
     # message body
     if ($line =~ /^ - /)  { 
-	my @tags = ( 'send', "from:$msg_sender" );
-	my $d;
-	foreach $d (@msg_dest) {
-	    push @tags, "to:$d";
+	if ($msg_state eq 'msg') {
+	    if (defined($partial)) {
+		$partial .= substr($line, 3);
+	    } else {
+		$partial = substr($line, 3);
+	    }
+	    return 0;
 	}
-	push @tags, $msg_state;
 
 	%event = (Type => 'send',
-		  Tags => [ @tags ],
+		  Tags => [ @msg_tags ],
 		  From => $msg_sender,
 		  To => \@msg_dest,
-		  Form => $msg_state);
+		  Form => $msg_type,
+		  WrapChar => $msg_wrapchar,
+		  Body => substr($line, 3));
 
-	if ($msg_state eq 'private') {
-	    $line = '<privmsg>' . $line . '</privmsg>';
-	} elsif ($msg_state eq 'public') {
-	    $line = '<pubmsg>' . $line . '</pubmsg>';
+	if ($msg_state eq 'first') {
+	    $event{First} = 1;
+	    $line = $msg_hdr;
+	    undef $partial;
+	    undef $msg_state;
+	} else {
+	    $line = '';
 	}
 
 	goto found;
@@ -644,6 +671,7 @@ sub parse_line($$) {
 	$event{RevType} = $event{Type};
 	$event{Type} = 'review';
 	push @{$event{Tags}}, 'review';
+	$event{WrapChar} = '# ' . ($event{WrapChar} || '');
     }
 
     $event{ToUser} = 1 unless ($hidden);

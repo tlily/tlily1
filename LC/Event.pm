@@ -259,7 +259,11 @@ sub dispatch_event($) {
 sub transmit_event($) {
     my($event) = @_;
 
-    print STDERR "EV: xmit: $event->{Type}\n" if ($event_debug);
+    if ($event_debug) {
+	print STDERR "EV: xmit: $event->{Type}";
+	print STDERR " ", $event->{Text} if (defined $event->{Text});
+	print STDERR "\n";
+    }
 
     my @all_handlers = (@before_handlers, @during_handlers, @after_handlers);
     my $handler;

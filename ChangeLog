@@ -1,4 +1,9 @@
 Version 0.4b
+  * Send collapsing.  [DPN]
+  * Trap SIGWINCH, and try to do something appropriate.  [DPN]
+  * Fixed a bug where the parse rules for discussions the user creates/
+    destroys weren't being applied properly.  [DPN]
+  * Fixed ludicrous bug involving terminal widths != 80 characters.  [DPN]
   * Fixed problems with overly-long sendlists.  [DPN]
   * Ctrl-c must be pressed twice within a 5-second period to exit.  [DPN]
   * Fixed the bug that caused tlily to complain about a sysread() error.  [DPN]

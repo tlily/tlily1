@@ -229,6 +229,57 @@ my $attr_cur_bg = COLOR_BLACK;
 my $attr_cur_fg = COLOR_WHITE;
 
 
+#
+# What is a line?  A line is a text string, with attached formatting
+# information.  A single line may span multiple rows on the screen; if
+# so, it must be word-wrapped.  The internal representation of a line
+# separates the text and formatting information.  The formatting information
+# is contained in a list.  This list is a sequence of formatting commands;
+# any command may be followed by a set of arguments.  Possible commands are:
+#   FOwrapchar <wrapchar>
+#   FOwrap
+#   FOnewline
+#   FOattr <attr>
+#   FOpopattr <attr>
+#   FOtext <length>
+
+
+my $FOnull     = 0;
+my $FOwrapchar = 1;
+my $FOwrap     = 2;
+my $FOnewline  = 3;
+my $FOattr     = 4;
+my $FOpopattr  = 5;
+my $FOtext     = 6;
+
+
+# A list of lines in the text window.  These lines are stored unformatted.
+my @text_lines = (" ");
+
+# A list of formatting information for the text window.
+my @text_fmts = ( [] );
+
+# A list of tags to identify lines by.
+my @text_tags = ();
+
+# A list of line heights.  This is a cache; any line's height as stored
+# in here may be undef.  (We don't seem to be able to my this one; we need
+# to use it in a handler passed down to the terminal module.)
+@text_heights = ();
+
+# The line and row in said line which are anchored to the bottom of the
+# text window.
+my $text_l = 0;
+my $text_r = 0;
+
+# The number of rows which have been scrolled up since the user last
+# examined the screen.
+my $scrolled_rows = 0;
+
+my @text_show_tags = ();
+my @text_hide_tags = ();
+
+
 sub min($$) {
     return ($_[0] > $_[1]) ? $_[1] : $_[0];
 }
@@ -291,63 +342,6 @@ sub attr_top() {
     }
     term_setattr(@$attrs);
 }
-
-
-
-
-#
-# The new text window code.  May it never need to be rewritten again.
-#
-
-
-#
-# What is a line?  A line is a text string, with attached formatting
-# information.  A single line may span multiple rows on the screen; if
-# so, it must be word-wrapped.  The internal representation of a line
-# separates the text and formatting information.  The formatting information
-# is contained in a list.  This list is a sequence of formatting commands;
-# any command may be followed by a set of arguments.  Possible commands are:
-#   FOwrapchar <wrapchar>
-#   FOwrap
-#   FOnewline
-#   FOattr <attr>
-#   FOpopattr <attr>
-#   FOtext <length>
-
-
-my $FOnull     = 0;
-my $FOwrapchar = 1;
-my $FOwrap     = 2;
-my $FOnewline  = 3;
-my $FOattr     = 4;
-my $FOpopattr  = 5;
-my $FOtext     = 6;
-
-
-# A list of lines in the text window.  These lines are stored unformatted.
-my @text_lines = (" ");
-
-# A list of formatting information for the text window.
-my @text_fmts = ( [] );
-
-# A list of tags to identify lines by.
-my @text_tags = ();
-
-# A list of line heights.  This is a cache; any line's height as stored
-# in here may be undef.
-my @text_heights = ();
-
-# The line and row in said line which are anchored to the bottom of the
-# text window.
-my $text_l = 0;
-my $text_r = 0;
-
-# The number of rows which have been scrolled up since the user last
-# examined the screen.
-my $scrolled_rows = 0;
-
-my @text_show_tags = ();
-my @text_hide_tags = ();
 
 
 # Draws one line (or a subset of the rows in a line) at a given position.
@@ -770,8 +764,8 @@ sub ui_status($) {
 sub input_position_cursor() {
     my $xpos = length($input_prompt);
     $xpos += $input_pos unless ($password);
-    term_move($term_lines - $input_height + floor(($xpos / 80)) - $input_fline,
-	      $xpos % 80);
+    term_move($term_lines - $input_height + floor(($xpos / $ui_cols)) - $input_fline,
+	      $xpos % $ui_cols);
 }
 
 
@@ -782,18 +776,18 @@ sub input_redraw() {
     my $l = $input_prompt;
     $l .= $input_line unless ($password);
 
-    my $height = floor((length($l) / 80)) + 1 - $input_fline;
+    my $height = floor((length($l) / $ui_cols)) + 1 - $input_fline;
     $height = 1 if ($height < 1);
 
     term_move($term_lines - 1, 0);
     term_delete_to_end();
 
     my $i;
-    for ($i = 0; $i < length($l) / 80; $i += 1) {
+    for ($i = 0; $i < length($l) / $ui_cols; $i += 1) {
 	next if ($i < $input_fline);
 	term_move($term_lines - $height + $i, 0);
 	term_delete_to_end();
-	term_addstr(substr($l,$i*80,80));
+	term_addstr(substr($l,$i*$ui_cols,$ui_cols));
     }
 
     if ($input_height != $height) {
