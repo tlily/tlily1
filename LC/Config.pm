@@ -1,5 +1,5 @@
 # -*- Perl -*-
-# $Header: /data/cvs/tlily/LC/Config.pm,v 2.1 1998/06/12 08:56:07 albert Exp $
+# $Header: /data/cvs/tlily/LC/Config.pm,v 2.2 1998/10/24 05:16:48 josh Exp $
 package LC::Config;
 
 use Safe;
@@ -251,7 +251,7 @@ sub parse_command_line {
 	if($ARGV[0] =~ /^-(m|mono)$/) {
 	    shift @ARGV; $config{mono} = 1; next;
 	}
-	print STDERR "$ARGV[0]\n";
+#	print STDERR "$ARGV[0]\n";
 	if($ARGV[0] =~ /^-(\w+)=(\S+)$/) {
 	    my($var,$val) = ($1,$2);
 	    print STDERR "$var => $val\n";

@@ -1,5 +1,5 @@
 @@PERL@@
-# $Header: /data/cvs/tlily/tlily.PL,v 2.1 1998/06/12 08:56:00 albert Exp $
+# $Header: /data/cvs/tlily/tlily.PL,v 2.2 1998/10/24 05:16:48 josh Exp $
 
 require 5.00307;
 
@@ -22,6 +22,8 @@ use LC::Extend;
 use LC::Event;
 use LC::SubClient;
 $|=1;
+
+@ORIGINAL_ARGV=@ARGV;
 
 if ( -f 'tlily.PL' ) {
     my @tstat = stat('tlily.PL');
