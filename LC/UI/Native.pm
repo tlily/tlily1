@@ -1,5 +1,5 @@
 # -*- Perl -*-
-# $Header: /data/cvs/tlily/LC/UI/Native.pm,v 1.4 1998/10/24 22:27:50 josh Exp $
+# $Header: /data/cvs/tlily/LC/UI/Native.pm,v 1.5 1998/10/28 21:19:14 neild Exp $
 package LC::UI::Native;
 
 =head1 NAME
@@ -875,12 +875,12 @@ sub input_yank($$$$) {
 
 # Deletes the word preceding the input cursor.
 sub input_killword($$$$) {
-    my ($key, $line, $pos) = @_;
+    my ($self, $key, $line, $pos) = @_;
 
-    my $oldlen = length $line;
+    my $l = $line;
     substr($line, 0, $pos) =~ s/(\S+\s*)$//;
     $self->{input_killbuf} = $1;
-    return ($line, $pos - ($oldlen - length($line)), 2);
+    return ($line, $pos - length($1), 2);
 }
 
 
