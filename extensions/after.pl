@@ -2,14 +2,14 @@
 register_user_command_handler('after', \&after_handler);
 register_help_short('after', "Run a lily command after a delay");
 register_help_long('after', qq(Usage: %after (time) (command)
-*
-* Runs (command) after (time).
-* time can be:
-*       N        N seconds
-*       Ns       N seconds
-*       Nm       N minutes
-*       Nh       N hours
-*       Nd       N days
+
+Runs (command) after (time).
+time can be:
+      N        N seconds
+      Ns       N seconds
+      Nm       N minutes
+      Nh       N hours
+      Nd       N days
 ));
 
 
