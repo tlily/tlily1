@@ -158,6 +158,10 @@ sub init() {
 				      output_send($event);
 				  } elsif ($event->{Type} eq 'userinput') {
 				      user_showline($event->{Text});
+				  }  elsif ($event->{Type} eq 'serverinput') {
+				      my $s = $event->{Text};
+				      $s =~ s/[\<\\]/\\$&/g;
+				      ui_output($s);
 				  } else {
 				      ui_output(Text => $event->{Text},
 						Tags => $event->{Tags},
