@@ -41,15 +41,20 @@ my %key_trans = (
 		 );
 
 my %attr_list = ();
+my %attr_cmap = ();
 
 
 
 # Starts the curses UI.
 sub init () {
     initscr;
+    start_color;
     cbreak; noecho; nodelay 1; keypad 1;
-    &redraw;
     $ui_up = 1;
+    defattr('status_line', COLOR_YELLOW, COLOR_BLUE, A_BOLD);
+    defattr('input_line', COLOR_WHITE, COLOR_BLACK, A_NORMAL);
+    defattr('text_window', COLOR_WHITE, COLOR_BLACK, A_NORMAL);
+    &redraw;
 }
 
 
@@ -63,12 +68,34 @@ sub end () {
 }
 
 
-# Define a new attribute.
-sub defattr ($@) {
-    my $name = shift @_;
-    foreach (@_) {
-	push @{$attr_list{$name}}, $_;
+# Allocate a color.
+sub color_alloc ($$) {
+    my($fg,$bg) = @_;
+    $id = "${fg}:${bg}";
+    my $n = $attr_cmap{$id};
+    if (!defined $n) {
+	$n = scalar(keys %attr_cmap) + 1;
+	init_pair $n, $fg, $bg;
+	$attr_cmap{$id} = $n;
     }
+    return $n;
+}
+
+
+# Define a new attribute.
+sub defattr ($$$$) {
+    my ($name,$fg,$bg,$attrs) = @_;
+    my $n = color_alloc($fg,$bg);
+    $attrs |= COLOR_PAIR($n);
+    $attr_list{$name} = $attrs;
+}
+
+
+# Returns a color attribute.
+sub getattr ($) {
+    my($name) = @_;
+    return $attr_list{$name} if (defined $attr_list{$name});
+    return A_NORMAL;
 }
 
 
@@ -187,18 +214,16 @@ sub win_draw_line ($$) {
     my @attrstack = ();
     my $xpos = 0;
 
+    my $oldattr = getattrs;
+    attrset getattr('text_window');
+
     while ((length $line) && ($xpos < $COLS)) {
 	if ($line =~ /^\/([^\>]*)\>/) {
 	    attrset (pop @attrstack);
 	    $line = substr($line, length $&);
 	} elsif ($line =~ /^([^\>]*)\>/) {
-	    my $tag = $1;
 	    push @attrstack, getattrs;
-	    if (defined($attr_list{$tag})) {
-		foreach (@{$attr_list{$tag}}) {
-		    attron $_;
-		}
-	    }
+	    attron getattr($1);
 	    $line = substr($line, length $&);
 	} elsif ($line =~ /^[^]+/) {
 	    my $len = $COLS - $xpos;
@@ -210,6 +235,8 @@ sub win_draw_line ($$) {
 	    $line = substr($line, 1);
 	}
     }
+
+    attrset $oldattr;
 }
 
 
@@ -298,9 +325,10 @@ sub sline_redraw () {
     getyx($y, $x);
     my $sline = sprintf "%-".$COLS.".".$COLS."s", $status_line;
 
-    attron(A_REVERSE);
+    my $oldattr = getattrs;
+    attrset getattr('status_line');
     addstr($LINES - 2, 0, $sline);
-    attroff(A_REVERSE);
+    attrset $oldattr;
     move($y,$x);
 }
 
@@ -315,10 +343,13 @@ sub sline_set ($) {
 
 # Redraws the input line.
 sub input_redraw () {
+    my $oldattr = getattrs;
+    attrset getattr('input_line');
     my $line = substr $input_line, $input_fchar;
     $line = sprintf "%-".$COLS.".".$COLS."s", $line;
     addstr($LINES - 1, 0, $line);
     move($LINES - 1, $input_pos - $input_fchar);
+    attrset $oldattr;
 }
 
 
