@@ -23,10 +23,18 @@ register_user_command_handler('eval', \&eval_handler);
 # !command handler
 sub bang_handler($$) {
     my($event,$handler) = @_;
-    if ($event->{Text} =~ /^\!(.*)/) {
+    if ($event->{Text} =~ /^\!(.*?)\s*$/) {
 	$event->{ToServer} = 0;
-	user_showline($event->{Text});
-	ui_output(`$1`);
+	ui_output("[beginning of command output]");
+	open(FD, "$1 |");
+	my @r = <FD>;
+	close(FD);
+	foreach (@r) {
+	    chomp;
+	    s/([\\<])/\\$1/g;
+	    ui_output($_);
+	}
+	ui_output("[end of command output]");
 	return 1;
     }
     return 0;

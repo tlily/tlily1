@@ -1,4 +1,5 @@
 Version 0.6b
+  * [extensions/misc.pl] Fixed !command handling.  [DPN]
   * [tlily.PL] Require perl 5.003_07.  [DPN]
   * [LC/smartexit.pl] Extension to exit on disconnect iff the user did a
     /det or /bye.  [DPN]
