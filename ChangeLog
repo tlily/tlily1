@@ -1,4 +1,21 @@
 Version 0.4b
+  * Major Change:  Config files; See README for more details.  [CWS]
+  * [Build.PL] Improved version number handling. [CWS]
+  * [Build.PL] Added -i option to ignore the build cache. [CWS]
+  * [Build.PL] If the install dirs are for the current dir, ask the user
+    if they want to be re-asked for the paths. [CWS]
+  * [LC/UI.pm] Bugfix:  If ^W was pressed while in the middle of text, the
+    cursor wasn't repositioned properly. [CWS]
+  * [Build.PL] Instead of asking for separate dirs for the extensions and
+    library(LC), ask for 1 library dir that will contain the extensions,
+    library, and global config file, and one that will hold the site
+    config file.  [CWS]
+  * [extensions/zone.pl] If $zonetype is set to 12, timestamps will be
+    displayed in a 12 hour clock. [CWS]
+  * [LC/StatusLine.pm] If $clocktype is set to 12, the statusline clock will
+    be displayed in a 12 hour clock. [CWS]
+  * [LC/StatusLine.pm] If $clockdelta is set, the statusline clock will be
+    zonedelta-ed similar to what the zone module does for timestamps. [CWS]
   * Autologin.  [DPN]
   * Send collapsing.  [DPN]
   * Trap SIGWINCH, and try to do something appropriate.  [DPN]
