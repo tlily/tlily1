@@ -166,10 +166,13 @@ Sounds an audible bell.
 
 use Curses;
 use POSIX;
-use Term::Size;
 use IO::Select;
 use LC::Config;
-
+eval "use Term::Size";
+if ("$@") { 
+  warn("** WARNING: Unable to load Term::Size **\n");
+  sleep 2;
+}
 
 my $term_up = 0;
 $size_changed = 0;
