@@ -10,22 +10,29 @@ sub info_set(%) {
     if ($edit) {
 	local(*FH);
         my $tmpfile = "/tmp/tlily.$$";
+		  my $mtime = 0;
 	
 	unlink($tmpfile);
 	if (@data) {
 	    open(FH, ">$tmpfile") or die "$tmpfile: $!";
 	    foreach (@data) { chomp; print FH "$_\n"; }
+		 $mtime = (stat FH)[10];
 	    close FH;
 	}
-	
+
 	ui_end();
 	system("$config{editor} $tmpfile");
 	ui_start();
-	
+
 	my $rc = open(FH, "<$tmpfile");
 	unless ($rc) {
 	    ui_output("(info buffer file not found)");
 	    return;
+	}
+
+	if ((stat FH)[10] == $mtime) {
+		ui_output("(info buffer not changed)");
+		return;
 	}
 
 	@data = <FH>;

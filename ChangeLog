@@ -1,4 +1,6 @@
 Version 0.7a
+  * [extensions/info.pl] Fixed %info edit to only change the info if you made
+								 a change to the edit buffer [SMC]
   * [extensions/info.pl] Added %export [JDW]
   * [extensions/smartexit.pl] Fix recognition of /det and /bye [FeRD@RPI][CWS]
   * [LC/Config.pm] Added some pod docs [CWS]
