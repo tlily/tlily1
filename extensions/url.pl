@@ -12,4 +12,14 @@ sub handler {
     return 0;
 }
 
+sub cmd {
+ui_output("| URLs captured this session:");
+    foreach (@urls) {
+       ui_output("| $_");
+    }
+}
+
 register_eventhandler(Type => 'send', Call => \&handler);
+register_user_command_handler('url', \&cmd);
+register_help_short('url', "View list of captured urls");
+register_help_long('url', "Usage: %url");
