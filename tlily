@@ -10,6 +10,7 @@ use LC::parse;
 use LC::Expand;
 use LC::gag;
 use LC::Command;
+use LC::User;
 use Socket;
 use Fcntl;
 use IO::Socket;
@@ -17,9 +18,6 @@ use IO::Select;
 use Curses;
 use POSIX;
 $|=1;
-
-# file globals
-my $sock;
 
 # globals
 $have_pseudo=0;
@@ -37,6 +35,7 @@ exp_init();
 ui_start();
 gag_init();
 cmd_init();
+user_init();
 
 ui_attr('sender','bold');
 ui_attr('dest','bold');
@@ -63,15 +62,178 @@ if (! $config{mono}) {
 
 tie $page_status, 'LC::status_update', 'page_status';
 
-show_banner();
-login();
-$SIG{ALRM}=\&foo;
-connect_until("*** Disconnected ***");    
+my $state;
+
+main();
+
+
 log_notice("Exiting.");
 
 END {
     ui_end;
 }
+
+##############################################################################
+sub server_connect ($$) {
+    my($host, $port) = @_;
+
+    log_notice("Connecting to $config{server} $config{port}.");
+    $sock = IO::Socket::INET->new(PeerAddr => $config{server},
+				  PeerPort => $config{port},
+				  Proto    => 'tcp');                         
+    if (!defined($sock)) {
+	die "Failed to contact server.\n$1\n";
+    }
+
+    fcntl($sock,F_SETFL,O_NONBLOCK) or die("fcntl: $!\n");
+    log_notice("Connected.");
+
+    return $sock;
+}
+
+
+sub server_send ($$) {
+    my($sock, $s) = @_;
+    if (syswrite($sock,$s,length($s)) != length($s)) {
+	log_err("syswrite: $!"); 
+    }
+}
+
+
+sub server_run ($) {
+    my($sock) = @_;
+
+    my $state = 'login';
+
+    my($ehid,$ihid);
+
+    $ehid = register_eventhandler('all', sub {
+	my($event) = @_;
+	my $os = $state;
+	if (($event->{Type} eq 'prompt') && ($event->{Line} =~ /^password:/)) {
+	    $state = 'password';
+	    ui_password(1);
+	} elsif (($event->{Type} eq 'prompt') && ($event->{Line} =~ /^-->/)) {
+	    $state = 'blurb';
+	} elsif (($state eq 'cxna') && ($event->{Line} =~ /^Welcome to/)) {
+	    $state = 'cxnb';
+	} elsif ($state eq 'cxnb') {
+	    $state = 'cxnc';
+	} elsif (($state eq 'cxnc')  && ($event->{Type} eq 'prompt')) {
+	    $state == 'reviewp';
+	} elsif (($state eq 'cxnc') || ($event->{Type} eq 'connected')) {
+	    $state = 'connected';
+	    deregister_eventhandler('all', $ehid);
+	    deregister_user_input_handler($ihid);
+	    on_connect($sock);
+	}
+    });
+
+    $ihid = register_user_input_handler(sub {
+	my($ievent) = @_;
+	my $os = $state;
+	if ($state eq 'password') {
+	    $state = 'login';
+	    $ievent->{UI} = 0;
+	    ui_password(0);
+	} elsif ($state eq 'blurb') {
+	    $state = 'cxna';
+	} elsif ($state eq 'reviewp') {
+	    $state = 'connected';
+	    deregister_eventhandler('all', $ehid);
+	    deregister_user_input_handler($ihid);
+	    on_connect($sock);
+	}
+	return 0;
+    });
+
+    set_client_options($sock);
+
+    my $s = IO::Select->new($sock, \*STDIN);
+
+    while (1) {
+	foreach ($s->can_read()) {
+	    if ($_ == $sock) {
+		parse(read_from_server($sock));
+	    } elsif ($_ == \*STDIN) {
+		foreach (user_accept()) {
+		    server_send($sock, $_);
+		}
+	    }
+	}
+    }
+}
+
+
+sub set_client_options {
+    #
+    # Lily is gifted with a multitude of incompatible options.  What I have
+    # here seems to work everywhere in use at the moment.  Someday, someone
+    # will come along and break everything in the name of progress.  At this
+    # point, I will declare lily dead, and get a life.
+    #
+    # The single, sole option which appears to work everywhere is `leaf'.
+    # This gives me command leafing; the server will kindly identify
+    # exactly what lines it sends to me are associated with what commands
+    # I send to it.  This is insanely useful; I'm amazed it works.  (I had
+    # begun to think that the server designers had intentionally designed
+    # things to prevent anything useful from being usable.)
+    #
+    # But, alas, there is a serpent in paradise.  Nobody (and I mean NOBODY)
+    # other than lclient is allowed to receive %gs.  This means that signalling
+    # is utterly broken by my use of this option.  I therefore shall
+    # implement signalling entirely in the client, and to hell with the
+    # servers.
+    #
+    # Another REALLY useful option is `leaf-msg'.  It doesn't work right on
+    # 2.2a1 cores.
+    #
+    # And then there's the `connected' option!  Ah, what I wouldn't do to
+    # be able to use IT!
+    #
+
+    server_send($sock, "\#\$\# client_version $TL_VERSION\n");
+    server_send($sock, "\#\$\# client_name TigerLily\n");
+    server_send($sock, "\#\$\# options +leaf-all +leaf\n");
+}
+
+
+sub on_connect ($) {
+    my($sock) = @_;
+
+    set_client_options($sock);
+}
+
+
+sub main () {
+    show_banner();
+    
+    # !command handler
+    register_user_input_handler(sub {
+	my($event) = @_;
+	if ($event->{Line} =~ /^\!(.*)/) {
+	    user_showline($event->{Line});
+	    ui_output(`$1`);
+	    return 1;
+	}
+	return 0;
+    });
+
+    # handle /info set command.  
+    register_user_input_handler(sub {
+	my($event) = @_;
+	if ($event->{Line} =~ /^\s*\/info set/i) {
+	    my $line = $event->{Line};
+	    $line =~ s/\s*\/info set\s*//g;
+	    set_info($line);
+	}
+	return 0;
+    });
+
+    my $sock = server_connect($config{server}, $config{port});
+    server_run($sock);
+}
+
 
 ##############################################################################
 sub login {   
@@ -240,18 +402,6 @@ sub read_from_server {
 }
 
 
-sub send_to_server {
-    my ($s)=@_;
-    
-    my $t=$s;
-    $t=~s/\n/\[\\n\]/g;
-    log_debug("send_to_server: $t");
-    if (syswrite($sock,$s,length($s)) != length($s)) {
-	log_err("syswrite: $!"); 
-    }
-
-}
-
 
 sub client_command {
     my($command) = @_;
@@ -333,34 +483,6 @@ sub alarm_handler {
 }
 
 
-sub set_client_options {
-    #
-    # Lily is gifted with a multitude of incompatible options.  What I have
-    # here seems to work everywhere in use at the moment.  Someday, someone
-    # will come along and break everything in the name of progress.  At this
-    # point, I will declare lily dead, and get a life.
-    #
-    # The single, sole option which appears to work everywhere is `leaf'.
-    # This gives me command leafing; the server will kindly identify
-    # exactly what lines it sends to me are associated with what commands
-    # I send to it.  This is insanely useful; I'm amazed it works.  (I had
-    # begun to think that the server designers had intentionally designed
-    # things to prevent anything useful from being usable.)
-    #
-    # But, alas, there is a serpent in paradise.  Nobody (and I mean NOBODY)
-    # other than lclient is allowed to receive %gs.  This means that signalling
-    # is utterly broken by my use of this option.  I therefore shall
-    # implement signalling entirely in the client, and to hell with the
-    # servers.
-    #
-    # Another REALLY useful option is `leaf-msg'.  It doesn't work right on
-    # 2.2a1 cores.  What a surprise!
-    #
-
-    send_to_server("\#\$\# client_version $TL_VERSION\n");
-    send_to_server("\#\$\# client_name TigerLily\n");
-    send_to_server("\#\$\# options +leaf-all +leaf\n");
-}
 
 
 sub set_status {

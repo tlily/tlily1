@@ -4,6 +4,8 @@ package LC::Expand;
 use Exporter;
 
 use LC::State;
+use LC::User;
+use LC::parse;
 use LC::UI;
 
 @ISA = qw(Exporter);
@@ -68,4 +70,17 @@ sub exp_init () {
     ui_callback(';' => \&exp_expand);
     ui_callback('=' => \&exp_expand);
     ui_callback('C-i' => \&exp_complete);
+
+    register_user_input_handler(sub {
+	my($event) = @_;
+	if ($event->{Line} =~ /^([^:;]*)[;:]/) {
+	    exp_set('recips', $1);
+	}
+	return 0;
+    });
+
+    register_eventhandler('privhdr', sub {
+	my($event) = @_;
+	exp_set('sender', $event->{From});
+    });
 }

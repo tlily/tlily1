@@ -2,11 +2,8 @@ package LC::parse;                  # -*- Perl -*-
 
 use Exporter;
 use LC::status_update;
-use LC::Expand;
-use LC::State;
 use LC::config;
 use LC::UI;
-use LC::gag;
 use LC::log;
 use POSIX;
 
@@ -48,7 +45,7 @@ my $token = 0;
 my %event_handlers = ();
 
 
-sub register_preparser ($) {
+sub register_preparser (&) {
     my($cmd) = @_;
     $token++;
     push @preparsers, [$token, $cmd];
@@ -57,12 +54,12 @@ sub register_preparser ($) {
 
 
 sub deregister_preparser ($) {
-    my($token) = @_;
-    @preparsers = grep { $$_[0] != $token } @preparsers;
+    my($t) = @_;
+    @preparsers = grep { $$_[0] != $t } @preparsers;
 }
 
 
-sub register_eventhandler ($$) {
+sub register_eventhandler ($&) {
     my($event, $cmd) = @_;
 
     $token++;
@@ -72,10 +69,9 @@ sub register_eventhandler ($$) {
 
 
 sub deregister_eventhandler ($$) {
-    my($event, $token) = @_;
-
+    my($event, $t) = @_;
     @{$event_handlers{$event}} =
-	grep { $$_[0] != $token } @{$event_handlers{$event}};
+	grep { $$_[0] != $t } @{$event_handlers{$event}};
 }
 
 
@@ -173,7 +169,27 @@ sub parse_line ($) {
 	goto found;
     }
 
-    # The options notification.
+    # %beginmsg
+    if ($line =~ /^%beginmsg/) {
+	%event = (Type => 'beginmsg',
+		  Invisible => 1);
+	goto found;
+    }
+
+    # %endmsg
+    if ($line =~ /^%endmsg/) {
+	%event = (Type => 'endmsg',
+		  Invisible => 1);
+	goto found;
+    }
+
+    # %connected
+    if ($line =~ /^%connected/) {
+	%event = (Type => 'connected');
+	goto found;
+    }
+
+    # The options notification.  (OK, not a %command...but it fits here.)
     if ($line =~ /^\[Your options are/) {
 	%event = (Type => 'options',
 		  Invisible => 1);
@@ -188,13 +204,6 @@ sub parse_line ($) {
 
     # prompts ################################################################
 
-    # Passwords are a bit of a special case.
-    if ($line =~ /^password:/) {
-	%event = (Type => 'prompt',
-		  Hide => 1);
-	goto found;
-    }
-
     # All the other prompts.
     foreach (@prompts) {
 	if ($line =~ /$_/) {
@@ -206,7 +215,10 @@ sub parse_line ($) {
 
     # /review ################################################################
 
-    if ($line =~ /^\#\s*$/ || $line =~ /^\# [<>\-\*\(]/) {
+    if (($line =~ /^\#\s*$/) ||
+	($line =~ /^\#\s[\>\-\*\(]/) ||
+	($line =~ /^\# \\\</)) {
+
 	if (substr($line, 2, 1) eq '*') {
 	    $line = substr($line, 2);
 	    $review = '# ';
