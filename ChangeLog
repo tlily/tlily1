@@ -1,4 +1,7 @@
 Version 1.0.1-post
+  * [extensions/url.pl] Added "tag_urls" config option to specify the
+    URL number of each captured URL.  Added support for "%url ##" where
+    ## <= 0; this shows URLs off the bottom of the list.  [DPN]
   * [tlily.global] Added examples for autoreview.  [DPN]
   * [extensions/autoreview.pl] Added the 'autoreview' extension.  [DPN]
   * [extensions/pipes.pl] Create temp files with mode 0600, and delete them
