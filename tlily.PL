@@ -79,7 +79,7 @@ sub sig_int {
 	register_timedhandler(Interval => 5,
 			      Call => sub {
             $int_active = 0;
-	    ui_output("(you waited to long to hit ctrl-c; exit aborted)");
+	    ui_output("(you waited too long to hit ctrl-c; exit aborted)");
 	});
     } else {
 	ui_end();
