@@ -1,4 +1,4 @@
-# $Header: /data/cvs/tlily/extensions/keepalive.pl,v 1.2 1998/05/29 05:12:29 mjr Exp $
+# $Header: /data/cvs/tlily/extensions/keepalive.pl,v 1.3 1998/06/07 09:55:48 danaf Exp $
 #
 # keepalive -- periodically ping the server, just to verify our connection
 #              is still there.
@@ -34,4 +34,4 @@ if ($config{keepalive_interval} <= 0) {
 
 register_timedhandler(Interval => $config{keepalive_interval},
 		      Repeat => 1,
-		      Code => \&keepalive);
+		      Call => \&keepalive);
