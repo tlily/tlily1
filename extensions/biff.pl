@@ -1,4 +1,4 @@
-# $Header: /data/cvs/tlily/extensions/biff.pl,v 1.4 1998/06/23 02:02:45 mjr Exp $
+# $Header: /data/cvs/tlily/extensions/biff.pl,v 1.5 1999/02/02 07:41:02 mjr Exp $
 #
 # A Biff module
 #
@@ -276,9 +276,9 @@ turn notification on and off, the 'list' argument lists the maildrops
 currently being monitored, and if no argument is given, %biff will list
 those maildrops with unread mail.
 
-Mail drops can be set via the %config{biff_drops} variable, by assigning
+Mail drops can be set via the \$config{biff_drops} variable, by assigning
 an arrayref of hashrefs to it, such as:
-$config{biff_drops} = [{type => 'mbox', path => '/home/mjr/Mailbox'}];
+\$config{biff_drops} = [{type => 'mbox', path => '/home/mjr/Mailbox'}];
 
 Valid types and their requiremed elements are:
 mbox - Standard Unix mbox file
@@ -290,7 +290,7 @@ rpimchk - RPI lightweight POP mail check protocol
   port => mailcheck port (usually 1110)
   user => account username
 
-The $config{biff_interval} can be set to the interval between maildrop polls,
+The \$config{biff_interval} can be set to the interval between maildrop polls,
 in seconds.  If one of your maildrops is not an mbox or maildir, please
 be considerate, and keep the interval above 5 minutes.  (That's 300 seconds
 for those non-math types.)

@@ -1,7 +1,9 @@
 Version 1.0.4-post
-  * [README, Build.PL] Changed occurances of einstein.to to einstein.org.
+  * [extensions/{biff.pl,info.pl] Fixed bugs in help text. [MJR]
+  * [extensions/submit.pl] New extension for submitting bug reports [MJR]
+  * [README, Build.PL] Changed occurances of einstein.to to einstein.org. [MJR]
   * [README] Added info for access to the bug tracking system [MJR]
-  * [LC/Client.pm] Bugfix for  tlily not reporting version to the server. [MJR]
+  * [LC/Client.pm] Bugfix for tlily not reporting version to the server. [MJR]
   * [extensions/parse.pl] Bugfix for /who output and names with spaces.  [DPN]
 
 Version 1.0.4

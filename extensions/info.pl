@@ -1,5 +1,5 @@
 # -*- Perl -*-
-# $Header: /data/cvs/tlily/extensions/info.pl,v 2.1 1998/06/12 08:56:36 albert Exp $
+# $Header: /data/cvs/tlily/extensions/info.pl,v 2.2 1999/02/02 07:41:05 mjr Exp $
 
 sub info_set(%) {
     my %args=@_;
@@ -162,7 +162,7 @@ Note: You can set your editor via \%set editor, or the VISUAL and EDITOR
 
 register_help_short("export", "Export a file to /info");
 register_help_long("export", "
-%export <filnename> [discussion] - Allows you to set a /info to the contents of 
+%export \<filnename\> [discussion] - Allows you to set a /info to the contents of 
                                a file
 ");
 
