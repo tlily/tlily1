@@ -9,7 +9,6 @@ use LC::UI;
 use LC::Server;
 use LC::parse;
 use LC::Expand;
-use LC::gag;
 use LC::Command;
 use LC::User;
 use LC::State;
@@ -40,7 +39,6 @@ exp_init();
 cmd_init();
 state_init();
 user_init();
-gag_init();
 info_init();
 
 ui_attr('sender','bold');
