@@ -41,6 +41,9 @@ my (%opfx,%ipfx);
 my $subcli_num;
 $status="";
 
+# Or else we get big WARNING:s.
+$SIG{PIPE} = "IGNORE";
+
 register_statusline(Var => \$status,
                     Position => "FORCELEFT");
 
@@ -108,16 +111,21 @@ sub subclient_del {
 	    $rhandle{$subcli}->close;
 	    $whandle{$subcli}->close;
 	    $ehandle{$subcli}->close;
+		 #ui_end();
 	    kill "TERM",$pid{$subcli};
-	    waitpid($pid{$subcli},&WNOHANG);
+		 #ui_start();
+# Handled now by the SIGCHLD handler
+#	    waitpid($pid{$subcli},&WNOHANG);
 	}
     }
     @subcli=@newsubcli;
     $subcli_num=0;
     if ($#subcli == 0) {
 	$status="";
+	$SIG{CHLD} = "DEFAULT";
     } else {
 	$status=ui_escape("<$subcli[$subcli_num]>");
+	$SIG{CHLD} = \&sig_chld_handler;
     }
     redraw_statusline(1);       
 
@@ -132,6 +140,7 @@ sub subclient_del {
 sub subclient_add {
     ($cmd,$subcli,@proc)=split /\s+/,"@_";
     my $proc=join ' ',@proc;
+	 my $pid;
     
     $opfx="$subcli>";
     $ipfx=$subcli;
@@ -144,16 +153,22 @@ sub subclient_add {
 			      Call => \&sc_userinput_handler);
     }
 
+    $SIG{CHLD} = \&sig_chld_handler;
+
     $rh=$rhandle{$subcli}=new FileHandle;
     $wh=$whandle{$subcli}=new FileHandle;
     $eh=$ehandle{$subcli}=new FileHandle;
     
     # fork off the process and hook it into tigerlily..
-    $pid = open3($wh, $rh, $eh, $proc);
+	 #ui_end();
+    eval { $pid = open3($wh, $rh, $eh, $proc); };
+	 #ui_start();
     if (! $pid) {
-	ui_output("(Error starting subclient)");
-	return;
+#	ui_output("(Error starting subclient)");
+	exit;
     }
+
+	 ui_output("(Error starting subclient: $@)") if $@;
 
     $ipfx{$subcli}=$ipfx;
     $opfx{$subcli}=$opfx;
@@ -189,9 +204,9 @@ sub subcli_input_process {
     }     
 
     my $buf;
-#    my $s=new IO::Select;
-#    $s->add($hdl);
-#    if (! ($s->can_read(0))) { return; }
+    my $s=new IO::Select;
+    $s->add($hdl);
+    if (! ($s->can_read(0))) { return; }
 
     my $rc = sysread($hdl,$buf,4096);
     if ($rc < 0) {
@@ -245,7 +260,14 @@ sub sc_userinput_handler {
     return 0;
 }
 
+sub sig_chld_handler {
+    my $child;
+	 my %pids = reverse %pid;
 
-
-
-
+    while ($child = waitpid(-1, WNOHANG)) {
+	last if (!$pids{$child});
+   ui_output("(Subclient $pids{$child} terminated abnormally)")
+  if ($? == WIFSIGNALED);
+   subclient_del("remove", $pids{$child});
+	 }
+}
