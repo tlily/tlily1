@@ -4,7 +4,7 @@ package LC::Config;
 use FileHandle;
 use Safe;
 use Exporter;
-#require "dumpvar.pl";
+require "dumpvar.pl";
 
 @ISA = qw(Exporter);
 @EXPORT = qw(&config_init &config_ask %config);
@@ -74,9 +74,9 @@ sub read_init_files {
 		}
 	    }
 #	    print STDERR "*** Done examining ", $safe->root, "\n";
-#	    print STDERR "*** \%config after $ifile:\n";
-#	    main::dumpValue(\%config);
-#	    print STDERR "*** Done \%config after $ifile\n";
+	    print STDERR "*** \%config after $ifile:\n";
+	    main::dumpValue(\%config);
+	    print STDERR "*** Done \%config after $ifile\n";
 	}
     }
 }
@@ -107,6 +107,9 @@ sub parse_command_line {
     my ($snrub,$xyzzy);
 
     while(@ARGV) {
+	if($ARGV[0] =~ /^-(h|help|\?)$/) {
+	    Usage; exit;
+	}
 	if($ARGV[0] =~ /^-(s|server)$/) {
 	    shift @ARGV; $config{server} = shift @ARGV; next;
 	}
