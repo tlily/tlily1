@@ -178,6 +178,7 @@ sub statusline_init() {
 	if ($event->{IsUser}) {
 	    $status_Pseudo = $event->{User};
 	    $status_Blurb = $event->{Blurb};
+	    $status_Blurb =~ s/</\</g; $status_Blurb =~ s/>/\\>/g;	    
 	    redraw_statusline();
 	}
 	return 0;
