@@ -294,6 +294,11 @@ sub min($$) {
 sub ui_start() {
     $config{'terminal'} ||= 'LC::CTerminal';
     eval "use $config{'terminal'};";
+    if ($@) {
+	print STDERR "Error: cannot initialize terminal \"$config{terminal}\".\n";
+	print STDERR $@, "\n";
+	exit;
+    }
     $term = $config{'terminal'}->new();
     $term->term_init(sub {
 	$ui_cols = $term->term_cols;
