@@ -1,5 +1,5 @@
 # -*- Perl -*-
-# $Header: /data/cvs/tlily/extensions/gag.pl,v 1.8 1998/06/02 20:33:53 steve Exp $
+# $Header: /data/cvs/tlily/extensions/gag.pl,v 1.9 1998/06/02 23:07:45 steve Exp $
 
 #
 # The gag extension adds the ability to `gag' all sends from a given user.
@@ -20,6 +20,7 @@ sub gag_command_handler($) {
 	return;
     }
 
+    my $clear = $args =~ s/ clear$//;
     $name = expand_name($args);
     if ((!defined $name) || ($name =~ /^-/)) {
 	ui_output("(could find no match to \"$args\")");
@@ -28,8 +29,11 @@ sub gag_command_handler($) {
 
     if ($gagged{$name}) {
 	delete $gagged{$name};
-	ui_resetfilter('gag');
+	ui_resetfilter('gag') if $clear;
 	ui_output("($name is no longer gagged.)");
+    } elsif ($clear) {
+    	ui_resetfilter('gag');
+	ui_output("($name is no longer muffled.)");
     } else {
 	$gagged{$name} = 1;
 	ui_resetfilter('gag');
