@@ -1,4 +1,4 @@
-Version 1.0-post
+Version 1.0.1
   * [extensions/parse.pl] Possible fix for an obscure parser bug.  [DPN]
   * [extensions/view.pl, extensions/log.pl] IO::File bug fix [MJR]
   * [LC/SubClient.pm] Fixed so it works again. [SMC]
@@ -9,8 +9,6 @@ Version 1.0-post
   * [lilybot.PL] Extensive modifications.  Try the "help" command. [JDW]
   * [extensions/biff.pl] Redesign and rewrite, added RPI lightweight POP
     mail check support. [MJR]
-
-Version 1.0
   * [LC/Extend.pm] Modified to work with ExoSafe.pm [MJR]
   * [LC/ExoSafe.pm] New file - replaces Safe, providing namespace
     seperation without the problems of Safe.pm [MJR]
