@@ -775,11 +775,7 @@ sub do_announcement {
 	undef $f;
 	undef $cl;
 
-	my $mail = new FileHandle("|/usr/sbin/sendmail -t");
-	die "Couldn't send mail: $!" if !$mail;
-#	my $mail = STDOUT;
-
-	print $mail qq(From: "Tigerlily Developers" <tigerlily\@hitchhiker.org>
+	my $msg = qq(From: "Tigerlily Developers" <tigerlily\@hitchhiker.org>
 To: "Tigerlily Announcement List" <tigerlily-announce\@einstein.to>
 Subject: Tigerlily $version is now available
 
@@ -803,6 +799,26 @@ Damien, Albert, Josh, Jon, Steve & Matt.
 To unsubscribe from this list, send email to <majordomo\@einstein.to> with
 the words "unsubscribe tigerlily-announce" in the body.
 );
+	my $abort_flag;
+	my $editor = $ENV{EDITOR} || $ENV{VISUAL} || "vi";
+	while(1) {
+	    print $msg;
+	    my $ans = &ask("(s)end, (e)dit, or (a)bort:", "s");
+	    last if $ans eq 's';
+	    if($ans eq 'a') { $abort_flag = 1; last; }
+	    if($ans eq 'e') {
+		FileHandle->new("msgtmp.$$", 'w')->print($msg);
+		system($editor, "msgtmp.$$");
+	    }
+	    $msg = join("", FileHandle->new("msgtmp.$$", 'r')->getlines());
+	    unlink("msgtmp.$$");
+	}
+	if(!$abort_flag) {
+	    my $mail = new FileHandle("|/usr/sbin/sendmail -t");
+	    die "Couldn't send mail: $!" if !$mail;
+#	    my $mail = STDOUT;
+	    print $mail $msg;
+	}
     }
     else {
 	print "Don't forget to send an announcement of the new release\n",

@@ -1,3 +1,8 @@
+Version 0.8b
+  * [extensions/after.pl] %after lists afterids.  %after cancel <id>
+                          cancels an after. [CWS]
+  * [Build.PL] Allow the releaser to edit the announcement message. [CWS]
+
 Version 0.8a
   * [extensions/parse.pl] Parser tweak: handle private sends in /reviews. [DPN]
   * [extensions/look.pl] Output in a columnar format, limit lines.  [DPN]
