@@ -13,6 +13,8 @@ register_help_long('version', "usage: %version\n* Displays the version of Tigerl
 register_user_command_handler('echo', \&echo_handler);
 register_help_short('echo', "Echo text to the screen.");
 
+my $last_command = '';
+
 
 # %eval handler
 sub eval_handler($) {
@@ -27,9 +29,12 @@ register_user_command_handler('eval', \&eval_handler);
 sub bang_handler($$) {
     my($event,$handler) = @_;
     if ($event->{Text} =~ /^\!(.*?)\s*$/) {
+    	my $cmd = $1;
 	$event->{ToServer} = 0;
+	$cmd = $last_command if ($cmd =~ /\!/);
+	$last_command = $cmd;
 	ui_output("[beginning of command output]");
-	open(FD, "$1 2>&1 |");
+	open(FD, "$cmd 2>&1 |");
 	my @r = <FD>;
 	close(FD);
 	foreach (@r) {
