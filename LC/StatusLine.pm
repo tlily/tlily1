@@ -6,7 +6,7 @@ use Tie::Hash;
 use LC::Server;
 use LC::UI;
 use LC::parse;
-use LC::config;
+use LC::Config;
 use LC::Event;
 use LC::log;
 
@@ -33,7 +33,23 @@ sub render() {
     push @right, $status{State} if (defined($status{State}));
 
     my @a = localtime;
-    push @right, sprintf("%02d:%02d", $a[2], $a[1]);
+    if(defined $config{clockdelta}) {
+	my($t) = ($a[2] * 60) + $a[1] + $config{clockdelta};
+	$t += (60 * 24) if ($t < 0);
+	$a[2] = int($t / 60);
+	$a[1] = $t % 60;
+    }
+    my($ampm);
+    if(defined $config{clocktype}) {
+	if($a[2] >= 12 && $config{clocktype} eq '12') {
+	    $ampm = 'p';
+	    $a[2] -= 12 if $a[2] > 12;
+	}
+	elsif($a[2] < 12 && $config{clocktype} eq '12') {
+	    $ampm = 'a';
+	}
+    }
+    push @right, sprintf("%02d:%02d%s", $a[2], $a[1], $ampm);
 
     my $left=join ' | ',@left;
     my $right=join ' | ',@right;
