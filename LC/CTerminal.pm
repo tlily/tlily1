@@ -76,7 +76,9 @@ term_refresh() is called.
 
 =item term_init()
 
-This function must be called prior to any use of the screen.
+This function must be called prior to any use of the screen.  It takes a
+single parameter: a code reference which will be called when the terminal
+is resized.
 
 =item term_end()
 
@@ -165,6 +167,7 @@ Sounds an audible bell.
 use Exporter;
 use Curses;
 use POSIX;
+use LC::config;
 
 @ISA = qw(Exporter);
 
@@ -188,6 +191,7 @@ use POSIX;
 
 
 my $term_up = 0;
+my $resize_cb;
 my %attrs = ('bold' => 0,
 	     'reverse' => 0,
 	     'foreground' => 'black',
@@ -204,8 +208,9 @@ my %color_pairs = ('black:white' => 0);
 
 
 # Initialize the terminal.
-sub term_init () {
+sub term_init ($) {
     return if ($term_up);
+    $resize_cb = $_[0];
     initscr();
     $term_lines = $LINES; 
     $term_cols = $COLS;
@@ -213,7 +218,9 @@ sub term_init () {
     cbreak();
     keypad(1);
     nodelay(1);
-    start_color();
+    $config{mono} = 1 unless (has_colors());
+    start_color() unless ($config{mono});
+    $SIG{WINCH} = \&term_winch;
     $term_up = 1;
 }
 
@@ -221,9 +228,18 @@ sub term_init () {
 # End use of the terminal.
 sub term_end () {
     return unless ($term_up);
+    undef $SIG{WINCH};
     endwin();
     %color_pairs = ('black:white' => 0);
     $term_up = 0;
+}
+
+
+# Handle a window size change.
+sub term_winch {
+    term_end();
+    term_init($resize_cb);
+    &$resize_cb if (defined $resize_cb);
 }
 
 

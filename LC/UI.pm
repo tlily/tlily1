@@ -226,7 +226,14 @@ sub min($$) {
 
 # Starts the curses UI.
 sub ui_start() {
-    term_init();
+    term_init(sub {
+	$ui_cols = $term_cols;
+	@text_heights = ();
+	$text_r = 0;
+	scroll_info();
+	$status_update_time = 0;
+	&redraw;
+    });
     $ui_cols = $term_cols;
     &redraw;
 }
@@ -906,14 +913,14 @@ sub input_nexthistory($$$) {
 sub input_accept($$$) {
     my($key, $line, $pos) = @_;
 
-    $input_prompt = '';
-    $input_curhistory = $#input_history;
-
     if (($line eq '') && (($text_l != $#text_lines) ||
 			  ($text_r != line_height($text_l) - 1))) {
 	input_pagedown();
 	return ($line, $pos, 0);
     }
+
+    $input_prompt = '';
+    $input_curhistory = $#input_history;
 
     if (($line ne '') && (!$password)) {
 	$input_history[$#input_history] = $line;
