@@ -4,7 +4,7 @@ package LC::Config;
 use FileHandle;
 use Safe;
 use Exporter;
-require "dumpvar.pl";
+#require "dumpvar.pl";
 
 @ISA = qw(Exporter);
 @EXPORT = qw(&config_init &config_ask %config);

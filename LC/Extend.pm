@@ -13,7 +13,7 @@ use LC::State;
 use LC::log;
 use LC::Config;
 use LC::Event;
-require "dumpvar.pl";
+#require "dumpvar.pl";
 
 @ISA = qw(Exporter);
 
