@@ -192,6 +192,7 @@ sub win_draw_line ($$) {
 	    attrset (pop @attrstack);
 	    $line = substr($line, length $&);
 	} elsif ($line =~ /^([^\>]*)\>/) {
+	    my $tag = $1;
 	    push @attrstack, getattrs;
 	    if (defined($attr_list{$tag})) {
 		foreach (@{$attr_list{$tag}}) {
