@@ -1,3 +1,4 @@
+  * moved gag code into the UI, so now we can ungag and see what was said [JDW]
   * load vinfo by default, but send _no_ replies automatically. [JDW]
   * modified %help prefix to ? instead of * [JDW]
   * modified autoreply and log to use the status line [JDW]
