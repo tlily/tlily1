@@ -392,7 +392,7 @@ sub parse_line($$) {
 	    $msg_sender = $1;
 	    $blurb = undef;
 	    @msg_dest = split /, /, $2;
-	if ($line =~ s|rom ([^\[]*) \[(.*)\], to (.*):|rom <sender>$1</sender> \[<blurb>$2</blurb>\], to <dest>$3</dest>:|) {
+	} elsif ($line =~ s|rom ([^\[]*) \[(.*)\], to (.*):|rom <sender>$1</sender> \[<blurb>$2</blurb>\], to <dest>$3</dest>:|) {
 	    $msg_sender = $1;
 	    $blurb = $2;
 	    @msg_dest = split /, /, $3;
