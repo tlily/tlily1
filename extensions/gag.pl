@@ -33,7 +33,7 @@ sub muffle($) {
 sub gag_event_handler(\%\%) {
     my($event,$handler) = @_;
 
-    $event->{Text} = muffle($event->{Text})
+    $event->{Body} = muffle($event->{Body})
 	if ($gagged{$event->{From}});
     return 0;
 }
