@@ -38,27 +38,28 @@ my $status_line = "";
 
 my @accepted_lines = ();
 
-my %key_trans = ('kl' => \&input_left,
-		 '' => \&input_left,
-		 'kr' => \&input_right,
-		 '' => \&input_right,
-		 'ku' => \&input_prevhistory,
-		 '' => \&input_prevhistory,
-		 'kd' => \&input_nexthistory,
-		 '' => \&input_nexthistory,
-		 '' => \&input_home,
-		 '' => \&input_end,
-		 '' => \&input_killtoend,
-		 '' => \&input_killtohome,
+my %key_trans = ('kl'   => \&input_left,
+		 'C-b'  => \&input_left,
+		 'kr'   => \&input_right,
+		 'C-f'  => \&input_right,
+		 'ku'   => \&input_prevhistory,
+		 'C-p'  => \&input_prevhistory,
+		 'kd'   => \&input_nexthistory,
+		 'C-n'  => \&input_nexthistory,
+		 'C-a'  => \&input_home,
+		 'C-e'  => \&input_end,
+		 'C-k'  => \&input_killtoend,
+		 'C-u'  => \&input_killtohome,
 		 'pgup' => \&input_pageup,
-		 '' => \&input_pageup,
+		 'C-b'  => \&input_pageup,
 		 'pgdn' => \&input_pagedown,
-		 '' => \&input_pagedown,
-		 "\r" => \&input_accept,
-		 "\n" => \&input_accept,
-		 "" => \&input_refresh,
-		 '' => \&input_bs,
-		 'bs' => \&input_bs
+		 'C-f'  => \&input_pagedown,
+		 'nl'   => \&input_accept,
+		 'C-w'  => \&input_killword,
+		 'C-l'  => \&input_refresh,
+		 'C-d'  => \&input_del,
+		 'C-h'  => \&input_bs,
+		 'bs'   => \&input_bs
 		 );
 
 my %attr_list = ();
@@ -500,6 +501,23 @@ sub input_bs ($$$) {
 }
 
 
+# Deletes the character after the input cursor.
+sub input_del ($$$) {
+    my ($key, $line, $pos) = @_;
+    return if ($pos >= length($line));
+    return input_bs('', $line, $pos + 1);
+}
+
+
+# Deletes the word preceding the input cursor.
+sub input_killword ($$$) {
+    my ($key, $line, $pos) = @_;
+    my $oldlen = length $line;
+    substr($line, 0, $pos) =~ s/\S+\s*$//;
+    return ($line, $pos - (length($line) - $oldlen), 2);
+}
+
+
 # Deletes all characters to the end of the line.
 sub input_killtoend ($$$) {
     my($key, $line, $pos) = @_;
@@ -510,7 +528,7 @@ sub input_killtoend ($$$) {
 # Deletes all characters to the beginning of the line.
 sub input_killtohome ($$$) {
     my($key, $line, $pos) = @_;
-    return (substr($line, $pos), $pos, 2);
+    return (substr($line, $pos), 0, 2);
 }
 
 

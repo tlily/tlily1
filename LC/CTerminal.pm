@@ -4,6 +4,7 @@ package LC::CTerminal;
 
 use Exporter;
 use Curses;
+use POSIX;
 
 @ISA = qw(Exporter);
 
@@ -190,13 +191,16 @@ my %key_map = (&KEY_DOWN      => 'kd',
 	       &KEY_PPAGE     => 'pgup',
 	       &KEY_NPAGE     => 'pgdn',
 	       &ALT_BACKSPACE => 'bs',     # fix for broken backspaces..
-	       &KEY_BACKSPACE => 'bs');
+	       &KEY_BACKSPACE => 'bs',
+	       "\n"           => 'nl',
+	       "\r"           => 'nl');
 
 # Returns a character if one is waiting, or undef otherwise.
 sub term_get_char () {
     my $ch = getch;
-    #return undef if ($ch eq ERR || $ch eq '-1');
+    return $key_map{$ch} if (defined $key_map{$ch});
     return undef if ($ch eq '-1');    
+    return (sprintf("C-%c", (ord($ch) + ord('a') - 1))) if (iscntrl($ch));
     return $key_map{$ch} || $ch;
 }
 

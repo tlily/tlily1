@@ -1,7 +1,7 @@
-#!/usr/bin/perl 
+#!/usr/local/bin/perl 
 #-w
 
-$TL_VERSION="0.1a";
+$TL_VERSION="0.1b";
 $debug=0;
 
 use LC::log; 
@@ -34,6 +34,7 @@ exp_init();
 ui_start();
 ui_attr('sender','bold');
 ui_attr('dest','bold');
+ui_attr('b',            'bold');
 if (! $config{mono}) {
     ui_attr('status_line',  'fg:yellow',  'bg:blue',  'bold');
     ui_attr('input_line',   'fg:white',   'bg:black', 'bold');
@@ -48,7 +49,8 @@ if (! $config{mono}) {
     ui_attr('greenblue',    'fg:green',   'bg:blue',  'bold');
     ui_attr('yellow',       'fg:yellow',  'bg:black',  'bold');
     ui_attr('green',        'fg:green',   'bg:black',  'bold');
-    ui_attr('b',            'bold');
+} else {
+    ui_attr('status_line', 'reverse');
 }
 
 tie $page_status, 'LC::status_update', 'page_status';
@@ -175,7 +177,7 @@ sub connect_until {
 		    # get a line of input from the user if it's available.
 		    $line=ui_process();		
 		    if (defined($line)) {		    
-			my $qline = $line; $qline =~ s/[\<\>]/\\$&/g;
+			my $qline = $line; $qline =~ s/[\<\\]/\\$&/g;
 			ui_output($qline);
 
 			if ($line =~ /^\!(.*)/) { 
@@ -190,13 +192,14 @@ sub connect_until {
 			} elsif ($line =~ /^([^:;]*)[;:]/) {
 			    # handle recipient caching for ;
 			    exp_set('recips', $1);
-			    send_to_server("$line\n");
+			    send_to_server($line . "\n");
 			} elsif ($line =~ /^\s*\/info set/i) {
 			    # handle /info set command.  
-			    set_info();
+			    $line =~ s/\s*\/info set\s*//g;
+			    set_info($line);
 			} else {
 			    # otherwise, send on to the server.
-			    send_to_server("$line\n");
+			    send_to_server($line . "\n");
 			}
 		    } else {
 #			log_debug("line undef"); 
@@ -371,21 +374,10 @@ sub set_status {
       
 }
 
-sub show_banner {
-
-    ui_output(qq[
-<yellow>     ("`-/")_.-'"``-._ </yellow>
-<yellow>      . . `; -._    )-;-,_`)</yellow>          <green>TigerLily $TL_VERSION</green>
-<yellow>     (v_,)'  _  )`-.\  ``-'</yellow>             <b>"Feel Free"</b>
-<yellow>    _.- _..-_/ / ((.'</yellow>
-<yellow>  ((,.-'   ((,/ </yellow>
-<b>------------------------------------------------------------------------------</b>
-]);
-}
-
 sub set_info {
     # rather than using the chee-z line editor in emacs, we fire off an editor
     # to let them edit the /info file.
+    my($disc)=@_;
     
     my $EDITOR=$ENV{VISUAL} || $ENV{EDITOR} || "vi";
     
@@ -407,12 +399,25 @@ sub set_info {
 	my $size=@info;
 
 	$cli_command="info set";
-	send_to_server("\#\$\# export_file info $size\n");
+	send_to_server("\#\$\# export_file info $size $disc\n");
     } else {
 	log_notice("info buffer file not found.");
     }
     
 }
+
+sub show_banner {
+
+    ui_output(qq[
+<yellow>     ("`-/")_.-'"``-._ </yellow>
+<yellow>      . . `; -._    )-;-,_`)</yellow>          <green>TigerLily $TL_VERSION</green>
+<yellow>     (v_,)'  _  )`-.\  ``-'</yellow>             <b>"Feel Free"</b>
+<yellow>    _.- _..-_/ / ((.'</yellow>
+<yellow>  ((,.-'   ((,/ </yellow>
+<b>------------------------------------------------------------------------------</b>
+]);
+}
+
 
 1;
 

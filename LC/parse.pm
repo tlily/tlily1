@@ -28,7 +28,7 @@ sub parse_output {
 
 sub parse_line {
     ($line)=@_;
-    $line =~ s/\</\\$&/g;
+    $line =~ s/[\<\\]/\\$&/g;
     $_=$line;
     
 #    main::log_debug("parse_line: \"$line\"");
@@ -55,6 +55,10 @@ sub parse_line {
 	&main::set_status(blurb => $1);
 	goto found;
     }    
+
+    if (/^\(your blurb has been turned off\)/) {
+	&main::set_status(blurb => '');
+    }
 
     # pseudo changes ####################################################
     if (/^\(you are now named \"(.*)\"/) {
@@ -90,24 +94,19 @@ sub parse_line {
     if (/^ >>/) { 
 	my $blurb;
 
-	if ($line =~ s|message from ([^\[]*) \[(.*)\]:|message from <sender>$1</sender> \[<blurb>$2</blurb>\]:|) {
-	    ($sender, $blurb) = ($1, $2);
-	} elsif ($line =~ s|message from (.*):|message from <sender>$1</sender>:|) {
+	if ($line =~ s|from ([^\[]*) \[(.*)\], to (.*):|from <sender>$1</sender> \[<blurb>$2</blurb>\], to <dest>$3</dest>:|) {
 	    $sender = $1;
-	    $blurb = undef;
+	} elsif ($line =~ s|from (.*), to (.*):|from <sender>$1</sender>, to <dest>$2</dest>:|) {
+	    $sender = $1;
+	} elsif ($line =~ s|from ([^\[]*) \[(.*)\]:|from <sender>$1</sender> \[<blurb>$2</blurb>\]:|) {
+	    $sender = $1;
+	} elsif ($line =~ s|from (.*):|from <sender>$1</sender>:|) {
+	    $sender = $1;
 	}
 
 	$parse_state="privhdr"; 
-	#if (/message from (.*) \[(.*)\]:/) {
-	#    ($sender,$blurb)=($1,$2);
-	#} else {
-	#    ($sender)=/message from (.*):/;	
-	#    $blurb=undef;
-	#}
 	my $qsender = $sender; $qsender =~ s/\s/_/g;
 	exp_set('sender', $qsender);
-	#$line=~s|from $sender|from <sender>$sender</sender>|;
-	#$line=~s|\[$blurb\]|\[<blurb>$blurb</blurb>\]|;
 	$line="<privhdr>$line</privhdr>";
 	goto found;
     }
