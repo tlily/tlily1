@@ -386,23 +386,35 @@ my %key_map = (&KEY_DOWN      => 'kd',
 	       "\r"           => 'nl');
 
 # Returns a character if one is waiting, or undef otherwise.
+my $metaflag = 0;
 sub term_get_char () {
-    shift;
+    my $self = shift;
     my $ch = getch;
     return undef if ($ch eq '-1');    
-    my $meta = '';
+
     if (ord($ch) == 27) {
-	$ch = getch;
-	return 'esc' if ($ch eq '-1');
-	$meta = 'M-';
-    } elsif ((ord($ch) >= 128) && (ord($ch) < 256)) {
-	$ch = chr(ord($ch)-128);
-	$meta = 'M-';
+	$metaflag = 1;
+	return $self->term_get_char();
     }
-    return $meta . $key_map{$ch} if (defined $key_map{$ch});
-    return ($meta . sprintf("C-%c", (ord($ch) + ord('a') - 1)))
-	if (iscntrl($ch));
-    return $meta . ($key_map{$ch} || $ch);
+
+    if ((ord($ch) >= 128) && (ord($ch) < 256)) {
+	$ch = chr(ord($ch)-128);
+	$metaflag = 1;
+    }
+
+    my $res;
+    if (defined $key_map{$ch}) {
+	$res = $key_map{$ch};
+    } elsif (iscntrl($ch)) {
+	$res = "C-" . (ord($ch) + ord('a') - 1);
+    } else {
+	$res = $ch;
+    }
+
+    $res = "M-" . $res if ($metaflag);
+
+    $metaflag = 0;
+    return $res;
 }
 
 
