@@ -1,4 +1,5 @@
 Version 0.7b
+  * [LC/State.pm] Handle 'me' as a destination.  [DPN]
   * [extensions/parse.pl] Yet another attempt at making /info set work.  [DPN]
   * [LC/parse.pm, extensions/parse.pl] Made the parser an extension.  [DPN]
   * [tlily.PL] Catch SIGPIPE.  [DPN]

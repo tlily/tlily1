@@ -136,6 +136,7 @@ use LC::Config;
 
 
 # Do not my these, as they can be useful for debugging.
+$Me = undef;
 %Users = ();
 %Discs = ();
 %Groups = ();
@@ -151,6 +152,11 @@ sub expand_name ($) {
     $name = lc($name);
     $name =~ tr/ /_/;
     $disc = 1 if ($name =~ s/^-//);
+
+    # Check for "me".
+    if (!$disc && $name eq 'me') {
+	return $Me || 'me';
+    }
 
     # Check for an exact match.
     if ($Groups{$name}) {
