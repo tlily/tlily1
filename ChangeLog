@@ -1,4 +1,4 @@
-Version 1.0.3-post
+Version 1.0.4
   * [extensions/parse.pl] Parser fixes to cope with the changed lily output
     format for /who.  This should hopefully work on all servers -- it
     autodetects based on the /who headers.  [DPN]
