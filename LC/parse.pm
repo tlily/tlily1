@@ -337,7 +337,7 @@ sub parse_line($$) {
 	} elsif ($line =~ s|from (.*), to (.*):|from <sender>$1</sender>, to <dest>$2</dest>:|) {
 	    $msg_sender = $1;
 	    $blurb = undef;
-	    @msg_dest = split /, /, $3;
+	    @msg_dest = split /, /, $2;
 	} elsif ($line =~ s|from ([^\[]*) \[(.*)\]:|from <sender>$1</sender> \[<blurb>$2</blurb>\]:|) {
 	    $msg_sender = $1;
 	    $blurb = $2;
@@ -371,7 +371,7 @@ sub parse_line($$) {
 	} elsif ($line =~ s|From (.*), to (.*):|From <sender>$1</sender>, to <dest>$2</dest>:|) {
 	    $msg_sender = $1;
 	    $blurb = undef;
-	    @msg_dest = split /, /, $3;
+	    @msg_dest = split /, /, $2;
 	} else {
 	    # Now what?
 	    goto found;
