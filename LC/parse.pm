@@ -83,7 +83,7 @@ sub parse_line {
     }    
 
     if (/^\(your blurb has been turned off\)/) {
-	&main::set_status(blurb => '');
+	&main::set_status(blurb => undef);
     }
 
     # pseudo changes ####################################################
@@ -113,6 +113,12 @@ sub parse_line {
 	goto found;
     }
 
+    # you have idled away ##############################################
+    if (/^\(you have idled \"away\"/) {
+	&main::set_status( here => "decr" );
+	&main::set_status( away => "incr" );
+	goto found;
+    }
     # other ()'s #######################################################
     # fall out to undef state.
     if (/^\(/) { $parse_state=undef; goto found; }
@@ -253,15 +259,24 @@ sub parse_line {
     if (/^\*\*\*/) {
 	s/^\*\*\*//;
 	if (/^(.*) has detached/) {
-	    &main::set_status( detached => "incr" );
-	    &main::set_status( here => "decr" );
+	    &main::do_how();
 	}
 	if (/^(.*) has been detached/) {
-	    &main::set_status( detached => "incr" );
-	    &main::set_status( here => "decr" );
+	    &main::do_how();
 	}
 	if (/^(.*) has left lily/) {
+	    &main::do_how();
+	}
+	if (/^(.*) has idled to death/) {
+	    &main::do_how();
+	}
+	if (/^(.*) has idled \"away\"/) {
 	    &main::set_status( here => "decr" );
+	    &main::set_status( away => "incr" );
+	}
+	if (/^(.*) is now \"away\"/) {
+	    &main::set_status( here => "decr" );
+	    &main::set_status( away => "incr" );
 	}
 	if (/^(.*) has reattached/) {
 	    &main::set_status( detached => "decr" );
@@ -271,9 +286,8 @@ sub parse_line {
 	    &main::set_status( here => "incr" );
 	    &main::set_status( away => "decr" );
 	}
-	if (/^(.*) is now \"away\"/) {
-	    &main::set_status( here => "decr" );
-	    &main::set_status( away => "incr" );
+	if (/^(.*) has entered lily/) {
+	    &main::set_status( here => "incr" );
 	}
     }
 

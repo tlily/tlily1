@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/local/bin/perl
 
 $TL_VERSION="0.1e";
 $debug=0;
@@ -377,7 +377,7 @@ sub set_status {
 
     my @left;
     my $name=$status{pseudo};
-    $name .= "[$status{blurb}]" if (defined($status{blurb}));
+    $name .= " [$status{blurb}]" if (defined($status{blurb}));
     push @left, $name if length($name);
     push @left,"Parse: $LC::parse::parse_state" if $debug;
     my @right;
