@@ -1,8 +1,7 @@
 # -*- Perl -*-
-# $Header: /data/cvs/tlily/LC/Config.pm,v 1.15 1998/05/29 05:12:17 mjr Exp $
+# $Header: /data/cvs/tlily/LC/Config.pm,v 1.16 1998/06/12 05:23:47 albert Exp $
 package LC::Config;
 
-use FileHandle;
 use Safe;
 use Exporter;
 #require "LC/dumpvar.pl";
@@ -175,14 +174,28 @@ sub read_init_files {
 #	    print STDERR "*** Examining ", $safe->root, "\n";
 	    foreach $key (keys %stab) {
 		next if($key =~ /^_/ || $key =~ /::/ || $key eq ENV || $key eq TL_VERSION);
+#		print STDERR "KEY: $key\n";
 		local(*entry) = $stab{$key};
 		if(defined $entry) {
+#		    print STDERR "TYPE: SCALAR\n";
 		    $config{$key} = $entry;
 		}
 		if(defined @entry) {
-		    $config{$key} = [ @{$config{$key}}, @entry ];
+#		    print STDERR "TYPE: ARRAY\n";
+		    if(scalar(@entry) == 1 && !defined $entry[0]) {
+			if(not exists $config{$key}) {
+			    $config{$key} = [];
+			}
+		    } else {
+			if(exists($config{$key})) {
+			    $config{$key} = [ @{$config{$key}}, @entry ];
+			} else {
+			    $config{$key} = \@entry;
+			}
+		    }
 		}
 		if(defined %entry) {
+#		    print STDERR "TYPE: HASH\n";
 		    my($k);
 		    foreach $k (keys %entry) {
 			$config{$key}->{$k} = $entry{$k};
@@ -276,6 +289,7 @@ sub collapse_list {
 #    print STDERR "collapse lref\n";
 #    main::dumpValue($lref);
     foreach $ext (@{$lref}) {
+	next if $ext eq undef;
 	if($ext =~ /^-(.*)$/) {
 	    delete $list{$1};
 	} else {
