@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# $Header: /data/cvs/tlily/Build.PL,v 2.2 1998/12/09 01:52:52 albert Exp $
+# $Header: /data/cvs/tlily/Build.PL,v 2.3 1998/12/09 02:00:39 albert Exp $
 
 use Config;
 use Carp;
@@ -316,6 +316,7 @@ elsif($target eq 'announce') {
 elsif($target eq 'clean') {
     rmtree('buildtmp', 0, 0);
     unlink("tlily");
+    unlink("lilybot");
     unlink("tlily-$VERSION.tar");
     unlink("tlily-$VERSION.tar.gz");
     unlink("build.cache");
