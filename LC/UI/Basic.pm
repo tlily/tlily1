@@ -46,15 +46,12 @@ sub ui_bell {
 
 sub ui_output {
     my $self=shift;
-
-    my %h;
-    if (@_ == 1) {
-	%h = (Text => $_[0]);
-    } else {
-	%h = @_;
-    }
+    my %h=@_;
 
     my $text=strip_tags($h{Text});
+
+    $h{FileHandle} |= "STDOUT";
+    my $orig_selected=select ($h{FileHandle});
 
     # NOTE:  This code does not do word wrapping.
     my ($char,$line);
@@ -74,6 +71,8 @@ sub ui_output {
 	$line=~s/^$h{WrapChar}$h{WrapChar}/$h{WrapChar}/;	
 	print "$line\n";
     }
+
+    select($orig_selected);
 }
 
 sub ui_process {

@@ -1,5 +1,5 @@
 # -*- Perl -*-
-# $Header: /data/cvs/tlily/LC/UI/Native.pm,v 1.1 1998/10/24 04:00:32 josh Exp $
+# $Header: /data/cvs/tlily/LC/UI/Native.pm,v 1.2 1998/10/24 20:05:59 josh Exp $
 package LC::UI::Native;
 
 =head1 NAME
@@ -631,13 +631,6 @@ sub win_scroll($$) {
 # Adds a line of text to the text window.
 sub ui_output {
     my $self=shift;
-
-    my %h;
-    if (@_ == 1) {
-	%h = (Text => $_[0]);
-    } else {
-	%h = @_;
-    }
 
     my($line, $fmt, $filters);
     ($line, $fmt, $filters) = $self->fmtline($h{Text});
