@@ -1,4 +1,5 @@
 
+  * modified %help prefix to ? instead of * [JDW]
   * modified autoreply and log to use the status line [JDW]
   * [LC/StatusLine.pm] Reworked status line processing to allow extensions
     to access the status line [JDW]
