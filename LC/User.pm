@@ -115,7 +115,7 @@ sub init() {
 			  Order => 'before',
 			  Call => sub {
 			      my($event,$handler) = @_;
-			      if ($event->{Text} =~ /^%(\w*)\s*(.*)/) {
+			      if ($event->{Text} =~ /^%(\w*)\s*(.*?)\s*$/) {
 				  my($cmd, $args) = ($1, $2);
 				  if (defined $commands{$cmd}) {
 				      $event->{ToServer} = 0;
