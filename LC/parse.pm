@@ -1,7 +1,6 @@
 package LC::parse;                  # -*- Perl -*-
 
 use Exporter;
-use LC::status_update;
 use LC::config;
 use LC::UI;
 use LC::log;
@@ -92,6 +91,12 @@ sub parse ($) {
     }
 
     foreach (@lines) {
+	my $pp;
+	foreach $pp (@preparsers) {
+	    my $f = $pp->[1];
+	    &$f($_, $pp->[0]);
+	}
+
 	dispatch_event(parse_line($_));
     }
 }
@@ -100,28 +105,21 @@ sub parse ($) {
 sub dispatch_event ($) {
     my($event) = @_;
 
-    my $pp;
-    foreach $pp (@preparsers) {
-	my $f = $$pp[1];
-	&$f($_);
-    }
-
     foreach $eh (@{$event_handlers{'all'}}) {
-	my $f = $$eh[1];
-	&$f($event);
+	my $f = $eh->[1];
+	&$f($event, $eh->[0]);
     }
 
     if ($event->{Type}) {
 	my $eh;
 	foreach $eh (@{$event_handlers{$event->{Type}}}) {
-	    my $f = $$eh[1];
-	    &$f($event);
+	    my $f = $eh->[1];
+	    &$f($event, $eh->[0]);
 	}
     }
 
-    return if ($event->{Invisible});
-
-    ui_output($event->{Line});
+    ui_bell() if ($event->{Signal});
+    ui_output($event->{Line}) unless ($event->{Invisible});
 }
 
 
@@ -130,13 +128,13 @@ sub parse_line ($) {
     $line =~ s/[\<\\]/\\$&/g;
     chomp $line;
 
+    my $signal = undef;
     my $cmdid = undef;
     my $review = undef;
     my %event = ();
 
 
     # %server messages #######################################################
-
     # %begin, 2.2a1 cores.
     if ($line =~ /^%begin \((.*)\) \[(\d+)\]/) {
 	$cmdid = $2;
@@ -189,6 +187,20 @@ sub parse_line ($) {
 	goto found;
     }
 
+    # %export_file
+    if ($line =~ /^%export_file (\w+)/) {
+	%event = (Type => 'export',
+		  Response => $1,
+		  Invisible => 1);
+	goto found;
+    }
+
+    # %g
+    if ($line =~ /^%g(.*)/) {
+	$signal = 1;
+	$line = $1;
+    }
+
     # The options notification.  (OK, not a %command...but it fits here.)
     if ($line =~ /^\[Your options are/) {
 	%event = (Type => 'options',
@@ -205,8 +217,9 @@ sub parse_line ($) {
     # prompts ################################################################
 
     # All the other prompts.
-    foreach (@prompts) {
-	if ($line =~ /$_/) {
+    my $p;
+    foreach $p (@prompts) {
+	if ($line =~ /$p/) {
 	    %event = (Type => 'prompt');
 	    goto found;
 	}
@@ -246,7 +259,6 @@ sub parse_line ($) {
     # your blurb has been set to...
     if ($line =~ /^\(your blurb has been set to \[(.*)\]\)/) {
 	%event = (Type => 'blurb',
-		  User => $me,
 		  Blurb => $1);
 	goto found;
     }    
@@ -254,16 +266,13 @@ sub parse_line ($) {
     # your blurb has been turned off
     if ($line =~ /^\(your blurb has been turned off\)/) {
 	%event = (Type => 'blurb',
-		  User => $me,
 		  Blurb => undef);
 	goto found;
     }
 
     # you are now named...
     if ($line =~ /^\(you are now named \"(.*)\"/) {
-	$me = $1;
 	%event = (Type => 'rename',
-		  User => $me,
 		  To => $1);
 	goto found;
     }    
@@ -271,7 +280,6 @@ sub parse_line ($) {
     # you are now here
     if ($line =~ /^\(you are now here/) {
 	%event = (Type => 'userstate',
-		  User => $me,
 		  From => 'away',
 		  To => 'here');
 	goto found;
@@ -282,7 +290,6 @@ sub parse_line ($) {
     if ($line =~ /^\(you are now away/ ||
 	$line =~ /^\(you have idled \"away\"/) {
 	%event = (Type => 'userstate',
-		  User => $me,
 		  From => 'here',
 		  To => 'away');
 	goto found;
@@ -324,11 +331,11 @@ sub parse_line ($) {
 	} elsif ($line =~ s|from ([^\[]*) \[(.*)\]:|from <sender>$1</sender> \[<blurb>$2</blurb>\]:|) {
 	    $msg_sender = $1;
 	    $blurb = $2;
-	    @msg_dest = ($me);
+	    @msg_dest = ();
 	} elsif ($line =~ s|from (.*):|from <sender>$1</sender>:|) {
 	    $msg_sender = $1;
 	    $blurb = undef;
-	    @msg_dest = ($me);
+	    @msg_dest = ();
 	} else {
 	    # Now what?
 	    goto found;
@@ -358,10 +365,6 @@ sub parse_line ($) {
 	} else {
 	    # Now what?
 	    goto found;
-	}
-
-	if (@msg_dest == 1) {
-	    set_disc_state(Name => $msg_dest[0]);
 	}
 
 	%event = (Type => 'pubhdr',
@@ -403,17 +406,17 @@ sub parse_line ($) {
 
     # /who information
     if (($line =~ /^[\>\<\| ][ \-\=\+][^\(]/) &&
-	((substr($_, 57, 6) eq '  here') ||
-	 (substr($_, 57, 6) eq '  away') ||
-	 (substr($_, 57, 6) eq 'detach'))) {
+	((substr($line, 57, 6) eq '  here') ||
+	 (substr($line, 57, 6) eq '  away') ||
+	 (substr($line, 57, 6) eq 'detach'))) {
 	my($name, $blurb) = (undef, undef);
-	my $state = substr($_, 57, 6);
+	my $state = substr($line, 57, 6);
 	$state =~ s/^\s*//;
 
-	if (substr($_, 2, 39) =~ /^([^\[]+) \[(.*)\]/) {
+	if (substr($line, 2, 39) =~ /^([^\[]+) \[(.*)\]/) {
 	    ($name, $blurb) = ($1, $2);
 	} else {
-	    $name = substr($_, 2, 39);
+	    $name = substr($line, 2, 39);
 	    $name =~ s/^\s*//;
 	    $name =~ s/\s*$//;
 	    undef $name if (length($name) == 0);
@@ -440,12 +443,12 @@ sub parse_line ($) {
     }
 
     # /what information
-    if (($line =~ /^[\*\# ][ \+]\w/) && ((substr($_, 23, 1) eq 'c') ||
-					 (substr($_, 23, 1) eq 'e'))) {
-	my $name = substr($_, 2, 10);
+    if (($line =~ /^[\*\# ][ \+]\w/) && ((substr($line, 23, 1) eq 'c') ||
+					 (substr($line, 23, 1) eq 'e'))) {
+	my $name = substr($line, 2, 10);
 	$name =~ s/\s*$//;
-	my $type = (substr($_, 23, 1) eq 'c') ? 'connect' : 'emote';
-	my $title = substr($_, 28);
+	my $type = (substr($line, 23, 1) eq 'c') ? 'connect' : 'emote';
+	my $title = substr($line, 28);
 
 	%event = (Type => 'what',
 		  Disc => $name,
@@ -554,7 +557,7 @@ sub parse_line ($) {
 	# renames
 	if ($tline =~ /^(.*) is now named (.*) \*\*\*/) {
 	    %event = (Type => 'rename',
-		      User => $1,
+		      From => $1,
 		      To => $2);
 	    goto found;
 	}
@@ -595,6 +598,7 @@ sub parse_line ($) {
 	$event{Type} = 'review';
     }
 
+    $event{Signal} = 'default' if ($signal);
     $event{Id} = $cmdid;
     $event{Line} = $line;
     return \%event;

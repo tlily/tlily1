@@ -1,3 +1,4 @@
+# -*- Perl -*-
 package LC::log;
 
 use Exporter;

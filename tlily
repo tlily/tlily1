@@ -6,14 +6,17 @@ $debug=0;
 use LC::log; 
 use LC::config;
 use LC::UI;
+use LC::Server;
 use LC::parse;
 use LC::Expand;
 use LC::gag;
 use LC::Command;
 use LC::User;
+use LC::State;
+use LC::Info;
+use LC::StatusLine;
 use Socket;
 use Fcntl;
-use IO::Socket;
 use IO::Select;
 use Curses;
 use POSIX;
@@ -31,11 +34,13 @@ $password_mode=0;
 
 
 LC::config::init();
-exp_init();
 ui_start();
-gag_init();
+exp_init();
 cmd_init();
+state_init();
 user_init();
+gag_init();
+info_init();
 
 ui_attr('sender','bold');
 ui_attr('dest','bold');
@@ -60,9 +65,12 @@ if (! $config{mono}) {
     ui_attr('status_line', 'reverse');
 }
 
-tie $page_status, 'LC::status_update', 'page_status';
+statusline_init();
 
 my $state;
+
+#$SIG{__DIE__} = sub { ui_output("DIE: " . $_[0]); };
+$SIG{__WARN__} = sub { ui_output("WARNING: " . $_[0]); };
 
 main();
 
@@ -74,43 +82,37 @@ END {
 }
 
 ##############################################################################
-sub server_connect ($$) {
-    my($host, $port) = @_;
+sub eventloop() {
+    my $s = IO::Select->new($server_sock, \*STDIN);
 
-    log_notice("Connecting to $config{server} $config{port}.");
-    $sock = IO::Socket::INET->new(PeerAddr => $config{server},
-				  PeerPort => $config{port},
-				  Proto    => 'tcp');                         
-    if (!defined($sock)) {
-	die "Failed to contact server.\n$1\n";
-    }
-
-    fcntl($sock,F_SETFL,O_NONBLOCK) or die("fcntl: $!\n");
-    log_notice("Connected.");
-
-    return $sock;
-}
-
-
-sub server_send ($$) {
-    my($sock, $s) = @_;
-    if (syswrite($sock,$s,length($s)) != length($s)) {
-	log_err("syswrite: $!"); 
+    while (1) {
+	foreach ($s->can_read()) {
+	    if ($_ == $server_sock) {
+		parse(server_read());
+	    } elsif ($_ == \*STDIN) {
+		foreach (user_accept()) {
+		    server_send($_);
+		}
+	    }
+	}
     }
 }
 
 
-sub server_run ($) {
-    my($sock) = @_;
+sub init_connection_handling() {
+    my($ehid,$ihid);
 
     my $state = 'login';
-
-    my($ehid,$ihid);
+    my $set_opts = 0;
 
     $ehid = register_eventhandler('all', sub {
 	my($event) = @_;
 	my $os = $state;
-	if (($event->{Type} eq 'prompt') && ($event->{Line} =~ /^password:/)) {
+	if (($event->{Type} eq 'prompt') && ($event->{Line} =~ /^login:/)) {
+	    set_client_options() unless ($set_opts);
+	    $set_opts == 1;
+	} elsif (($event->{Type} eq 'prompt') &&
+		 ($event->{Line} =~ /^password:/)) {
 	    $state = 'password';
 	    ui_password(1);
 	} elsif (($event->{Type} eq 'prompt') && ($event->{Line} =~ /^-->/)) {
@@ -125,7 +127,7 @@ sub server_run ($) {
 	    $state = 'connected';
 	    deregister_eventhandler('all', $ehid);
 	    deregister_user_input_handler($ihid);
-	    on_connect($sock);
+	    on_connect();
 	}
     });
 
@@ -142,30 +144,14 @@ sub server_run ($) {
 	    $state = 'connected';
 	    deregister_eventhandler('all', $ehid);
 	    deregister_user_input_handler($ihid);
-	    on_connect($sock);
+	    on_connect();
 	}
 	return 0;
     });
-
-    set_client_options($sock);
-
-    my $s = IO::Select->new($sock, \*STDIN);
-
-    while (1) {
-	foreach ($s->can_read()) {
-	    if ($_ == $sock) {
-		parse(read_from_server($sock));
-	    } elsif ($_ == \*STDIN) {
-		foreach (user_accept()) {
-		    server_send($sock, $_);
-		}
-	    }
-	}
-    }
 }
 
 
-sub set_client_options {
+sub set_client_options() {
     #
     # Lily is gifted with a multitude of incompatible options.  What I have
     # here seems to work everywhere in use at the moment.  Someday, someone
@@ -192,22 +178,27 @@ sub set_client_options {
     # be able to use IT!
     #
 
-    server_send($sock, "\#\$\# client_version $TL_VERSION\n");
-    server_send($sock, "\#\$\# client_name TigerLily\n");
-    server_send($sock, "\#\$\# options +leaf-all +leaf\n");
+    server_send("\#\$\# client_version $TL_VERSION\n");
+    server_send("\#\$\# client_name TigerLily\n");
+    server_send("\#\$\# options +leaf-all +leaf\n");
 }
 
 
-sub on_connect ($) {
-    my($sock) = @_;
-
-    set_client_options($sock);
+sub on_connect() {
+    set_client_options();
+    state_sync();
 }
 
 
-sub main () {
+sub main() {
     show_banner();
     
+    # %eval handler
+    register_user_command_handler('eval', sub {
+	my($args) = @_;
+	eval($args);
+    });
+
     # !command handler
     register_user_input_handler(sub {
 	my($event) = @_;
@@ -219,273 +210,20 @@ sub main () {
 	return 0;
     });
 
-    # handle /info set command.  
-    register_user_input_handler(sub {
-	my($event) = @_;
-	if ($event->{Line} =~ /^\s*\/info set/i) {
-	    my $line = $event->{Line};
-	    $line =~ s/\s*\/info set\s*//g;
-	    set_info($line);
-	}
-	return 0;
-    });
+    log_notice("Connecting to $config{server} $config{port}.");
+    server_connect($config{server}, $config{port});
+    log_notice("Connected.");
 
-    my $sock = server_connect($config{server}, $config{port});
-    server_run($sock);
+    init_connection_handling();
+    eventloop();
 }
 
 
 ##############################################################################
-sub login {   
-    $parse_state="login";
-    log_notice("Connecting to $config{server} $config{port}.");
-    set_status(server => $config{server},
-	       status => "INIT");
-
-    $sock = IO::Socket::INET->new(PeerAddr => $config{server},
-				  PeerPort => $config{port},
-				  Proto    => 'tcp');                         
-    if (! defined($sock)) { log_err("IO::Socket: $!\n"); }
-    
-    fcntl($sock,F_SETFL,O_NONBLOCK) || log_err("fcntl: $!\n");
-    
-    set_status(status => "CONN");
-    
-    log_notice("Connected.");
-    
-    pass_until("login:",10);
-    set_client_options(); # if (!$config{options_after_connect});
-
-    if ($config{login} && $config{pass}) {
-	log_info("Sending autologin ($config{login})\n");
-	send_to_server("$config{login} $config{pass}\n");
-    }
-
-    connect_until("***");
-    set_client_options() if ($config{options_after_connect});
-    set_status(status => "ONLINE");
-    log_info("Connected");
-}
-
-
-# allow the user to type, a nice normal bidirectional connection until we
-# see the desired output.
-sub connect_until {
-    my ($waitfor)=@_;
-    my ($str,$t,$u);
-
-    $waitfor=~ s/\*/\\\*/g;
-    $waitfor=~ s/\./\\\./g;
-
-    my $s = IO::Select->new();    
-
-    $s->add($sock);
-    $s->add(\*STDIN);
-
-    $next_alarm=30; # kicked up by a %connected event or %c command.
-
-    my $end;
-    my $pp_token = register_preparser(sub {
-	my ($line) = @_;
-	$end = 1 if ($line =~ /$waitfor/);
-    });
-
-    $last_alarm=time();
-    while (1) {
-	if (time() > ($last_alarm+$next_alarm)) {
-	    alarm_handler();
-	}
-
-	@ready=$s->can_read($wakeup);	
-
-	$str="";
-	foreach $rs (@ready) {      
-	    if ($rs == $sock) {
-		parse(read_from_server($rs));
-		if ($end) {
-		    deregister_preparser($pp_token);
-		    return;
-		}
-		next;
-	    }
-	    
-	    if ($rs == \*STDIN) {
-		# check for UI events, deal wid' em.
-		while (1) {
-		    # get a line of input from the user if it's available.
-		    my $line=ui_process();		
-		    if (defined($line)) {		    
-			my $qline = $line; $qline =~ s/[\<\\]/\\$&/g;
-
-			if ($password_mode) {
-			    $password_mode = 0;
-			    ui_password(0);
-			} else {
-			    ui_output("<usersend>" . $qline . "</usersend>");
-			}
-
-			if ($line =~ /^\!(.*)/) { 
-			    # !command handling
-			    ui_output(`$1`); 
-			} elsif ($line =~ /^%/) { 
-			    # handle client commands
-			    client_command($line);
-			} elsif ($line =~ /^([^:;]*)[;:]/) {
-			    # handle recipient caching for ;
-			    exp_set('recips', $1);
-			    send_to_server($line . "\n");
-			} elsif ($line =~ /^\s*\/info set/i) {
-			    # handle /info set command.  
-			    $line =~ s/\s*\/info set\s*//g;
-			    set_info($line);
-			} else {
-			    # otherwise, send on to the server.
-			    send_to_server($line . "\n");
-			}
-		    } else {
-#			log_debug("line undef"); 
-			last;
-		    }
-		}
-		next;
-	    }       	
-	    
-	    log_err("SKY IS FALLING!\n");
-	}
-    }   
-}
-
-# pass through all output from the server until a string is matched.
-sub pass_until {
-    my ($waitfor,$timeout)=@_;
-    my ($t,$str,$matched) = ('', '', 0);
-
-    my $pp_token = register_preparser(sub {
-	my ($line) = @_;
-	$matched = 1 if ($line =~ /$waitfor/);
-    });
-    
-    my $s = IO::Select->new();
-
-    $s->add($sock);
-
-    my $stime=time();
-    my $now=$stime;
-    while ((!$matched) && ($now-$stime < $timeout)) {	
-	if ($s->can_read($stime+$timeout-$now)) {
-	    parse(read_from_server($sock));
-	}
-	$now=time();
-    }
-
-    deregister_preparser($pp_token);
-
-    if (! $matched) {
-	log_err("Error waiting for $waitfor, $timeout sec timeout expired.\n");
-    }
-}
-
-
-my $crumb = '';
-sub read_from_server {
-    my ($sock) = @_;
-
-    my $buf;
-    if (sysread($sock,$buf,4096) < 1) {
-	if ($errno != EAGAIN) {
-	    log_err("sysread: $!"); 
-	    next;
-	}
-    }
-
-    return $buf;
-}
-
-
-
-sub client_command {
-    my($command) = @_;
-
-    return if ($command !~ /^(%\w+)\s*(.*)$/);
-    my($cmd, $args) = ($1, $2);
-
-    if ($cmd eq '%eval') {
-	my $output=eval($args); 
-	ui_output($output);
-	ui_output($@) if ($@);
-    } elsif ($cmd eq '%leaf') {
-	cmd_process($args, sub {
-	    my($e) = @_;
-	    $e->{Line} = 'leaf: ' . $e->{Line};
-	});
-    } elsif ($cmd eq '%version') {
-	ui_output("Tigerlily, version $TL_VERSION");
-    } elsif ($cmd eq '%gag') {
-	foreach (split /[\s,]+/, $args) {
-	    if ($gagged{tolower($_)}) {
-		undef $gagged{tolower($_)};
-		ui_output("$_ is no longer gagged.");
-	    } else {
-		$gagged{tolower($_)} = 1;
-		ui_output("$_ is gagged.");
-	    }
-	}
-    } else {
-	ui_output("?");
-	ui_output("? %eval <code>       - evals a chunk o' perl");
-	ui_output("? %gag <user>        - gags a user");
-	ui_output("?");
-    }
-}
-
-
-sub do_how {
-    $cli_command="how";
-    
-    send_to_server("/how\n");
-}
-
-sub do_who_me {
-    $cli_command="who me";
-    
-    send_to_server("/who me\n");
-}
-
-sub alarm_handler {
-    log_debug("alarm handler");
-
-    if ($parse_state eq undef) {
-	# we're idle, so we can send these commands.
-
-	log_debug("alarm handler: idle state ok");	
-	log_debug("alarm handler: unable to proceed- $cli_command pending") 
-	    if $cli_command;
-	
-
-	if (! $have_pseudo) {
-	    do_who_me() unless $cli_command;
-	}
-	
-	do_how() unless $cli_command;
-    } else {
-	log_debug("alarm handler: not in idle state");
-    }
-
-    if ($have_pseudo) {
-	log_debug("alarm handler, set for 300");
-	$next_alarm=300;		
-    } else {
-	log_debug("alarm handler, set for 5");
-	$next_alarm=5;
-    }
-
-    $last_alarm=time()	
-}
-
-
 
 
 sub set_status {
+    return;
     my %s2=@_;
 
     foreach (keys %s2) {
@@ -532,39 +270,8 @@ sub set_status {
       
 }
 
-sub set_info {
-    # rather than using the chee-z line editor in emacs, we fire off an editor
-    # to let them edit the /info file.
-    my($disc)=@_;
-    
-    my $EDITOR=$ENV{VISUAL} || $ENV{EDITOR} || "vi";
-    
-    ui_end();
-    unlink ("/tmp/tlily.$$");
-    if (@info) {
-	open(F,">/tmp/tlily.$$");
-	foreach (@info) { chomp; print F "$_\n"; }
-	close(F);
-    }
 
-    system("$EDITOR /tmp/tlily.$$");
-    ui_start();
-
-    if (open(F,"</tmp/tlily.$$")) {
-	@info=<F>;
-	close(F);
-	unlink ("/tmp/tlily.$$");
-	my $size=@info;
-
-	$cli_command="info set";
-	send_to_server("\#\$\# export_file info $size $disc\n");
-    } else {
-	log_notice("info buffer file not found.");
-    }
-    
-}
-
-sub show_banner {
+sub show_banner() {
 
     ui_output(qq[
 <yellow>     ("`-/")_.-'"``-._ </yellow>

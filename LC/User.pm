@@ -15,8 +15,8 @@ use LC::UI;
 	     &user_init);
 
 
-my @handlers = ();
-my %commands = ();
+@handlers = ();
+%commands = ();
 my $token = 0;
 
 

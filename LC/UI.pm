@@ -14,7 +14,7 @@ use LC::log;
 @ISA = qw(Exporter);
 
 @EXPORT = qw(&ui_start &ui_end &ui_attr &ui_output &ui_status &ui_process
-	     &ui_callback &ui_bell &ui_password);
+	     &ui_callback &ui_bell &ui_password $ui_lines $ui_cols);
 
 
 my $ui_up = 0;
@@ -80,6 +80,8 @@ my $attr_cur_fg = COLOR_WHITE;
 # Starts the curses UI.
 sub ui_start () {
     term_init();
+    $ui_lines = $term_lines;
+    $ui_cols = $term_cols;
     &redraw;
 }
 

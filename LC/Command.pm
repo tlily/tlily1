@@ -2,6 +2,7 @@
 package LC::Command;
 
 use Exporter;
+use LC::Server;
 use LC::parse;
 use LC::log;
 
@@ -16,6 +17,8 @@ use LC::log;
 
 
 sub cmd_init () {
+    # The order of these handlers is important!
+
     register_eventhandler('begincmd', sub {
 	my($e) = @_;
 	my $cmd = $e->{Command};
@@ -45,7 +48,7 @@ sub cmd_init () {
 sub cmd_process ($$) {
     my($c, $f) = @_;
     $pending_commands{$c} = $f;
-    &main::send_to_server($c . "\n");
+    server_send($c . "\n");
 }
 
 
