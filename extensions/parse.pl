@@ -34,7 +34,8 @@ The exact server output for the line.
 @prompts = ('-->\s*$',
 	    '\(Y\/n\)\s*$',
             '^login:',
-	    '^password:');
+	    '^password:',
+	    '^\* ');
 
 my $partial;
 
@@ -749,8 +750,8 @@ sub init() {
     register_eventhandler(Type => 'connected',
 			  Call => \&parse_connected);
 
-#    register_eventhandler(Type => 'connected',
-#			  Call => sub { push @prompts, '\* $'; 0; }); # '})
+    register_eventhandler(Type => 'connected',
+			  Call => sub { push @prompts, '^\* '; 0; });
 }
 
 init();
