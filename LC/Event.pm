@@ -96,17 +96,17 @@ Example:
 =item register_iohandler()
 
 Registers an I/O event handler.  Takes a hash as its paramter.  The hash
-should contain "Handle", "Mode", and "Code" keys: Handle is a file handle
+should contain "Handle", "Mode", and "Call" keys: Handle is a file handle
 to monitor, Mode is any combination of the letters 'r', 'w', and 'x',
 indicating that the handler should be invoked when the handle is readable,
-writable, or has an exception flag, and Code is a reference to the code
+writable, or has an exception flag, and Call is a reference to the code
 to call when the event occurs.  (This code will be called with the
 eventhandler as its argument.)
 Example:
 
     register_iohandler(Handle => \*STDIN,
 		       Mode => 'r',
-		       Code => \&ui_process);
+		       Call => \&ui_process);
 
 =item register_timedhandler()
 
