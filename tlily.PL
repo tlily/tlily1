@@ -198,7 +198,8 @@ sub server_reader($) {
     }
 
     dispatch_event({Type => 'serverinput',
-		    Text => $buf});
+		    Text => $buf,
+		    ToUser => 1});
 
     return 0;
 }

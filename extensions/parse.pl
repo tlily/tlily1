@@ -55,6 +55,8 @@ my $crumb = '';
 sub parse_server_data($$) {
     my($event, $handler) = @_;
 
+    $event->{ToUser} = 0;
+
     # Debugging.
     if ($config{debug_parser}) {
 	my $t = $event->{Text};
