@@ -152,6 +152,8 @@ use IO::Handle;
 
 use LC::Config;
 
+use POSIX;
+
 use integer;
 
 @ISA = qw(Exporter);
