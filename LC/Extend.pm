@@ -11,6 +11,7 @@ use LC::Command;
 use LC::State;
 use LC::Config;
 use LC::Event;
+use LC::SubClient;
 #require "dumpvar.pl";
 
 @ISA = qw(Exporter);
@@ -81,6 +82,7 @@ sub extension($;$) {
     push @share,@LC::Config::EXPORT;
     push @share,@LC::Event::EXPORT;
     push @share,@LC::StatusLine::EXPORT;
+    push @share,@LC::SubClient::EXPORT;
 
     $safe->share(@share);
     # This only works in perl 5.003_07+

@@ -4,8 +4,7 @@ package LC::SubClient;
 # bugs:
 # %del_hack needs to be fixed.
 # bug if you del a subclient and make a new one with the same name. (locks up)
-# bug if error in open3
-
+# ftp as a subclient doesnt work right.
 
 =head1 NAME
 
@@ -34,11 +33,14 @@ use LC::Event;
 use LC::UI;
 use LC::User;
 use LC::StatusLine;
+use Exporter;
+
+@ISA    = qw(Exporter);
+@EXPORT = qw(&start_subclient);
 
 my @subcli=qw(Lily);
 my (%rhandle,%whandle,%ehandle);
-my (%opfx,%ipfx);
-my (%color);
+my (%opfx,%filter);
 my $subcli_num;
 $status="";
 
@@ -54,28 +56,11 @@ $usage=ui_escape("usage:
     %subclient list
 ");
 
-register_user_command_handler('subclient', \&subclient);
+register_user_command_handler('subclient', \&subclient_cmd);
 register_help_short('subclient', 'run a \"sub client\"');
 register_help_long('subclient', $usage);
 
-register_user_command_handler('irc', \&irc);
-register_help_short('irc', 'run dsirc as a \"sub client\"');
-register_help_long('irc', ui_escape("usage:
-    %irc <nick> <server>
-
-Dsirc is a portion of the sirc irc client.  You must have sirc installed on
-your system in order to use it!
-
-http://www.eleves.ens.fr:8080/home/espel/sirc.html
-
-"));
-
-sub irc {
-    subclient("add","irc","dsirc @_");
-}
-
-
-sub subclient {
+sub subclient_cmd {
     ($cmd,$subcli,@proc)=split /\s+/,"@_";
     my $proc=join ' ',@proc;
 
@@ -88,7 +73,10 @@ sub subclient {
 	}
 	return;
     } elsif ($cmd eq "add") { 
-	subclient_add(@_); 
+	my $opfx="<subc>$subcli></subc>";
+	start_subclient(name => $subcli,
+			run => $proc,
+			prefix => $opfx);
     } elsif ($cmd eq "remove" || $cmd eq "del") {
 	subclient_del(@_);
     } else {
@@ -112,11 +100,8 @@ sub subclient_del {
 	    $rhandle{$subcli}->close;
 	    $whandle{$subcli}->close;
 	    $ehandle{$subcli}->close;
-		 #ui_end();
 	    kill "TERM",$pid{$subcli};
-		 #ui_start();
-# Handled now by the SIGCHLD handler
-#	    waitpid($pid{$subcli},&WNOHANG);
+	    # the SIGCHLD handler will take care of the zombies.
 	}
     }
     @subcli=@newsubcli;
@@ -125,7 +110,8 @@ sub subclient_del {
 	$status="";
 	$SIG{CHLD} = "DEFAULT";
     } else {
-	$status=ui_escape("<$subcli[$subcli_num]>");
+	$status="<greenblue>" . ui_escape("<$subcli[$subcli_num]>") .
+	        "</greenblue>";
 	$SIG{CHLD} = \&sig_chld_handler;
     }
     redraw_statusline(1);       
@@ -138,17 +124,22 @@ sub subclient_del {
     }
 }
 
-sub subclient_add {
-    ($cmd,$subcli,@proc)=split /\s+/,"@_";
-    my $proc=join ' ',@proc;
-	 my $pid;
-    
-    $opfx="$subcli>";
-    $ipfx=$subcli;
 
+# example:
+# name => "irc"
+# run => "/usr/foo/dsirc"
+# prefix => "<foo>IRC></foo>"
+# filter => \&my_filter
+#  Note: filter functions should call ui_escape to escape any < >'s in the 
+#     input!
+sub start_subclient {
+    my %args=@_;
+    my ($subcli,$proc,$opfx)=($args{name},$args{run},$args{prefix});
+    my $pid;
+    
     if (! $callbacks_setup) {
 	$callbacks_setup=1;
-	ui_callback("`",\&toggle_key);
+	ui_callback("`",\&sc_toggle_key);
 	register_eventhandler(Type => 'userinput',
 			      Order => 'before',
 			      Call => \&sc_userinput_handler);
@@ -161,40 +152,38 @@ sub subclient_add {
     $eh=$ehandle{$subcli}=new FileHandle;
     
     # fork off the process and hook it into tigerlily..
-	 #ui_end();
     eval { $pid = open3($wh, $rh, $eh, $proc); };
-	 #ui_start();
     if (! $pid) {
-#	ui_output("(Error starting subclient)");
+	ui_output("(Error starting subclient)");
 	exit;
     }
+    
+    ui_output("(Error starting subclient: $@)") if $@;
 
-	 ui_output("(Error starting subclient: $@)") if $@;
-
-    $ipfx{$subcli}=$ipfx;
     $opfx{$subcli}=$opfx;
-	 $color{$subcli}="subc";
     push @subcli,$subcli;     
     $subcli_num++;
     $pid{$subcli}=$pid;
+    $filter{$subcli} = $args{filter} if $args{filter};
 
     ui_output("(Started process $pid ($proc) - use the \` key to switch)");
 
     $rhid{$subcli}=register_iohandler(Handle => $rh,
 				      Mode => 'r',
 				      Name => "SC$subcli",
-				      Call => \&subcli_input_process);
+				      Call => \&sc_input_process);
     
     $ehid{subcli}=register_iohandler(Handle => $eh,
 				     Mode => 'r',
 				     Name => "SCE$subcli",
-				     Call => \&subcli_input_process);
+				     Call => \&sc_input_process);
 
-    $status=ui_escape("<$subcli>");
+    $status="<greenblue>" . ui_escape("<$subcli>") . "</greenblue>";
+    
     redraw_statusline();       
 }
 
-sub subcli_input_process {
+sub sc_input_process {
     my ($handler)=@_;
     my $hdl;
     if ($handler->{Name}=~/SCE/) {
@@ -224,15 +213,17 @@ sub subcli_input_process {
 
     foreach $line (split '[\n\r]',$buf) {
 	next unless $line;
-	# should have a user-registerable pre-filter here.. for 
-	# extensions that want to define customized behaviors (dsirc 
-	# springs to mind)
-	ui_output("<$color{$subcli}>$opfx{$subcli}</$color{$subcli}> " .
-				  ui_escape($line));
+	
+	if (! $filter{$subcli}) {
+	    $filter{$subcli}=\&ui_escape;
+	}
+
+	ui_output("$opfx{$subcli} " .
+		  &{$filter{$subcli}}($line));
     }
 }
 
-sub toggle_key {
+sub sc_toggle_key {
     my($key, $line, $pos) = @_;
 
     $subcli_num++;
@@ -240,7 +231,8 @@ sub toggle_key {
     if ($#subcli == 0) {
 	$status="";
     } else {
-	$status=ui_escape("<$subcli[$subcli_num]>");
+	$status="<greenblue>" . ui_escape("<$subcli[$subcli_num]>") .
+	        "</greenblue>";
     }
     redraw_statusline(1);       
 
@@ -269,8 +261,10 @@ sub sig_chld_handler {
 
     while ($child = waitpid(-1, WNOHANG)) {
 	last if (!$pids{$child});
-   ui_output("(Subclient $pids{$child} terminated abnormally)")
-  if ($? == WIFSIGNALED);
-   subclient_del("remove", $pids{$child});
-	 }
+	ui_output("(Subclient $pids{$child} terminated abnormally)")
+	    if ($? == WIFSIGNALED);
+	subclient_del("remove", $pids{$child});
+    }
 }
+
+
