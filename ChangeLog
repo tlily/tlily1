@@ -1,3 +1,19 @@
+Version 0.8b-post
+  * [LC/Config.pm] Add -h and -host as synonyms for -server. [CWS]
+  * [extensions/zone.pl] Moved test for $zonetype and $zonedelta so users can
+                         set them dynamically without reloading. [CWS]
+  * [extensions/set.pl] Removed %ENV/$TL_VERSION hack. [CWS]
+  * [LC/Config.pm] Fixed it so %ENV and $TL_VERSION are not included in
+                   %config. [CWS]
+  * [extensions/autojoin.pl] New extension: automatically joins discussions
+                             when they are created. Not loaded by default. [CWS]
+  * [extensions/countdown.pl] Allow the user to specify the formatting of
+                              the time via $countdown_fmt. [CWS]
+  * [extensions/set.pl] Fixed some of the regexps so as to allow setting of
+                        countdown_fmt. [CWS]
+  * [extension/set.pl] Added %unset and %show to unset and display config
+                       variables, respectively. [CWS]
+
 Version 0.8b
   * [extensions/parse.pl] Refixed parser to display the lily banner,
                           /infos, and /info sets properly.  Oy.  [DPN]
