@@ -1,5 +1,5 @@
 # -*- Perl -*-
-# $Header: /data/cvs/tlily/LC/Httpd.pm,v 2.2 1999/01/11 21:29:45 steve Exp $
+# $Header: /data/cvs/tlily/LC/Httpd.pm,v 2.3 1999/01/11 21:57:32 steve Exp $
 package LC::Httpd;
 
 =head1 NAME
@@ -359,19 +359,22 @@ sub send_webfile($$;$) {
     print $fd "HTTP/1.0 200 OK\r\n";
     print $fd "Date: " . httpd_date() . "\r\n";
     print $fd "Connection: close\r\n";
-    print $fd "Content-Length: " . -s IN . "\r\n";
+    print $fd "Content-Length: " . (-s IN) . "\r\n";
+    print $fd "Content-Type: application/octet-stream\r\n";
     print $fd "Cache-Control: private\r\n";
 #    print $fd "Content-Location: " . $files{$file} . "\r\n";
     print $fd "\r\n";
 
     # Then set up a iohandler to send the data itself in chunks.
-    register_iohandler ( Handle => $fd,
-			 WHand  => $handle,
-			 File   => $file,
-			 Fd     => \*IN,
-			 Mode   => 'w',
-			 Call   => \&send_rawfile
-		       );
+    if (! $head) {
+	register_iohandler ( Handle => $fd,
+			     WHand  => $handle,
+			     File   => $file,
+			     Fd     => \*IN,
+			     Mode   => 'w',
+			     Call   => \&send_rawfile
+			   );
+    }
 
     return 1;
 }
