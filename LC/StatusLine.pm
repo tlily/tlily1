@@ -64,6 +64,7 @@ sub render() {
     my $fmt="%-$ll.$ll" . "s%$lr.$lr" . "s";
     my $status_line=sprintf($fmt,$left,$right);
 
+    $status_line =~ s/(<\\)/\\$1/g;
     $status_line =~ s:\|:<whiteblue>\|</whiteblue>:g;
 
     # -- MORE -- prompt

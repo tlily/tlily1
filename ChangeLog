@@ -1,4 +1,5 @@
 Version 0.6c
+  * [LC/StatusLine.pm] Bugfix for blurbs containing a < or \.  [DPN]
   * [extensions/misc.pl] Added an %echo command.  [DPN]
   * [LC/State.pm] New configuration variable: 'prefer'.  See the README.  [DPN]
   * [extensions/hidesend.pl] New extension: don't display user's sends.
