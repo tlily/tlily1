@@ -50,8 +50,8 @@ sub ui_output {
 
     my $text=strip_tags($h{Text});
 
-    $h{FileHandle} |= "STDOUT";
-    my $orig_selected=select ($h{FileHandle});
+    $self->{FileHandle} ||= "STDOUT";
+    my $orig_selected=select ($self->{FileHandle});
 
     # NOTE:  This code does not do word wrapping.
     my ($char,$line);
