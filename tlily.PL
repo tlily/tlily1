@@ -14,7 +14,6 @@ use LC::Expand;
 use LC::Command;
 use LC::User;
 use LC::State;
-use LC::Info;
 use LC::StatusLine;
 use LC::Extend;
 use LC::Event;
@@ -40,7 +39,6 @@ LC::config::init();
 ui_start();
 exp_init();
 cmd_init();
-info_init();
 
 ui_attr('sender','bold');
 ui_attr('dest','bold');

@@ -1,21 +1,4 @@
 # -*- Perl -*-
-package LC::Info;
-
-use Exporter;
-use LC::UI;
-use LC::Server;
-use LC::parse;
-use LC::User;
-use LC::Command;
-use LC::State;
-use LC::Event;
-use LC::log;
-use IO::File;
-
-@ISA = qw(Exporter);
-
-@EXPORT = qw(info_init);
-
 
 sub info_set($;\@) {
     my($disc,$lref) = @_;
@@ -84,18 +67,31 @@ sub info_edit($) {
 }
 
 
-sub info_init() {
+sub info_cmd($) {
+    my ($args) = @_;
+    my @argv = split /\s+/, $args;
+    my $cmd = shift @argv;
+
+    if ($cmd eq 'set') {
+	info_set(shift @argv);
+    } elsif ($cmd eq 'edit') {
+	info_edit(shift @argv);
+    } else {
+	server_send("/info $1");
+    }
+}
+
+
+register_user_command_handler('info', \&info_cmd);
+
+if ($config{replace_info}) {
     register_eventhandler(Type => 'userinput',
 			  Call => sub {
 	my($event,$handler) = @_;
-	if ($event->{Text} =~ m|^\s*/info\s+set\s*(.*?)\s*$|) {
-	    info_set($1);
-	    $event->{ToServer} = 0;
-	} elsif ($event->{Text} =~ m|^\s*/info\s+edit\s*(.*?)\s*$|) {
-	    info_edit($1);
+	if ($event->{Text} =~ m|^\s*/info\s*(.*?)\s*$|) {
+	    info_cmd($1);
 	    $event->{ToServer} = 0;
 	}
-	return 0;
     });
 }
 
