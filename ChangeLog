@@ -1,3 +1,4 @@
+Version 0.6e-post
   * [LC/parse.pm] Fix to make emotes parse properly during a /review [SMC]
   * moved gag code into the UI, so now we can ungag and see what was said [JDW]
   * load vinfo by default, but send _no_ replies automatically. [JDW]
