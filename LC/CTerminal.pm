@@ -170,8 +170,11 @@ use IO::Select;
 use LC::Config;
 eval "use Term::Size";
 if ("$@") { 
-  warn("** WARNING: Unable to load Term::Size **\n");
+  warn("** WARNING: Unable to load Term::Size: **\n");
+  $have_term_size=0;
   sleep 2;
+} else {
+  $have_term_size=1;
 }
 
 my $term_up = 0;
@@ -206,9 +209,11 @@ sub term_init ($) {
     shift;
     return if ($term_up);
     $resize_cb = $_[0];
-    ($ENV{COLUMNS}, $ENV{LINES}) = Term::Size::chars;
+    if ($have_term_size) {
+       ($ENV{COLUMNS}, $ENV{LINES}) = &Term::Size::chars;
+    }
     initscr();
-    #($COLS, $LINES) = Term::Size::chars;
+    #($COLS, $LINES) = &Term::Size::chars;
     $term_lines = $LINES; 
     $term_cols = $COLS;
     noecho();

@@ -115,8 +115,11 @@ sub extension($;$) {
 sub extension_unload($) {
     my($name) = @_;
 
-    return if (!defined $Extensions{$name});
-
+    if (!defined $Extensions{$name}->{Safe}) {
+       ui_output("*** \'$name\' extension not loaded");
+       return; 
+    }
+    
     ui_output("*** unloading \'$name\' extension");
 
     my $old = $Extensions{/current/};
