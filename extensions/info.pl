@@ -1,5 +1,5 @@
 # -*- Perl -*-
-# $Header: /data/cvs/tlily/extensions/info.pl,v 1.19 1998/06/03 13:13:38 steve Exp $
+# $Header: /data/cvs/tlily/extensions/info.pl,v 1.20 1998/06/07 09:54:08 danaf Exp $
 
 sub info_set(%) {
     my %args=@_;
@@ -53,6 +53,16 @@ sub info_set(%) {
 	    foreach $l (@data) {
 		server_send($l);
 	    }
+	} else {
+	  my $deadfile = $ENV{HOME}."/.lily/tlily/dead.info";
+	  my $rc = open(DF, ">$deadfile");
+	  if ($rc) {
+	    print DF @data;
+	    close(DF);
+	    ui_output("(export refused, info saved to $deadfile)");
+	  } else {
+	    ui_output("(export refused, edits lost!)");
+	  }
 	}
 	deregister_handler($handler->{Id});
 	return 0;
