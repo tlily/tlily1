@@ -1,3 +1,7 @@
+Version 0.9a-post
+  * [LC/CTerminal.pm] Added definitions for the home and end keys. [CWS]
+  * [LC/UI.pm] Made home and end do something. [CWS]
+
 Version 0.9a
   * [LC/Extend.pm] Better error handling, reporting. [DPN]
   * [extensions/gag.pl] Made %gag work with the new ui_filter [SMC]
