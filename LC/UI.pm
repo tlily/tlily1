@@ -961,17 +961,18 @@ sub input_scrollfirst($$$) {
     $text_l = 0;
     $text_r = 0;
 
-    my $rows = 0;
+    my $rows = 1;
     while (($rows < $term_lines) && ($text_l <= $#text_lines)) {
+	$rows++;
 	$text_r++;
-	if ($text_r > line_height($text_l)) {
+	if ($text_r >= line_height($text_l)) {
 	    $text_l++;
 	    $text_r = 0;
 	}
     }
     if ($text_l > $#text_lines) {
 	$text_l = $#text_lines;
-	$text_r = line_height($text_l);
+	$text_r = line_height($text_l) - 1;
     }
 
     win_redraw();
