@@ -264,6 +264,9 @@ sub parse_line {
 	if (/^(.*) has been detached/) {
 	    &main::do_how();
 	}
+	if (/^(.*) has entered lily/) {
+	    &main::set_status( here => "incr" );
+	}
 	if (/^(.*) has left lily/) {
 	    &main::do_how();
 	}

@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl
 
-$TL_VERSION="0.1e";
+$TL_VERSION="0.1f";
 $debug=0;
 
 use LC::log; 
@@ -281,6 +281,8 @@ sub client_command {
 	my $output=eval($args); 
 	ui_output($output);
 	ui_output($@) if ($@);
+    } elsif ($cmd eq '%version') {
+	ui_output("Tigerlily, version $TL_VERSION");
     } elsif ($cmd eq '%gag') {
 	foreach (split /[\s,]+/, $args) {
 	    if ($gagged{tolower($_)}) {
