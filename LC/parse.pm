@@ -377,7 +377,7 @@ sub parse_line ($) {
     }
 
     # message body
-    if ($line =~ /^ -/)  { 
+    if ($line =~ /^ - /)  { 
 	%event = (Type => 'send',
 		  From => $msg_sender,
 		  To => \@msg_dest,
