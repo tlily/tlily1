@@ -1,3 +1,7 @@
+Version 0.7b
+  * [extensions/countdown.pl] Countdown timer on the statusline.  [DPN]
+  * [LC/User.pm] Fixed the laggy signals problem.  [DPN]
+
 Version 0.7a
   * [extensions/info.pl] Fixed /info override to correctly recognize /info [CWS]
   * [extensions/info.pl] Fixed %info edit to only change the info if you made
