@@ -25,21 +25,39 @@ sub exp_set ($$) {
 sub exp_expand ($$$) {
     my($key, $line, $pos) = @_;
 
-    return LC::UI::input_add($key, $line, $pos) if ($pos != 0);
+    if ($pos == 0) {
+	my $exp;
+	if ($key eq '=') {
+	    $exp = $expansions{'sendgroup'};
+	    $key = ';';
+	} elsif ($key eq ':') {
+	    $exp = $expansions{'sender'};
+	} elsif ($key eq ';') {
+	    $exp = $expansions{'recips'};
+	} else {
+	    return LC::UI::input_add($key, $line, $pos);
+	}
+	
+	return ($exp . $key . $line, length($exp) + 1, 2);
+    } elsif (($key eq ':') || ($key eq ';')) {
+	my $fore = substr($line, 0, $pos);
+	my $aft  = substr($line, $pos);
 
-    my $exp;
-    if ($key eq '=') {
-	$exp = $expansions{'sendgroup'};
-	$key = ';';
-    } elsif ($key eq ':') {
-	$exp = $expansions{'sender'};
-    } elsif ($key eq ';') {
-	$exp = $expansions{'recips'};
-    } else {
-	return LC::UI::input_add($key, $line, $pos);
+	return LC::UI::input_add($key, $line, $pos) if ($fore =~ /[:;]/);
+
+	my @dests = split(/,/, $fore);
+	foreach (@dests) {
+	    my $full = expand_name($_);
+	    next unless ($full);
+	    $_ = $full;
+	    $_ =~ tr/ /_/;
+	}
+
+	$fore = join(',', @dests);
+	return ($fore . $key . $aft, length($fore) + 1, 2);
     }
 
-    return ($exp . $key . $line, length($exp) + 1, 2);
+    return LC::UI::input_add($key, $line, $pos);
 }
 
 
