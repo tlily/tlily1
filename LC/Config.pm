@@ -225,7 +225,7 @@ sub parse_command_line {
     my ($snrub,$xyzzy);
 
     while(@ARGV) {
-	if($ARGV[0] =~ /^-(h|help|\?)$/) {
+	if($ARGV[0] =~ /^-(H|help|\?)$/) {
 	    &Usage; exit;
 	}
 	if($ARGV[0] =~ /^-(h|host|s|server)$/) {
