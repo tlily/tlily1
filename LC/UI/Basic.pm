@@ -6,8 +6,8 @@ LC::UI:Basic - tlily's dumbest user interface.
 
 This is the simplest UI module possible.  
 
-This module provides a simple text based UI functions, but you can't instantiate
-it directly.
+This module provides a simple text based UI functions, but you can't 
+instantiate it directly.
 
 =cut
 
@@ -25,11 +25,11 @@ sub new {
     die "You can not use LC::UI::Basic as a UI.  Try LC::UI::Debug.\n";
 }
 
-sub ui_start        {
+sub ui_start {
     system("stty cbreak");
 }
 
-sub ui_end          {
+sub ui_end {
     system("stty sane");    
 }
 
@@ -98,6 +98,7 @@ sub ui_process {
     if ($buf eq "\n") {
        my $ret=$self->{input};
        $self->{input}="";
+       chomp($ret);
        return $ret;
     } else {
        return undef;

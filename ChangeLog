@@ -1,4 +1,6 @@
 Version 1.0.1-post
+  * [LC/UI/OutputWindow]  Created a new UI module.  Sort of a "status window"
+    at this point.
   * [LC/UI] Major overhaul of UI subsystem.  Created LC::UI:: modules for each
     UI.  Also created a LC::UI::SSFE module as an example.
   * [extensions/url.pl] Bugfix: Netscape doesn't like commas in arguments

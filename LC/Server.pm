@@ -1,5 +1,5 @@
 # -*- Perl -*-
-# $Header: /data/cvs/tlily/LC/Server.pm,v 2.1 1998/06/12 08:56:12 albert Exp $
+# $Header: /data/cvs/tlily/LC/Server.pm,v 2.2 1998/10/24 21:01:23 josh Exp $
 package LC::Server;
 
 use Exporter;
@@ -45,10 +45,10 @@ sub server_read() {
     return $buf;
 }
 
-
 # Send a chunk of data to the server.
 sub server_send($) {
     my($s) = @_;
+
     my $written = 0;
     while ($written < length($s)) {
 	my $bytes = syswrite($server_sock,$s,length($s),$written);

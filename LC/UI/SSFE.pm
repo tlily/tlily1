@@ -14,6 +14,11 @@ You must have the "ssfe" program installed somewhere in your path.
 
 It can be found at http://www.eleves.ens.fr:8080/home/espel/sirc/ssfe.c
 
+Bugs:
+I note that prompts do not seem to work after the first one.
+This appears to be a bug in ssfe itself, but I am not sure.  I might be 
+using the ssfe "p" command incorrectly or something.
+
 =cut
 
 package LC::UI::SSFE;
@@ -77,8 +82,9 @@ sub ui_process {
 
     # with ssfe, we always get a line of input.
     my $line=<STDIN>;
+    chomp($line);
 
-    if ($line eq "\n") { $line = " \n"; }
+    if ($line eq "") { $line = " "; }
 
     return $line;
 }
@@ -93,7 +99,6 @@ sub ui_password($) {
 
 sub ui_prompt {
     my ($self,$prompt)=@_;
-    
     print "`#ssfe#p$prompt\n";
 }
 
