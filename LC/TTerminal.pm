@@ -1,5 +1,5 @@
 # -*- Perl -*-
-# $Header: /data/cvs/tlily/LC/TTerminal.pm,v 1.7 1998/06/05 07:23:22 josh Exp $
+# $Header: /data/cvs/tlily/LC/TTerminal.pm,v 1.8 1998/06/05 07:25:33 josh Exp $
 package LC::TTerminal;
 
 use IO::Select;
@@ -69,7 +69,7 @@ sub term_init ($) {
 
     $termios->setattr(0, &POSIX::TCSANOW);
 
-    eval '`$term = Tgetent Term::Cap { TERM => undef, OSPEED => $ospeed };';
+    eval '$term = Tgetent Term::Cap { TERM => undef, OSPEED => $ospeed };';
 
     if ($@) {
 	if ($ENV{TERM} eq "vt100") {
