@@ -1,4 +1,4 @@
-# $Header: /data/cvs/tlily/extensions/url.pl,v 2.3 1998/10/14 00:59:00 neild Exp $
+# $Header: /data/cvs/tlily/extensions/url.pl,v 2.4 1998/10/23 21:06:53 neild Exp $
 #
 # URL handling
 #
@@ -47,6 +47,8 @@ sub url_cmd {
         } else {
 	    $url = $num;
 	}
+
+	$url =~ s/([,"'])/sprintf "%%%02x", ord($1)/eg;
 
 	ui_output("(viewing $url)");
 	my $cmd=$config{browser};

@@ -1,4 +1,6 @@
 Version 1.0.1-post
+  * [extensions/url.pl] Bugfix: Netscape doesn't like commas in arguments
+    to openURL, so replace them with %2c.  [DPN]
   * [extensions/program.pl] Preliminary version of an extension for 
     to enable server maintenance.  This version contains a very hackish
     verb editor. [MJR]
