@@ -31,7 +31,7 @@ sub info_set(%) {
 	}
 
 	if ((stat FH)[10] == $mtime) {
-		ui_output("(info buffer not changed)");
+		ui_output("(info not changed)");
 		return;
 	}
 
