@@ -1,3 +1,6 @@
+Version 0.3b
+  * Minor UI bugfix involving the input line's attributes.  [DPN]
+
 Version 0.3a
   * Build script now asks what paths you want to use and caches them,
     rather than making you edit Build.PL to set them.
