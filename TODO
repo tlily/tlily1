@@ -7,9 +7,6 @@ only once subclient with a given name works per session.
 
 
 Feature requests:
-- Make home/end do something.  (C-a/C-e or M-</M->)  (Honker suggests making
-  this dependant on the position of the cursor in the line.)
-
 - MOO programming features.
 
 - Update help text.
