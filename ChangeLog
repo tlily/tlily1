@@ -1,4 +1,5 @@
 Version 0.7a
+  * [extensions/info.pl] Added %export [JDW]
   * [extensions/smartexit.pl] Fix recognition of /det and /bye [FeRD@RPI][CWS]
   * [LC/Config.pm] Added some pod docs [CWS]
   * [LC/UI.pm] Changed Paste mode keymapping to M-p to match documentation
@@ -28,15 +29,17 @@ Version 0.7a
   * [Build.PL] New target: announce: Allows developer to send a release
                announcement asynchronously from the release [CWS]
   * [Build.PL] Don't let non-developers try to release or announce [CWS]
-  * %url viewing code. [JDW]
+  * [extensions/url.pl] %url viewing code. [JDW]
   * Lots of little changes to make tlily work better under -w.  [DPN]
   * [LC/parse.pm] Fix to make emotes parse properly during a /review [SMC]
-  * moved gag code into the UI, so now we can ungag and see what was said [JDW]
+  * [LC/UI.pm] moved gag code into the UI, so now we can ungag and see what 
+               was said [JDW]
   * load vinfo by default, but send _no_ replies automatically. [JDW]
-  * modified %help prefix to ? instead of * [JDW]
-  * modified autoreply and log to use the status line [JDW]
+  * [extensions/help.pl] modified %help prefix to ? instead of * [JDW]
+  * [extensions/autoreply.pl] modified autoreply and log to use the 
+               status line [JDW]
   * [LC/StatusLine.pm] Reworked status line processing to allow extensions
-    to access the status line [JDW]
+               to access the status line [JDW]
 
 Version 0.6e
   * [LC/CTerminal.pm] Relaxed requirement for Term::Size to show warning [JDW]
