@@ -17,37 +17,39 @@ sub help_cmd {
     }
 
     if ($args =~ /^\s*$/) {
-	ui_output("* This is TigerLily version $TL_VERSION");
-	ui_output("* Help is available on the following topics:\n");
+	ui_output("? This is TigerLily version $TL_VERSION");
+	ui_output("? Help is available on the following topics:");
 
 	foreach $topic (@topics) {	    
-	    my $s=sprintf("*  <yellow>%-$w.$w" . "s</yellow>",$topic);
+	    my $s=sprintf("?  <yellow>%-$w.$w" . "s</yellow>",$topic);
 	    my $t=help_get_short($topic);
 	    if ($t) { $s .= " - $t";}
 	    ui_output($s);
 	}	
 	
-	ui_output("* For further help, type \'%help [topic]\'");
+	ui_output("? For further help, type \'%help [topic]\'");
 	return;	   
     }
     
     $args=~s/^[\%\s]*//g;
 
     if ($helpon{$args}) {
-	ui_output("* Help on \'$args\'");
+	ui_output("? Help on \'$args\'");
 	my $f=0;
 	if (help_get_short($args)) {
-	    ui_output(Text => "* $args: " . help_get_short($args),
-		      WrapChar => '* ');
+	    ui_output(Text => "? $args: " . help_get_short($args),
+		      WrapChar => '? ');
 	    $f=1;
 	}
-	my $longtxt= "* " . help_get_long($args);
+	my $longtxt= "? " . help_get_long($args);	
 	$longtxt=~s/\n/\n\* /g;
-	if ($longtxt) { ui_output(Text => $longtxt, WrapChar => '* '); $f=1; 
+	if ($longtxt) { 
+	    ui_output(Text => $longtxt, WrapChar => '? '); $f=1;
 	}
-	if (! $f) { ui_output("* No further help for \'$args\'.  Feel like writing it?"); }
+	if (! $f) { 
+	    ui_output("? No further help for \'$args\'.  Feel like writing it?"); }
     } else {
-	ui_output("* No help for \'$args\'");
+	ui_output("? No help for \'$args\'");
     }
 
 }
