@@ -71,7 +71,7 @@ sub info_edit($) {
     my @lines = ();
     cmd_process("/info $itarget", sub {
 	my($event) = @_;
-	$event->{ToUser} = 1;
+	$event->{ToUser} = 0;
 	if ($event->{Text} =~ /^\* (.*)/) {
 	    return if ((@lines == 0) &&
 		       ($event->{Text} =~ /^\* Last Update: /));
