@@ -149,7 +149,6 @@ provided.)
 use Exporter;
 
 use IO::Handle;
-use POSIX;
 
 use LC::Config;
 

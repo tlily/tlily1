@@ -48,7 +48,6 @@ The exact server output for the line.
 use Exporter;
 use LC::UI;
 use LC::Event;
-use POSIX;
 
 @ISA = qw(Exporter);
 
