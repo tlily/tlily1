@@ -39,7 +39,7 @@ $editor = $ENV{VISUAL} || $ENV{EDITOR} || 'vi';
 #$browser_textmode=1;
 #$browser="lynx";
 $browser_textmode=0;
-$broser="netscape -remote 'openURL(%URL%)'";
+$browser="netscape -remote 'openURL(%URL%)'";
 
 
 # End defaults
