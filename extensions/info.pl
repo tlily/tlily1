@@ -1,41 +1,46 @@
 # -*- Perl -*-
 
-sub info_set($;\@) {
-    my($disc,$lref) = @_;
-
-    local(*FH);
+sub info_set(%) {
+    my %args=@_;
     
-    my $tmpfile = "/tmp/tlily.$$";
+    my $disc=$args{disc};
+    my $edit=$args{edit};
+    my @data=@{$args{data}};
 
-    unlink($tmpfile);
-    if ($lref) {
-	open(FH, ">$tmpfile") or die "$tmpfile: $!";
-	foreach (@$lref) { chomp; print FH "$_\n"; }
+    if ($edit) {
+	local(*FH);
+        my $tmpfile = "/tmp/tlily.$$";
+	
+	unlink($tmpfile);
+	if (@data) {
+	    open(FH, ">$tmpfile") or die "$tmpfile: $!";
+	    foreach (@data) { chomp; print FH "$_\n"; }
+	    close FH;
+	}
+	
+	ui_end();
+	system("$config{editor} $tmpfile");
+	ui_start();
+	
+	my $rc = open(FH, "<$tmpfile");
+	unless ($rc) {
+	    ui_output("(info buffer file not found)");
+	    return;
+	}
+
+	@data = <FH>;
 	close FH;
+	unlink($tmpfile);
     }
 
-    ui_end();
-    system("$config{editor} $tmpfile");
-    ui_start();
-
-    my $rc = open(FH, "<$tmpfile");
-    unless ($rc) {
-	ui_output("(info buffer file not found)");
-	return;
-    }
-
-    my @lines = <FH>;
-    close FH;
-    unlink($tmpfile);
-
-    my $size=@lines;
+    my $size=@data;
 
     register_eventhandler(Type => 'export',
 			  Call => sub {
 	my($event,$handler) = @_;
 	if ($event->{Response} eq 'OKAY') {
 	    my $l;
-	    foreach $l (@lines) {
+	    foreach $l (@data) {
 		server_send($l);
 	    }
 	}
@@ -52,17 +57,20 @@ sub info_edit($) {
 
     my $itarget = $target || user_name();
 
-    my @lines = ();
+    ui_output("(getting info for $itarget)");
+    my @data = ();
     cmd_process("/info $itarget", sub {
 	my($event) = @_;
 	$event->{ToUser} = 0;
 	if ($event->{Text} =~ /^\* (.*)/) {
-	    return if ((@lines == 0) &&
+	    return if ((@data == 0) &&
 		       ($event->{Text} =~ /^\* Last Update: /));
-	    push @lines, substr($event->{Text},2);
+	    push @data, substr($event->{Text},2);
 	} elsif ($event->{Type} eq 'endcmd') {
-	    map { s/\\(.)/$1/g } @lines;
-	    info_set($target, @lines);
+	    map { s/\\(.)/$1/g } @data;
+	    info_set(disc=>$target,
+		     data=>\@data,
+		     edit=>1);
 	}
 	return 0;
     });
@@ -70,21 +78,40 @@ sub info_edit($) {
 
 
 sub info_cmd($) {
-    my ($args) = @_;
-    my @argv = split /\s+/, $args;
-    my $cmd = shift @argv;
-
+    my ($cmd,$disc) = split /\s+/,"@_";
     if ($cmd eq 'set') {
-		info_set(shift @argv);
+		info_set(disc=>$disc,
+			 edit=>1);
     } elsif ($cmd eq 'edit') {
-		info_edit(shift @argv);
+		info_edit($disc);
     } else {
-		server_send("/info $args\r\n");
+		server_send("/info @_\r\n");
     }
+}
+
+sub export_cmd($) {
+    my ($file, $disc);
+    my @args=split /\s+/,"@_";
+    if (@args == 1) {
+	($file) = @args;
+    } else {
+	($disc,$file) = @args;
+    }
+    my $rc=open(FH, "<$file");
+    unless ($rc) {
+	ui_output("(file \"$file\" not found)");
+	return;
+    }
+    @lines=<FH>;
+    close(FH);
+    info_set(data=>\@lines,
+	     disc=>$disc,
+	     edit=>0);
 }
 
 
 register_user_command_handler('info', \&info_cmd);
+register_user_command_handler('export', \&export_cmd);
 
 if (config_ask("info")) {
     register_eventhandler(Type => 'scommand',
@@ -112,6 +139,12 @@ register_help_long("info", "
 Note: You can set your editor via \$config{editor}, or the VISUAL and EDITOR
       environment variables.
 
+");
+
+register_help_short("info", "Export a file to /info");
+register_help_long("export", "
+%export [discussion] <file>  - Allows you to set a /info to the contents of 
+                               a file
 ");
 
 
