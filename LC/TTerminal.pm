@@ -1,34 +1,12 @@
 # -*- Perl -*-
 package LC::TTerminal;
 
-#use Exporter;
 use Term::Cap;
 use POSIX;
 
 use LC::Config;
 
-#@ISA = qw(Exporter);
-
-@EXPORT = qw($term_lines
-	     $term_cols
-	     $term_resize_flag
-	     &term_init
-	     &term_end
-	     &term_winch
-	     &term_clear
-	     &term_getattr
-	     &term_setattr
-	     &term_addstr
-	     &term_move
-	     &term_delete_to_end
-	     &term_insert_line
-	     &term_delete_line
-	     &term_insert_char
-	     &term_delete_char
-	     &term_get_char
-	     &term_refresh
-	     &term_bell);
-
+require 'termio.ph';
 
 my %attrs = ('bold' => 0,
              'reverse' => 0);
@@ -59,8 +37,8 @@ sub term_cols () { $term_cols; }
 # Determine the terminal size.
 sub term_get_size () {
     my $winsize = '';
-    my $TIOCGWINSZ = (ord('T') << 8) | 104;
-    if (ioctl(STDIN, $TIOCGWINSZ, $winsize)) {
+    #my $TIOCGWINSZ = (ord('T') << 8) | 104;
+    if (ioctl(STDIN, &TIOCGWINSZ, $winsize)) {
 	my($ws_row, $ws_col, $ws_xp, $ws_yp) = unpack("SSSS", $winsize);
 	$ws_row = 24 if ($ws_row <= 0);
 	$ws_col = 80 if ($ws_col <= 0);
