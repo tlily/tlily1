@@ -175,6 +175,7 @@ sub expand_name ($) {
     if (ref($config{prefer}) eq "ARRAY") {
 	my $m;
 	foreach $m (@{$config{prefer}}) {
+	    $m = lc($m);
 	    return $m if (index($m, $name) == 0);
 	    return $m if ($m =~ /^-/ && index($m, $name) == 1);
 	}

@@ -1,3 +1,6 @@
+Version 0.6e
+  * [LC/State.pm] Make @prefer ignore case.  [DPN]
+
 Version 0.6d
   * [LC/UI.pm] Fixed the problem with newlines in output.  [DPN]
   * [LC/UI.pm] Better error reporting when a terminal module fail.  [DPN]
