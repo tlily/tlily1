@@ -1,4 +1,6 @@
 Version 1.0.4-post
+  * [README, Build.PL] Changed occurances of einstein.to to einstein.org.
+  * [README] Added info for access to the bug tracking system [MJR]
   * [LC/Client.pm] Bugfix for  tlily not reporting version to the server. [MJR]
   * [extensions/parse.pl] Bugfix for /who output and names with spaces.  [DPN]
 

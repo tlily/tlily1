@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# $Header: /data/cvs/tlily/Build.PL,v 2.3 1998/12/09 02:00:39 albert Exp $
+# $Header: /data/cvs/tlily/Build.PL,v 2.4 1999/02/01 01:55:03 mjr Exp $
 
 use Config;
 use Carp;
@@ -489,7 +489,7 @@ Usage: perl Build.PL [-n][-h][-i][tigerlily|install|uninstall|clean|
 	release:   Tag the release via CVS and make a .tar.gz for release
 	           (Developers only!)
 	announce:  Generate an annoucement mail and send it to
-	           tigerlily-announce\@einstein.to.  (Developers only!)
+	           tigerlily-announce\@einstein.org.  (Developers only!)
 
 	With no targets, will execute tigerlily target.
 );
@@ -781,7 +781,7 @@ sub do_announcement {
 	undef $cl;
 
 	my $msg = qq(From: "Tigerlily Developers" <tigerlily\@hitchhiker.org>
-To: "Tigerlily Announcement List" <tigerlily-announce\@einstein.to>
+To: "Tigerlily Announcement List" <tigerlily-announce\@einstein.org>
 Subject: Tigerlily $version is now available
 
 Hi All -
@@ -801,7 +801,7 @@ Share and Enjoy.
 The Tigerlily Developers
 Damien, Albert, Josh, Jon, Steve & Matt.
 ----------------------------------------------------------------------------
-To unsubscribe from this list, send email to <majordomo\@einstein.to> with
+To unsubscribe from this list, send email to <majordomo\@einstein.org> with
 the words "unsubscribe tigerlily-announce" in the body.
 );
 	my $abort_flag;
@@ -827,7 +827,7 @@ the words "unsubscribe tigerlily-announce" in the body.
     }
     else {
 	print "Don't forget to send an announcement of the new release\n",
-	    "to tigerlily-announce\@einstein.to.\n";
+	    "to tigerlily-announce\@einstein.org.\n";
     }
 }
 
