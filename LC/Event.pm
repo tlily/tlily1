@@ -13,8 +13,8 @@ LC::Event - the event queue
 				Order => 'after',
 				Call => \&logger);
 
-    dispatch_event(Type => 'serverline',
-		   Text => $s);
+    dispatch_event({Type => 'serverline',
+		   Text => $s});
 
     deregister_eventhandler($id);
 
@@ -90,8 +90,8 @@ Events are processed in the order they are received.  All event handlers
 for a given event will run to completion before the next event is processed.
 Example:
 
-    dispatch_event(Type => 'serverline',
-		   Text => $s);
+    dispatch_event({Type => 'serverline',
+		   Text => $s});
 
 =item register_iohandler()
 

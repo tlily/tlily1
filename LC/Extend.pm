@@ -64,6 +64,8 @@ sub extension($) {
     push @share,@LC::Event::EXPORT;
     $TL_VERSION=$main::TL_VERSION;
     push @share,qw($TL_VERSION);
+	$HOME = $ENV{HOME};
+	push @share,qw($HOME);
     
     $safe->share (@share);
         

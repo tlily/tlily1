@@ -1,23 +1,33 @@
 Version 0.3c
-  * Changed page up/down to M-v/C-v.
+  * Changed page up/down to M-v/C-v. [DPN]
   * Meta keys now function.  [DPN]
-  * Look extension: perform a look(1) on the word under the cursor.  [DPN]
-  * Added a clock to the statusline.  [DPN]
-  * Added support for I/O and timed events.  [DPN]
+  * [extensions/look.pl] Removed debugging 'foo' printf. [CWS]
+  * [Build.PL] Added -c option to use current directories. [CWS]
+  * [extensions/startup.pl] New extension; snarfs ~/.lily/tlily/Startup
+    on a connected event. [CWS]
+  * [tlily.PL] Played with login stuff so client options are sent at the
+    blurb prompt and, therefore, we get the %connected option at RPI. [CWS]
+  * [LC/Event.pm] Fixed documentation;  dispatch_event takes 1 arg, a
+    hashref. [CWS]
+  * [extensions/look.pl] Look extension: perform a look(1) on the word under
+    the cursor.  [DPN]
+  * [LC/StatusLine.pm] Added a clock.  [DPN]
+  * [LC/Event.pm, LC/Extend.pm] Added support for I/O and timed events.  [DPN]
   * [extensions/expand.pl] added code to reset the sendlist more appropriately
     when /oops-ing or /also-ing; enabled with $config{oops} and $config{also};
     when set to "/", intercepts /oops and /also, when set to "%", adds
-    commands %oops and %also, when set to "/%" or "%/", does both.
-  * Commented out some unused variables and fixed some typos to make
-    perl -w happier. [CWS]
+    commands %oops and %also, when set to "/%" or "%/", does both. [CWS]
+  * [tlily.PL] Commented out some unused variables and fixed some typos to
+    make perl -w happier. [CWS]
   * The parser should now catch sends from the user.  (<< and <-)  [DPN]
   * Parser bug fix: *** (10:00) User has attached *** was parsed incorrectly
     if the date was in there.  [DPN]
-  * Fixed bug in tlily.PL which caused ~/.lily/tlily/init not to be read. [CWS]
-  * The Build now tells you how to install when you only make tlily and
+  * [tlily.PL] Fixed bug which caused ~/.lily/tlily/init not to be read. [CWS]
+  * [Build.PL] Tells you how to install when you only make tlily and
     your directories aren't the current dir. [CWS]
-  * The Build now accepts 'tlily' as a target on the command line. [CWS]
-  * Tilde(~) expansion will be done on all paths entered by the user. [CWS]
+  * [Build.PL] Now accepts 'tlily' as a target on the command line. [CWS]
+  * [Build.PL] Tilde(~) expansion will be done on all paths entered by the
+    user. [CWS]
 
 Version 0.3b
   * Moved !command and %eval into an extension, and fixed a !cmd bug.  [DPN]

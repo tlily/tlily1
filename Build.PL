@@ -31,7 +31,9 @@ while(@ARGV) {
 	elsif($ARGV[0] eq "-f") {
 		$yesdamnit = 1; shift;
 	}
-	else {
+	elsif($ARGV[0] eq "-c") {
+		$current = 1; shift;
+	} else {
 		$target=shift;
 	}
 }
@@ -299,9 +301,11 @@ sub ask_dirs {
 		print "Reading cache file $cachefile.\n";
 		do "$cachefile";
 		if($DIRS_ARE_LOCAL) {
-			print "\n*** It is recommended that you not do 'perl Build.PL install' ***\n\n";
+			print "\n*** It is recommended that you NOT do 'perl Build.PL install' ***\n\n";
 		}
 		return;
+	} elsif($current == 1) {
+		&use_current_dir; return;
 	} else {
 		$PREFIX='/usr/local';
 		print qq(By default, tlily will be installed in $PREFIX/bin, global extensions
@@ -360,7 +364,7 @@ sub use_current_dir {
 	print "Extension directory is $LIBEXTDIR\n";
 	$DIRS_ARE_LOCAL = 1;
 
-	print "\n*** It is recommended that you not do 'perl Build.PL install' ***\n\n";
+	print "\n*** It is recommended that you NOT do 'perl Build.PL install' ***\n\n";
 
 	&write_buildcache;
 }

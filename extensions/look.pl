@@ -23,5 +23,4 @@ sub spellcheck($$$) {
     return;
 }
 
-ui_output('foo');
 ui_callback('C-g', \&spellcheck);

@@ -399,6 +399,12 @@ sub state_sync () {
 
 # Registers the handlers required to maintain lily state information.
 sub state_init () {
+	register_eventhandler(Type => 'connected',
+			  Call => sub {
+		my($event,$handler) = @_;
+		state_sync();
+		deregister_handler($handler->{Id});
+	});
     register_eventhandler(Type => 'rename',
 			  Order => 'before',
 			  Call => sub {

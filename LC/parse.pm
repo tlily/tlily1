@@ -163,7 +163,9 @@ sub parse_line($$) {
 
     # %connected
     if ($line =~ /^%connected/) {
-	%event = (Type => 'connected');
+	$hidden = 1;
+	%event = (Type => 'connected',
+		Text => $line);
 	goto found;
     }
 

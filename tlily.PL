@@ -114,6 +114,7 @@ sub init_connection_handling() {
 	} elsif (($event->{Type} eq 'prompt') &&
 		 ($event->{Text} =~ /^-->/)) {
 	    $state = 'blurb';
+		set_client_options();
 	} elsif (($state eq 'cxna') &&
 		 ($event->{Type} eq 'serverline') &&
 		 ($event->{Text} =~ /^Welcome to/)) {
@@ -136,7 +137,9 @@ sub init_connection_handling() {
 	}
 	if ($state eq 'connected') {
 	    deregister_handler($handler->{Id});
-	    on_connect();
+    	set_client_options();
+		dispatch_event({Type => 'connected',
+	               Text => '%connected unknown'});
 	}
 	return 0;
     });
@@ -172,13 +175,7 @@ sub set_client_options() {
 
     server_send("\#\$\# client_version $TL_VERSION\n");
     server_send("\#\$\# client_name TigerLily\n");
-    server_send("\#\$\# options +leaf-all +leaf\n");
-}
-
-
-sub on_connect() {
-    set_client_options();
-    state_sync();
+    server_send("\#\$\# options +leaf-all +leaf +connected\n");
 }
 
 
