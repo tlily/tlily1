@@ -24,12 +24,12 @@ use POSIX;
 $|=1;
 
 # globals
-$have_pseudo=0;
-$last_alarm=0;
-$next_alarm=0;
-$wakeup=10;     # how often to exit the select loop to do status processing,
+#$have_pseudo=0;
+#$last_alarm=0;
+#$next_alarm=0;
+#$wakeup=10;     # how often to exit the select loop to do status processing,
                 # etc.
-$password_mode=0;
+#$password_mode=0;
 
 ## main ##
 
@@ -95,7 +95,7 @@ sub init_connection_handling() {
 	my $os = $state;
 	if (($event->{Type} eq 'userinput') && ($state eq 'password')) {
 	    $state = 'login';
-	    $ievent->{ToUser} = 0;
+	    $event->{ToUser} = 0;
 	    ui_password(0);
 	    user_password(0);
 	} elsif (($event->{Type} eq 'userinput') && ($state eq 'blurb')) {
@@ -105,7 +105,7 @@ sub init_connection_handling() {
 	} elsif (($event->{Type} eq 'prompt') &&
 		 ($event->{Text} =~ /^login:/)) {
 	    set_client_options() unless ($set_opts);
-	    $set_opts == 1;
+	    $set_opts = 1;
 	} elsif (($event->{Type} eq 'prompt') &&
 		 ($event->{Text} =~ /^password:/)) {
 	    $state = 'password';

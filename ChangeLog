@@ -1,4 +1,6 @@
 Version 0.3c
+  * Commented out some unused variables and fixed some typos to make
+    perl -w happier. [CWS]
   * The parser should now catch sends from the user.  (<< and <-)  [DPN]
   * Parser bug fix: *** (10:00) User has attached *** was parsed incorrectly
     if the date was in there.  [DPN]

@@ -528,7 +528,7 @@ sub parse_line($$) {
 	}
 
 	# user state changes (lots of possibilities)
-	my $newstate, $oldstate = (undef, undef);
+	my($newstate, $oldstate)= (undef, undef);
 	if ($tline =~ /^(.*) has detached/) {
 	    $oldstate = undef;
 	    $newstate = 'detach';
