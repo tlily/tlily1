@@ -53,7 +53,9 @@ print join("\n", @extfiles), "\n" if $debug;
 
 if(!$target || $target eq 'tlily') {
 	&make_tlily;
-	print "To install Tigerlily, do a 'perl Build.PL install'.\n";
+	if(!$DIRS_ARE_LOCAL && !$nonono) {
+		print "To install Tigerlily, do a 'perl Build.PL install'.\n";
+	}
 }
 elsif($target eq 'install') {
 	&make_tlily;
