@@ -36,7 +36,9 @@ use LC::StatusLine;
 use Exporter;
 
 @ISA    = qw(Exporter);
-@EXPORT = qw(&start_subclient);
+@EXPORT = qw(&subclient_start
+	     &subclient_send
+	     );
 
 my @subcli=qw(Lily);
 my (%rhandle,%whandle,%ehandle);
@@ -74,7 +76,7 @@ sub subclient_cmd {
 	return;
     } elsif ($cmd eq "add") { 
 	my $opfx="<subc>$subcli></subc>";
-	start_subclient(name => $subcli,
+	subclient_start(name => $subcli,
 			run => $proc,
 			prefix => $opfx);
     } elsif ($cmd eq "remove" || $cmd eq "del") {
@@ -110,8 +112,7 @@ sub subclient_del {
 	$status="";
 	$SIG{CHLD} = "DEFAULT";
     } else {
-	$status="<greenblue>" . ui_escape("<$subcli[$subcli_num]>") .
-	        "</greenblue>";
+	$status= ui_escape("<$subcli[$subcli_num]>");
 	$SIG{CHLD} = \&sig_chld_handler;
     }
     redraw_statusline(1);       
@@ -132,7 +133,8 @@ sub subclient_del {
 # filter => \&my_filter
 #  Note: filter functions should call ui_escape to escape any < >'s in the 
 #     input!
-sub start_subclient {
+# onexit => \&cleanup
+sub subclient_start {
     my %args=@_;
     my ($subcli,$proc,$opfx)=($args{name},$args{run},$args{prefix});
     my $pid;
@@ -164,6 +166,7 @@ sub start_subclient {
     push @subcli,$subcli;     
     $subcli_num++;
     $pid{$subcli}=$pid;
+    $exited{$pid}=$args{onexit} if $args{onexit};
     $filter{$subcli} = $args{filter} if $args{filter};
 
     ui_output("(Started process $pid ($proc) - use the \` key to switch)");
@@ -178,7 +181,7 @@ sub start_subclient {
 				     Name => "SCE$subcli",
 				     Call => \&sc_input_process);
 
-    $status="<greenblue>" . ui_escape("<$subcli>") . "</greenblue>";
+    $status=ui_escape("<$subcli>");
     
     redraw_statusline();       
 }
@@ -231,8 +234,7 @@ sub sc_toggle_key {
     if ($#subcli == 0) {
 	$status="";
     } else {
-	$status="<greenblue>" . ui_escape("<$subcli[$subcli_num]>") .
-	        "</greenblue>";
+	$status=ui_escape("<$subcli[$subcli_num]>");
     }
     redraw_statusline(1);       
 
@@ -264,7 +266,13 @@ sub sig_chld_handler {
 	ui_output("(Subclient $pids{$child} terminated abnormally)")
 	    if ($? == WIFSIGNALED);
 	subclient_del("remove", $pids{$child});
+	&{$exited{$child}} if $exited{$child}
     }
 }
 
-
+sub subclient_send {
+    my ($name,$str)=@_;
+    
+    my ($wh)=$whandle{$name};
+    print $wh $str;
+}

@@ -1363,7 +1363,7 @@ sub ui_gaglist() {
 sub ui_escape {
     my ($line)=@_;
     $line =~ s/\</\\\</g; $line =~ s/\>/\\\>/g;
-    $line =~ s/\\\\([<>])/\\$1/g;  #what the heck!
+#    $line =~ s/\\\\([<>])/\\$1/g;  #what the heck!
 
     return $line;
 }

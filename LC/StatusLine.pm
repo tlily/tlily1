@@ -89,14 +89,15 @@ sub redraw_statusline {
 
     my $left=join ' | ',@left;
     my $right=join ' | ',reverse @right;
-    my $ll=length($left);
+    my $ll=length($left);    
     my $lr=$ui_cols-$ll;
+
 
     # favor things on the left over the right.
     my $fmt="%-$ll.$ll" . "s%$lr.$lr" . "s";
     my $status_line=sprintf($fmt,$left,$right);
        
-    $status_line =~ s/(<\\)/\\$1/g;
+#    $status_line =~ s/(<\\)/\\$1/g;
     $status_line =~ s:\|:<whiteblue>\|</whiteblue>:g;
 
     ui_status($status_line);

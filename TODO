@@ -1,6 +1,7 @@
 Bugs to fix:
 - Line tagging is useless.
 %eval ui_output("\r") causes a cool lockup :)
+statusline code messes up spacing when < >'s are in the statusline..
 
 
 Feature requests:
