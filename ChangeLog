@@ -1,4 +1,4 @@
-Version 0.5d
+Version 0.6a
   * [README] Documented the terminal features.  [DPN]
   * [LC/UI.pm, LC/CTerminal.pm, LC/TTerminal.pm, tlily.PL,
     extensions/terminal.pl] Added support for multiple terminals.  [DPN]
