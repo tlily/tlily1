@@ -1,4 +1,7 @@
 Version 1.0.2-post
+  * [LC/CTerminal.pm] Changed the 'use POSIX' line to only include the one
+    function that I know of that we use(iscntrl). [CWS]
+  * [Build.PL] Modified to install the UI directory and modules. [CWS]
   * [LC/Httpd.pm, extensions/httpd.pl] Http daemon using tlily internals.
     Second stage in client-to-client communications [SMC]
   * [extensions/parse.pl, LC/User.pm] First-cut attempt at handling emotes
