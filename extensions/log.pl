@@ -1,9 +1,10 @@
 # -*- Perl -*-
-# $Header: /data/cvs/tlily/extensions/log.pl,v 2.1 1998/06/12 08:56:39 albert Exp $
+# $Header: /data/cvs/tlily/extensions/log.pl,v 2.2 1998/06/24 01:06:36 mjr Exp $
 
 #
 # Log a lily session to a file.
 #
+use IO::File;
 
 my $log_file;
 my $log_fd;
@@ -32,7 +33,7 @@ sub log_start($) {
 
     log_stop();
 
-    $log_fd = IO::File->new(">>$file");
+    $log_fd = new IO::File ">>$file";
     if (!defined $log_fd) {
 	return;
 	ui_output("(Can't write to \"$file\": $!)");

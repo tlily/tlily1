@@ -1,4 +1,5 @@
 Version 1.0-post
+  * [extensions/view.pl, extensions/log.pl] IO::File bug fix [MJR]
   * [LC/SubClient.pm] Fixed so it works again. [SMC]
   * [LC/User.pm] Added % command abbreviation capability. [MJR]
   * [extensions/set.pl] Added a return 0 to end of unset_handler() [MJR]

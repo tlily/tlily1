@@ -1,5 +1,5 @@
 # -*- Perl -*-
-# $Header: /data/cvs/tlily/extensions/view.pl,v 2.1 1998/06/12 08:57:03 albert Exp $
+# $Header: /data/cvs/tlily/extensions/view.pl,v 2.2 1998/06/24 01:06:37 mjr Exp $
 #To: tigerlily@hitchhiker.org
 #Subject: My %view extension
 #Date: Wed, 10 Dec 1997 01:09:58 PST
@@ -13,6 +13,8 @@
 #--
 #Paul
 
+use IO::File;
+
 
 sub view_display(\@) {
     my($lref) = @_;
@@ -22,7 +24,7 @@ sub view_display(\@) {
 
     unlink($tmpfile);
 
-    my $fh = IO::File->new(">$tmpfile");
+    my $fh = new IO::File ">$tmpfile";
     foreach (@$lref) {
        chomp;
        $fh->print("$_\n");
