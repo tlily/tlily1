@@ -169,12 +169,13 @@ use POSIX;
 use IO::Select;
 use LC::Config;
 eval "use Term::Size";
+my $termsize_installed;
 if ("$@") { 
   warn("** WARNING: Unable to load Term::Size: **\n");
-  $have_term_size=0;
+  $termsize_installed=0;
   sleep 2;
 } else {
-  $have_term_size=1;
+  $termsize_installed=1;
 }
 
 my $term_up = 0;
@@ -209,11 +210,14 @@ sub term_init ($) {
     shift;
     return if ($term_up);
     $resize_cb = $_[0];
-    if ($have_term_size) {
-       ($ENV{COLUMNS}, $ENV{LINES}) = &Term::Size::chars;
+
+    if ($termsize_installed) {
+       ($ENV{COLUMNS}, $ENV{LINES}) = Term::Size::chars();
     }
     initscr();
-    #($COLS, $LINES) = &Term::Size::chars;
+    if ($termsize_installed) {
+    #   ($COLS, $LINES) = Term::Size::chars();
+    }
     $term_lines = $LINES; 
     $term_cols = $COLS;
     noecho();
