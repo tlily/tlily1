@@ -43,7 +43,7 @@ ui_attr('dest','bold');
 ui_attr('b','bold');
 if (! $config{mono}) {
     ui_attr('status_line',  'fg:yellow',  'bg:blue',  'bold');
-    ui_attr('input_line',   'fg:white',   'bg:black', 'bold');
+    ui_attr('input_line',   'fg:white',   'bg:black');
     ui_attr('text_window',  'fg:white',   'bg:black', 'normal');
     ui_attr('privhdr',      'fg:green',   'bg:black');
     ui_attr('privmsg',      'fg:green',   'bg:black');
