@@ -2,8 +2,8 @@
 package LC::UI;
 
 use LC::config;
+use LC::Terminal;
 
-use Curses;
 use IO::Handle;
 use POSIX;
 
@@ -32,28 +32,26 @@ my $status_line = "";
 my @accepted_lines = ();
 
 my %key_trans = (
-		 (KEY_LEFT) => \&input_left,
+		 'kl' => \&input_left,
 		 '' => \&input_left,
-		 (KEY_RIGHT) => \&input_right,
+		 'kr' => \&input_right,
 		 '' => \&input_right,
-		 (KEY_UP) => \&input_prevhistory,
+		 'ku' => \&input_prevhistory,
 		 '' => \&input_prevhistory,
-		 (KEY_DOWN) => \&input_nexthistory,
+		 'kd' => \&input_nexthistory,
 		 '' => \&input_nexthistory,
-		 (KEY_HOME) => \&input_home,
 		 '' => \&input_home,
-		 (KEY_END) => \&input_end,
 		 '' => \&input_end,
 		 '' => \&input_killtoend,
 		 '' => \&input_killtohome,
-		 (KEY_PPAGE) => \&input_pageup,
+		 'pgup' => \&input_pageup,
 		 '' => \&input_pageup,
-		 (KEY_NPAGE) => \&input_pagedown,
+		 'pgdn' => \&input_pagedown,
 		 '' => \&input_pagedown,
 		 "\r" => \&input_accept,
 		 "\n" => \&input_accept,
 		 "" => \&input_refresh,
-		 (KEY_BACKSPACE) => \&input_bs
+		 '' => \&input_bs
 		 );
 
 my %attr_list = ();
@@ -65,65 +63,24 @@ my $attr_cur_fg = COLOR_WHITE;
 
 # Starts the curses UI.
 sub init () {
-    initscr;
-    start_color;
-    cbreak; noecho; nodelay 1; keypad 1;
-    $ui_up = 1;
-    attr_define('status_line', COLOR_YELLOW, COLOR_BLUE, A_BOLD);
-    attr_define('input_line', COLOR_WHITE, COLOR_BLACK, A_BOLD);
-    attr_define('text_window', COLOR_WHITE, COLOR_BLACK, A_NORMAL);
+    term_init();
+    attr_define('status_line', 'yellow|blue', 'bold');
+    attr_define('input_line', 'white|black', 'normal');
+    attr_define('text_window', 'white|black', 'normal');
     &redraw;
 }
 
 
 # Terminates the UI.
 sub end () {
-    return unless ($ui_up);
-    clear;
-    refresh;
-    endwin;
-    $ui_up = 0;
-}
-
-
-# Allocate a color.
-sub color_alloc ($$) {
-    my($fg,$bg) = @_;
-    $id = "${fg}:${bg}";
-    my $n = $attr_cmap{$id};
-    if (!defined $n) {
-	$n = scalar(keys %attr_cmap) + 1;
-	init_pair $n, $fg, $bg;
-	$attr_cmap{$id} = $n;
-    }
-    return $n;
-}
-
-
-# Use a given color pair.
-sub attr_colors ($$$) {
-    my($fg,$bg,$attr) = @_;
-
-    if ($config{mono}) {
-	attrset $attr;
-	return;
-    }
-
-    $fg = $attr_cur_fg if (!defined $fg);
-    $bg = $attr_cur_bg if (!defined $bg);
-
-    my $n = color_alloc($fg,$bg);
-    attrset $attr | COLOR_PAIR($n);
-
-    $attr_cur_fg = $fg;
-    $attr_cur_bg = $bg;
+    term_end();
 }
 
 
 # Define a new attribute.
-sub attr_define ($$$$) {
-    my ($name,$fg,$bg,$attrs) = @_;
-    $attr_list{$name} = [$fg,$bg,$attrs];
+sub attr_define ($@) {
+    my ($name,@attrs) = @_;
+    $attr_list{$name} = \@attrs;
 }
 
 
@@ -131,19 +88,20 @@ sub attr_define ($$$$) {
 sub attr_use ($) {
     my($name) = @_;
 
-    push @attr_stack, [$attr_cur_fg, $attr_cur_bg, getattrs];
+    my @curattrs = term_getattr();
+    push @attr_stack, \@curattrs;
 
     return if (!defined $attr_list{$name});
 
     my $attrs = $attr_list{$name};
-    attr_colors($$attrs[0], $$attrs[1], $$attrs[2]);
+    term_setattr(@$attrs);
 }
 
 
 # Pops attribute usage stack.
 sub attr_pop () {
     my $attrs = pop @attr_stack;
-    attr_colors($$attrs[0], $$attrs[1], $$attrs[2]);
+    term_setattr(@$attrs);
 }
 
 
@@ -153,7 +111,7 @@ sub attr_top () {
     while (@attr_stack) {
 	$attrs = pop @attr_stack;
     }
-    attr_colors($$attrs[0], $$attrs[1], $$attrs[2]);
+    term_setattr(@$attrs);
 }
 
 
@@ -184,10 +142,10 @@ sub fmtline ($) {
 		$blk = substr($blk, length $&);
 		push @tagstack, $1;
 	    } elsif ($blk =~ /^[^ ]+/) {
-		if ($linelen + length($&) > $COLS) {
-		    if ($linelen < $COLS - 10) {
-			$line .= substr($blk, 0, $COLS - $linelen);
-			$blk = substr($blk, $COLS - $linelen);
+		if ($linelen + length($&) > $term_cols) {
+		    if ($linelen < $term_cols - 10) {
+			$line .= substr($blk, 0, $term_cols - $linelen);
+			$blk = substr($blk, $term_cols - $linelen);
 		    }
 		    foreach (reverse @tagstack) {
 			$line .= "/$_>";
@@ -231,7 +189,6 @@ my @win_idx_ctext;
 sub linelen ($) {
     my ($idx) = @_;
 
-    #addstr 2, 10, "==> $idx"; refresh; sleep 1;
     $text_sizes[$idx] = fmtline($text_lines[$idx])
 	unless (defined $text_sizes[$idx]);
     return $text_sizes[$idx];
@@ -240,7 +197,7 @@ sub linelen ($) {
 
 # Returns the size (in lines) of the text window.
 sub win_height () {
-    return $LINES - 2 - $input_height;
+    return $term_lines - 2 - $input_height;
 }
 
 
@@ -294,7 +251,10 @@ sub win_draw_line ($$) {
 
     attr_use('text_window');
 
-    while ((length $line) && ($xpos < $COLS)) {
+    term_move($ypos, 0);
+    term_delete_to_end();
+
+    while ((length $line) && ($xpos < $term_cols)) {
 	if ($line =~ /^\/([^\>]*)\>/) {
 	    attr_pop();
 	    $line = substr($line, length $&);
@@ -302,8 +262,8 @@ sub win_draw_line ($$) {
 	    attr_use($1);
 	    $line = substr($line, length $&);
 	} elsif ($line =~ /^[^]+/) {
-	    my $len = $COLS - $xpos;
-	    addstr $ypos, $xpos, sprintf "%-${len}.${len}s", $&;
+	    my $len = $term_cols - $xpos;
+	    term_addstr($&);
 	    $line = substr($line, length $&);
 	    $xpos += length $&;
 	} else {
@@ -318,14 +278,13 @@ sub win_draw_line ($$) {
 
 # Redraws the text window.
 sub win_redraw () {
-    getyx($y, $x);
     my $cline = win_height();
     my $idx = $win_endline;
     while ($cline >= 0) {
 	my $s = win_index($idx--);
 	win_draw_line($cline--, ($s ? $s : ""));
     }
-    move($y,$x);
+    input_position_cursor();
 }
 
 
@@ -343,37 +302,34 @@ sub win_scroll ($) {
     $n = -$n if ($n < 0);
 
     if ($n > win_height()) {
-	win_redraw;
+	win_redraw();
 	return;
     }
 
-    getyx($y,$x);
-
     if ($up) {
-	my $pad = newpad $LINES, $COLS;
-	copywin stdscr, $pad, $n, 0, 0, 0, win_height() - $n, $COLS - 1, 0;
-	copywin $pad, stdscr, 0, 0, 0, 0, win_height() - $n, $COLS - 1, 0;
-	delwin $pad;
-
 	my $i;
-	for ($i = 0; $i < $n; $i++) {
+	for ($i = $n - 1; $i >= 0; $i--) {
+	    term_move(0,0);
+	    term_delete_line();
+	    term_move(win_height(),0);
+	    term_insert_line();
 	    my $s = win_index($win_endline - $i);
-	    win_draw_line(win_height() - $i, ($s ? $s : ''));
+	    win_draw_line(win_height(), ($s ? $s : ''));
 	}
     } else {
-	my $pad = newpad $LINES, $COLS;
-	copywin stdscr, $pad, 0, 0, 0, 0, win_height() - $n, $COLS - 1, 0;
-	copywin $pad, stdscr, 0, 0, $n, 0, win_height(), $COLS - 1, 0;
-	delwin $pad;
-
 	my $i;
 	for ($i = 0; $i < $n; $i++) {
+	    term_move($win_height,0);
+	    term_delete_line();
+	    term_move(0,0);
+	    term_insert_line();
+
 	    my $s = win_index($win_endline - (win_height()) + $i);
 	    win_draw_line($i, ($s ? $s : ''));
 	}
     }
 
-    move($y,$x);
+    input_position_cursor();
 }
 
 
@@ -385,7 +341,6 @@ sub addline ($) {
     push @text_lines, $line;
     my $atend = ($text_lastline == $win_endline) ? 1 : 0;
     my @fmt = fmtline($line);
-    push(@fmt, '---') if (@fmt == 0);
     $text_lastline += scalar(@fmt);
     if ($atend) {
 	my $max_scroll = win_height() - ($win_endline - $win_lastseen);
@@ -395,24 +350,32 @@ sub addline ($) {
 	}
     }
     scroll_info();
-    refresh;
+    term_refresh();
 }
 
 
 # Redraws the status line.
 sub sline_redraw () {
-    getyx($y, $x);
     my $sline = "<status_line>${status_line}</status_line>";
-    win_draw_line($LINES-1-$input_height, $sline);
-    move($y, $x);
+    win_draw_line($term_lines-1-$input_height, $sline);
+    input_position_cursor();
 }
 
 
 # Sets the status line.
 sub sline_set ($) {
-    $status_line = shift @_;
+    my ($s) = @_;
+    return if ($status_line eq $s);
+    $status_line = $s;
     sline_redraw();
-    refresh;
+    term_refresh();
+}
+
+
+# Positions the input cursor.
+sub input_position_cursor () {
+    term_move($term_lines - $input_height + floor(($input_pos / 80)) - $input_fline,
+	      $input_pos % 80);
 }
 
 
@@ -423,13 +386,15 @@ sub input_redraw () {
     my $height = floor((length($input_line) / 80)) + 1 - $input_fline;
     $height = 1 if ($height < 1);
 
-    addstr $LINES - 1, 0, sprintf "%-".$COLS."s", '';
+    term_move($term_lines - 1, 0);
+    term_delete_to_end();
 
     my($i, $line);
     for ($i = 0; $i < length($input_line) / 80; $i += 1) {
 	next if ($i < $input_fline);
-	$line = sprintf "%-".$COLS.".".$COLS."s", substr($input_line,$i*80,80);
-	addstr $LINES - $height + $i, 0, $line;
+	term_move($term_lines - $height + $i, 0);
+	term_delete_to_end();
+	term_addstr(substr($input_line,$i*80,80));
     }
 
     if ($input_height != $height) {
@@ -438,20 +403,18 @@ sub input_redraw () {
 	sline_redraw();
     }
 
-    move($LINES - $height + floor(($input_pos / 80)) - $input_fline,
-	 $input_pos % 80);
-
+    input_position_cursor();
     attr_top();
 }
 
 
 # Restores sanity to the input cursor.
 sub input_normalize_cursor () {
-#    if ($input_pos > length $input_line) {
-#	$input_pos = length $input_line;
-#    } elsif ($input_pos < 0) {
-#	$input_pos = 0;
-#    }
+    if ($input_pos > length $input_line) {
+	$input_pos = length $input_line;
+    } elsif ($input_pos < 0) {
+	$input_pos = 0;
+    }
 #
 #    my $ypos = ($input_pos / 80) - $input_fline;
 #    my $xpos = $input_pos % 80;
@@ -469,155 +432,179 @@ sub input_normalize_cursor () {
 
 
 # Inserts a character into the input line.
-sub input_add ($) {
-    $input_line = substr($input_line, 0, $input_pos) .
-	          shift(@_) .
-	          substr($input_line, $input_pos);
-    $input_pos++;
-    &input_normalize_cursor;
+sub input_add ($$$) {
+    my($key, $line, $pos) = @_;
+    $line = substr($line, 0, $pos) . $key . substr($line, $pos);
 
-    &input_redraw; refresh;
+    if (length($line) % $term_cols == 0) {
+	return ($line, $pos + 1, 2);
+    }
+
+    my $ii = $input_height - $input_fline - 1;
+    my $i = $ii;
+    while ($i * $term_cols > $pos) {
+	term_move($term_lines - $input_height + $i, 0);
+	term_insert_char();
+	term_addstr(substr($line, $i * $term_cols, 1));
+	$i--;
+    }
+    input_position_cursor();
+    term_insert_char();
+    term_addstr($key);
+    return ($line, $pos + 1, 0);
 }
 
 
 # Moves the input cursor left.
-sub input_left (;$) {
-    $input_pos-- unless ($input_pos <= 0);
-    &input_normalize_cursor;
-    &input_redraw; refresh;
+sub input_left ($$$) {
+    my($key, $line, $pos) = @_;
+    return ($line, $pos - 1, 1);
 }
 
 
 # Moves the input cursor right.
-sub input_right (;$) {
-    $input_pos++ unless ($input_pos >= length $input_line);
-    &input_normalize_cursor;
-    &input_redraw; refresh;
+sub input_right ($$$) {
+    my($key, $line, $pos) = @_;
+    return ($line, $pos + 1, 1);
 }
 
 
 # Moves the input cursor to the beginning of the line.
-sub input_home (;$) {
-    $input_pos = 0;
-    &input_normalize_cursor;
-    &input_redraw; refresh;
+sub input_home ($$$) {
+    my($key, $line, $pos) = @_;
+    return ($line, 0, 1);
 }
 
 
 # Moves the input cursor to the end of the line.
-sub input_end (;$) {
-    $input_pos = length $input_line;
-    &input_normalize_cursor;
-    &input_redraw; refresh;
+sub input_end ($$$) {
+    my($key, $line, $pos) = @_;
+    return ($line, length $line, 1);
 }
 
 
 # Deletes the character before the input cursor.
-sub input_bs (;$) {
-    return if ($input_pos == 0);
-    $input_line = substr($input_line, 0, $input_pos - 1) .
-	          substr($input_line, $input_pos);
-    $input_pos--;
-    &input_normalize_cursor;
-    &input_redraw; refresh;
+sub input_bs ($$$) {
+    my($key, $line, $pos) = @_;
+    return if ($pos == 0);
+    $line = substr($line, 0, $pos - 1) . substr($line, $pos);
+
+    if (length($line) % $term_cols == 0) {
+	return ($line, $pos - 1, 2);
+    }
+
+    my $ii = $input_height - $input_fline - 1;
+    my $i = $ii;
+    while ($i * $term_cols > $pos) {
+	term_move($term_lines - $input_height + $i, 0);
+	term_delete_char();
+	$i--;
+	term_move($term_lines - $input_height + $i, $term_cols - 1);
+	term_addstr(substr($line, ($i * $term_cols) + $term_cols - 1, 1));
+    }
+    input_position_cursor();
+    term_delete_char();
+    return ($line, $pos - 1, 2);
 }
 
 
 # Deletes all characters to the end of the line.
-sub input_killtoend (;$) {
-    $input_line = substr($input_line, 0, $input_pos);
-    input_redraw; refresh;
+sub input_killtoend ($$$) {
+    my($key, $line, $pos) = @_;
+    return (substr($line, 0, $pos), $pos, 2);
 }
 
 
 # Deletes all characters to the beginning of the line.
-sub input_killtohome (;$) {
-    $input_line = substr($input_line, $input_pos);
-    $input_pos = 0;
-    input_redraw; refresh;
+sub input_killtohome ($$$) {
+    my($key, $line, $pos) = @_;
+    return (substr($line, $pos), $pos, 2);
 }
 
 
 # Moves back one entry in the history.
-sub input_prevhistory (;$) {
+sub input_prevhistory ($$$) {
+    my($key, $line, $pos) = @_;
     return if ($input_curhistory <= 0);
-    $input_history[$input_curhistory] = $input_line;
+    $input_history[$input_curhistory] = $line;
     $input_curhistory--;
-    $input_line = $input_history[$input_curhistory];
-    $input_pos = length $input_line;
-    input_redraw; refresh;
+    $line = $input_history[$input_curhistory];
+    return ($line, length $line, 2);
 }
 
 
 # Moves forward one entry in the history.
-sub input_nexthistory (;$) {
+sub input_nexthistory ($$$) {
+    my($key, $line, $pos) = @_;
     return if ($input_curhistory >= $#input_history);
-    $input_history[$input_curhistory] = $input_line;
+    $input_history[$input_curhistory] = $line;
     $input_curhistory++;
-    $input_line = $input_history[$input_curhistory];
-    $input_pos = length $input_line;
-    input_redraw; refresh;
+    $line = $input_history[$input_curhistory];
+    return ($line, length $line, 2);
 }
 
 
 # Handles entry of a new line.
-sub input_accept (;$) {
-    if (($input_line eq '') && ($text_lastline != $win_endline)) {
+sub input_accept ($$$) {
+    my($key, $line, $pos) = @_;
+
+    if (($line eq '') && ($text_lastline != $win_endline)) {
 	input_pagedown();
 	return;
     }
 
-    if ($input_line ne '') {
-	$input_history[$#input_history] = $input_line;
+    if ($line ne '') {
+	$input_history[$#input_history] = $line;
 	push @input_history, '';
 	$input_curhistory = $#input_history;
     }
 
-    push @accepted_lines, $input_line;
-    $input_line = "";
-    $input_pos = 0;
+    push @accepted_lines, $line;
     $input_fline = 0;
-    input_redraw; refresh;
+    return ('', 0, 2);
 }
 
 
 # Redraw the UI screen.
-sub input_refresh (;$) {
+sub input_refresh ($$$) {
     redraw();
+    return;
 }
 
 
 # Page up.
-sub input_pageup (;$) {
+sub input_pageup ($$$) {
     $win_lastseen = $win_endline if ($win_endline > $win_lastseen);
     &win_scroll(-win_height());
     scroll_info();
-    refresh;
+    term_refresh();
+    return;
 }
 
 
 # Page down.
-sub input_pagedown (;$) {
+sub input_pagedown ($$$) {
     $win_lastseen = $win_endline if ($win_endline > $win_lastseen);
     &win_scroll(win_height());
     scroll_info();
-    refresh;
+    term_refresh();
+    return;
 }
 
 
 # Redraws the UI screen.
 sub redraw () {
-    clear;
+    term_clear();
     &win_redraw;
     &sline_redraw;
     &input_redraw;
-    refresh;
+    term_refresh();
 }
 
 
 # Returns scrollback information.
 sub scroll_info () {
-    if (($win_endline - $win_lastseen) >= $LINES - 3) {
+    if (($win_endline - $win_lastseen) >= $term_lines - 3) {
 	my $lines = $text_lastline - $win_endline + 1;
 	return if (($main::page_status ne '') && ($lines % 10));
 	$main::page_status = "MORE " . $lines;
@@ -627,19 +614,39 @@ sub scroll_info () {
 }
 
 
+# Registers an input callback function.
+sub input_callback ($&) {
+    my($key, $cb) = @_;
+    $key_trans{$key} = $cb;
+}
+
+
 # Accepts input from the terminal.
 sub handle_input () {
     my $c;
-    while ($c = getch) {
+    while ($c = term_get_char()) {
 	last if ((!defined($c)) || ($c eq '-1'));
 
 	$win_lastseen = $win_endline if ($win_endline > $win_lastseen);
 	scroll_info();
 
+	my @res;
 	if (defined $key_trans{$c}) {
-	    &{$key_trans{$c}}($c);
+	    @res = &{$key_trans{$c}}($c, $input_line, $input_pos);
 	} elsif (isprint($c) && length($c) == 1) {
-	    input_add $c;
+	    @res = input_add($c, $input_line, $input_pos);
+	}
+
+	if (@res) {
+	    my $update = 0;
+	    ($input_line, $input_pos, $update) = @res;
+	    input_normalize_cursor();
+	    if ($update == 1) {
+		input_position_cursor();
+	    } elsif ($update == 2) {
+		input_redraw();
+		term_refresh();
+	    }
 	}
     }	
     return shift @accepted_lines;
