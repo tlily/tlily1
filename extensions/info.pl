@@ -1,5 +1,5 @@
 # -*- Perl -*-
-# $Header: /data/cvs/tlily/extensions/info.pl,v 1.16 1998/05/29 05:12:27 mjr Exp $
+# $Header: /data/cvs/tlily/extensions/info.pl,v 1.17 1998/05/31 00:28:37 steve Exp $
 
 sub info_set(%) {
     my %args=@_;
@@ -33,6 +33,8 @@ sub info_set(%) {
 
 	if ((stat FH)[10] == $mtime) {
 		ui_output("(info not changed)");
+		close FH;
+		unlink($tmpfile);
 		return;
 	}
 
