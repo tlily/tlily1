@@ -8,7 +8,7 @@ register_help_short('zone', "timezone conversion extension");
 register_help_long('zone', 
 "The zone extension can convert timestamps from the server's native time zone to the your local time zone.   To use it, invoke tlily with the \"zonedelta\" option, which is a number of hours to add to the timestamps (it can be negative).");
 
-if ($config{zonedelta}) {
+if ($config{zonedelta} || $config{zonetype}) {
     register_eventhandler(Type => 'serverline',
 			  Order => 'before',
 			  Call => \&zonewriter);
