@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# $Header: /data/cvs/tlily/Build.PL,v 2.4 1999/02/01 01:55:03 mjr Exp $
+# $Header: /data/cvs/tlily/Build.PL,v 2.5 1999/02/27 19:08:43 albert Exp $
 
 use Config;
 use Carp;
@@ -18,8 +18,23 @@ use subs qw(&install);
 # and make a build.cache file to save your preferences.
 
 # Find perl
-$PERL = $Config{'startperl'} ||
-        $Config{'perlpath'}? "#!".$Config{'perlpath'} : "#/usr/bin/perl";
+$PERL = $Config{'startperl'} ? $Config{'startperl'}     : 
+        $Config{'perlpath'}  ? "#!".$Config{'perlpath'} :
+                               "#/usr/bin/perl";
+
+$perl_exec = $Config{'perl'};
+# On broken systems like RPI's, locate perl in the user's path
+if(length $PERL > 32) {
+    my $P;
+    foreach $P (split(/:/,$ENV{PATH})) {
+	$PERL = "$P/$perl_exec";
+	last if -x $PERL;
+    }
+    $PERL = '#!'.$PERL;
+}
+
+# If the place is still broken, try the swiss army perl starter
+# FIXME: Insert chainsaw here
 
 getopts("ndhficp:");
 if($opt_h) {
@@ -39,6 +54,7 @@ if($opt_i) {
 }
 if($opt_c) {
     $current = 1;
+    $ignore = 1;
 }
 if($opt_p) {
     $prefix = $opt_p;
@@ -66,8 +82,9 @@ $extext='\.pl';
 @modfiles = &get_files($moddir, $modext);
 @extfiles = &get_files($extdir, $extext);
 
-foreach(@modsubdirs) {
-    push @modfiles, map {$_ = "UI/$_"} get_files("$moddir/$_", $modext)
+my $dir;
+foreach $dir (@modsubdirs) {
+    push @modfiles, map {$_ = "$dir/$_"} get_files("$moddir/$dir", $modext)
 }
 
 print join("\n", @modfiles), "\n" if $debug;
@@ -558,7 +575,7 @@ to configure tlily for use in the current directory only.
 
 sub use_current_dir {
     print "\nUsing current directory.\n";
-    $PREFIX = Cwd::cwd;
+    $PREFIX = ".";
     print "Installation prefix is $PREFIX\n";
     $BINDIR = $PREFIX;
     print "Script location is $BINDIR\n";
