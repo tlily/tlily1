@@ -99,4 +99,20 @@ if (config_ask("info")) {
 }
 
 
+register_help_short("info", "Improved /info functions");
+register_help_long("info", "
+%info set  [discussion]      - Loads your editor and allows you to set your 
+                               /info
+%info edit [discussion|user] - Allows you to edit or view (in your editor)
+                               your /info, or that of a discussion or user.
+			       (a handy way to save out someone's /info to 
+			        a file or to edit a /info)
+%info clear [discussion]     - Allows you to clear a /info.
+
+Note: You can set your editor via \$config{editor}, or the VISUAL and EDITOR
+      environment variables.
+
+");
+
+
 1;
