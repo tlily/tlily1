@@ -11,8 +11,9 @@ use LC::User;
 use LC::Command;
 use LC::State;
 use LC::log;
-use LC::config;
+use LC::Config;
 use LC::Event;
+require "dumpvar.pl";
 
 @ISA = qw(Exporter);
 
@@ -79,12 +80,10 @@ sub extension($) {
     push @share,@LC::Command::EXPORT;
     push @share,@LC::State::EXPORT;
     push @share,@LC::log::EXPORT;
-    push @share,@LC::config::EXPORT;
+    push @share,@LC::Config::EXPORT;
     push @share,@LC::Event::EXPORT;
     $TL_VERSION=$main::TL_VERSION;
     push @share,qw($TL_VERSION);
-    $HOME = $ENV{HOME};
-    push @share,qw($HOME);
     
     $safe->share (@share);
     $safe->share_from('main', [ qw(%ENV @INC %INC) ]);
@@ -99,8 +98,16 @@ sub extension($) {
 			   Safe => $safe };
     $Extensions{/current/} = $Extensions{$name};
 
+#    print STDERR "Pre-Dumping ", $safe->root, "($filename)\n";
+#    main::dumpvar($safe->root);
+#    print STDERR "Done pre-dumping ", $safe->root, "($filename)\n";
+#
     $safe->rdo($filename);
     ui_output("* error: $@") if $@;
+#
+#    print STDERR "Dumping ", $safe->root, "($filename)\n";
+#    main::dumpvar($safe->root);
+#    print STDERR "Done dumping ", $safe->root, "($filename)\n";
 
     $Extensions{/current/} = $old;
 }
@@ -153,14 +160,9 @@ sub extension_unload($) {
 
 # Snarf extensions out of standard locations.
 sub load_extensions() {
-    ui_output("(Searching ~/.lily/tlily/extensions for extensions)");
-    foreach (grep /[^~]$/, glob "$ENV{HOME}/.lily/tlily/extensions/*.pl") {
-	extension($_);
-    }   
-
-    ui_output("(Searching " . $main::TL_EXTDIR . " for extensions)");
-    foreach (grep /[^~]$/, glob $main::TL_EXTDIR."/*.pl") {
-	extension($_);
+    my $ext;
+    foreach $ext (@{$config{load}}) {
+	extension($ext);
     }   
 
     extension_cmd("list");
