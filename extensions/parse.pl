@@ -31,11 +31,16 @@ The exact server output for the line.
 
 =cut
 
-@prompts = ('-->\s*$',
-	    '\(Y\/n\)\s*$',
-            '^login:',
-	    '^password:',
-	    '^\* $');
+@login_prompts   = ('\(Y\/n\)\s*$',
+                    '^-->\s*$',
+                    '^login:',
+                    '^password:');
+
+@connect_prompts = ('^\&password:',
+                    '^-->\s*$',
+	            '^\* $');
+
+$logged_in = 0;
 
 my $partial;
 
@@ -75,7 +80,7 @@ sub parse_server_data($$) {
     # are lines lacking newlines) and partial lines (which are lines which
     # we haven't completely read yet).
     my $prompt;
-    foreach $prompt (@prompts) {
+    foreach $prompt ($logged_in ? @connect_prompts : @login_prompts) {
 	if ($crumb =~ /$prompt/) {
 	    push @lines, $crumb;
 	    $crumb = '';
@@ -88,13 +93,6 @@ sub parse_server_data($$) {
 	dispatch_event({Type => 'serverline',
 			Text => $_});
     }
-}
-
-
-sub parse_connected($$) {
-    my($ev, $h) = @_;
-    @prompts = grep { $_ !~ /^-->/ } @prompts;
-    return 0;
 }
 
 
@@ -758,11 +756,14 @@ sub init() {
     register_eventhandler(Type => 'userinput',
 			  Call => \&parse_user);
 
-    register_eventhandler(Type => 'connected',
-			  Call => \&parse_connected);
-
-#    register_eventhandler(Type => 'connected',
-#			  Call => sub { push @prompts, '^\* '; 0; });
+    register_eventhandler(Call => sub {
+	my($e,$h) = @_;
+	if (($e->{Type} eq 'connected' || $e->{Type} eq 'send')) {
+	    $logged_in = 1;
+	    deregister_handler($e->{Id});
+	}
+	return 0;
+    });
 }
 
 init();
