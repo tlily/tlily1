@@ -1,4 +1,4 @@
-# $Header: /data/cvs/tlily/extensions/set.pl,v 1.5 1998/05/29 05:12:32 mjr Exp $
+# $Header: /data/cvs/tlily/extensions/set.pl,v 1.6 1998/06/12 06:13:41 albert Exp $
 sub dumpit {
     my($l,%H) = @_;
     $l = 0 if ! $l;
@@ -13,7 +13,6 @@ sub dumpit {
 	    ui_output("\t"x$l."$k = ".join(", ", @$v));
 	}
 	elsif(ref($v) eq 'HASH') {
-#            next if $k eq "ENV";
 	    ui_output("\t"x$l."$k = HASH");
 	    dumpit($l+1,%$v);
 	}
@@ -113,7 +112,7 @@ register_help_long('set', qq(usage:
     %set name{key} (value,value,value)
         Sets the hash key [key] in the config variable [name] to the given list.
   Examples:
-    %set mono=1
+    %set mono 1
         Turns on monochrome mode.  (Also has the side effect of setting the
         colors on your screen to your monochrome preferences.)
     %set slash (also,-oops)
