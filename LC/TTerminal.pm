@@ -15,7 +15,7 @@ my %attrs = ('bold' => 0,
 my $term_up = 0;
 my $resize_cb;
 
-$term_resize_flag = 0;
+my $term_resize_flag = 0;
 
 my $term;
 my $out = '';
@@ -30,7 +30,6 @@ sub new {
 }
 
 
-sub term_resize_flag () { $term_resize_flag; }
 sub term_lines () { $term_lines; }
 sub term_cols () { $term_cols; }
 
@@ -115,15 +114,6 @@ sub term_end () {
     $termios->setattr(0, &POSIX::TCSANOW);
 
     $term_up = 0;
-}
-
-
-# Handle a window size change.
-sub term_winch () {
-    my $self = shift;
-    $term_resize_flag = 0;
-    ($term_lines, $term_cols) = term_get_size;
-    &$resize_cb if (defined $resize_cb);
 }
 
 
@@ -281,7 +271,15 @@ sub term_select ($$$$) {
     my $r = IO::Select->new(@$rr);
     my $w = IO::Select->new(@$wr);
     my $e = IO::Select->new(@$er);
-    return IO::Select->select($r, $w, $e, $to);
+    my @ret = IO::Select->select($r, $w, $e, $to);
+
+    if ($term_resize_flag) {
+	$term_resize_flag = 0;
+	($term_lines, $term_cols) = term_get_size;
+	&$resize_cb if (defined $resize_cb);
+    }
+
+    return @ret;
 }
 
 
