@@ -1,4 +1,4 @@
-Version 1.0.4-post
+Version 1.0.5
   * [extensions/{biff.pl,info.pl] Fixed bugs in help text. [MJR]
   * [extensions/submit.pl] New extension for submitting bug reports [MJR]
   * [README, Build.PL] Changed occurances of einstein.to to einstein.org. [MJR]
