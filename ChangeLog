@@ -1,4 +1,5 @@
 Version 0.2d
+  * Sendgroup expansion (=) now works.
   * Extensions may be loaded and unloaded during a lily session.
   * Timezone rewriting works again, through the 'zone' extension.
   * Groups are supported (the expander knows about them).
