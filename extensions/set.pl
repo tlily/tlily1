@@ -12,11 +12,26 @@ sub dumpit {
 	    ui_output("\t"x$l."$k = ".join(", ", @$v));
 	}
 	elsif(ref($v) eq 'HASH') {
-            next if $k eq "ENV";
+#            next if $k eq "ENV";
 	    ui_output("\t"x$l."$k = HASH");
 	    dumpit($l+1,%$v);
 	}
     }
+}
+
+# %show handler
+sub show_handler($) {
+    my($args) = @_;
+    (my $name = $args) =~ /[\w\-_]/;
+    dumpit(0, ($name =>$config{$name}));
+    return 0;
+}
+
+# %unset handler
+sub unset_handler($) {
+    my($args) = @_;
+    (my $name = $args) =~ /[\w\-_]/;
+    delete $config{$name};
 }
 
 # %set handler
@@ -30,7 +45,7 @@ sub set_handler($) {
 	return 0;
     }
 
-    if($args =~ m/^([\w\-_]+)\{?([\w_]+)?\}?\s*=\s*([\w_\-:]+)\s*$/) {
+    if($args =~ m/^([\w\-_]+)\{?([\w_]+)?\}?\s*=\s*(\S+)\s*$/) {
 	my($var,$key,$val) = ($1,$2,$3);
 	if($key) {
 	    if(!defined($config{$var}) || (ref($config{$var}) eq 'HASH' && ref($config{$var}{$key}) eq '')) {
@@ -45,7 +60,7 @@ sub set_handler($) {
 	    } else { ui_output("(Invalid type for variable)"); }
 	}
     }
-    elsif($args =~ m/^([\w\-_]+)\{?([\w_]+)?\}?\s*=\s*\(([\w_\-:,]+)\)\s*$/) {
+    elsif($args =~ m/^([\w\-_]+)\{?([\w_]+)?\}?\s*=\s*\((\S+)\)\s*$/) {
 	my($var,$key,$val) = ($1,$2,$3);
 	my @L = split(/\s*,\s*/, $val);
 	if($key) {
@@ -78,24 +93,32 @@ sub set_handler($) {
     }
     return 0;
 }
+
+register_user_command_handler('show', \&show_handler);
+register_help_short('show', "Show the value of a configuration variable");
+
+register_user_command_handler('unset', \&unset_handler);
+register_help_short('unset', "UNset a configuration variable");
+
 register_user_command_handler('set', \&set_handler);
-register_help_short('set', "Set configuration variables");
+register_help_short('set', "Set a configuration variable");
 register_help_long('set', qq(usage:
     %set name value
-        Sets a scalar config variable to a value.
+        Sets the scalar config variable [name] to [value].
     %set name (value,value,value)
-        Appends the given list to a list config variable.
+        Appends the given list to the config variable [name].
     %set name{key} value
-        Sets the hash hey key in the config variable name to value.
+        Sets the hash key [key] in the config variable [name] to [value].
     %set name{key} (value,value,value)
-        Sets the hash hey key in the config variable name to the given list.
+        Sets the hash key [key] in the config variable [name] to the given list.
   Examples:
     %set mono=1
-        Turns on monochrome mode.  (Also has the side effect of setting your
-        colors to your monochrome preferences.)
-    %set slash (also,oops)
-        Appends 'also', and 'oops' onto your list of /-commands that
-        are allowed to be intercepted.
+        Turns on monochrome mode.  (Also has the side effect of setting the
+        colors on your screen to your monochrome preferences.)
+    %set slash (also,-oops)
+        Adds also and -oops to your \@slash list.  Has the side-effect of
+        allowing /also to be intercepted, and disabling /oops from being
+        intercepted.
     %set color_attrs{pubmsg} (normal,bg:red,fg:green,bold)
         Sets your color pref. for public messages to black on white & bold.
         (Also has the side effect of changing the color of public messages
