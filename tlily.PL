@@ -20,7 +20,6 @@ use LC::Event;
 use Socket;
 use Fcntl;
 use IO::Select;
-use Curses;
 use POSIX;
 $|=1;
 
