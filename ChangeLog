@@ -1,6 +1,8 @@
 Version 0.3c
-  * [LC/StatusLine.pm] Added a clock.
-  * [LC/Event.pm, LC/Extend.pm] Added support for I/O and timed events.
+  * [extensions/look.pl] Look extension: perform a look(1) on the word under
+    the cursor.  [DPN]
+  * [LC/StatusLine.pm] Added a clock.  [DPN]
+  * [LC/Event.pm, LC/Extend.pm] Added support for I/O and timed events.  [DPN]
   * [extensions/expand.pl] added code to reset the sendlist more appropriately
     when /oops-ing or /also-ing; enabled with $config{oops} and $config{also};
     when set to "/", intercepts /oops and /also, when set to "%", adds
