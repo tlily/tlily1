@@ -55,6 +55,14 @@ my $crumb = '';
 sub parse_server_data($$) {
     my($event, $handler) = @_;
 
+    # Debugging.
+    if ($config{debug_parser}) {
+	my $t = $event->{Text};
+	$t =~ s/([\\<])/\\$1/g;
+	$t =~ s/\r?\n$//;
+	ui_output("<yellow>" . $t . "</yellow>");
+    }
+
     # Divide into lines.
     my $buf = $crumb . $event->{Text};
     my @lines = split /\r?\n/, $buf, -1;
@@ -104,6 +112,17 @@ sub parse_line($$) {
     my $hidden = undef;
     my %event = ();
 
+    # prompts ################################################################
+
+    my $p;
+    foreach $p (@prompts) {
+	if ($line =~ /$p/) {
+	    ui_prompt("$line");
+	    %event = (Type => 'prompt');
+	    $hidden = 1;
+	    goto found;
+	}
+    }
 
     # %server messages #######################################################
     # %begin, 2.2a1 cores.
@@ -193,20 +212,6 @@ sub parse_line($$) {
     if ($line =~ /^%/) {
 	%event = (Type => 'servercmd');
 	goto found;
-    }
-
-
-    # prompts ################################################################
-
-    # All the other prompts.
-    my $p;
-    foreach $p (@prompts) {
-	if ($line =~ /$p/) {
-	    ui_prompt("$line");
-	    %event = (Type => 'prompt');
-	    $hidden = 1;
-	    goto found;
-	}
     }
 
 
@@ -750,8 +755,8 @@ sub init() {
     register_eventhandler(Type => 'connected',
 			  Call => \&parse_connected);
 
-    register_eventhandler(Type => 'connected',
-			  Call => sub { push @prompts, '^\* '; 0; });
+#    register_eventhandler(Type => 'connected',
+#			  Call => sub { push @prompts, '^\* '; 0; });
 }
 
 init();
