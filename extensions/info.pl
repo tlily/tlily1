@@ -95,7 +95,7 @@ sub export_cmd($) {
     if (@args == 1) {
 	($file) = @args;
     } else {
-	($disc,$file) = @args;
+	($file,$disc) = @args;
     }
     my $rc=open(FH, "<$file");
     unless ($rc) {
@@ -143,7 +143,7 @@ Note: You can set your editor via \$config{editor}, or the VISUAL and EDITOR
 
 register_help_short("info", "Export a file to /info");
 register_help_long("export", "
-%export [discussion] <file>  - Allows you to set a /info to the contents of 
+%export <filnename> [discussion] - Allows you to set a /info to the contents of 
                                a file
 ");
 
