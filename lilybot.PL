@@ -1,5 +1,5 @@
 @@PERL@@
-# $Header: /data/cvs/tlily/lilybot.PL,v 2.1 1998/06/12 08:55:58 albert Exp $
+# $Header: /data/cvs/tlily/lilybot.PL,v 2.2 1998/06/14 08:50:20 josh Exp $
 
 require 5.00307;
 
@@ -26,6 +26,49 @@ chomp($pass=<STDIN>);
 config_init(); # should pass in config file name?
                # Maybe, but right now the list of config files is static.
 cmd_init();
+
+register_bothandler(Match => "help",
+		    Private => 1,
+		    Respond => sprintf("%-76.76s",
+				       "Hi.. I know the following commands:") .
+		               sprintf("%-76.76s", "cmd register") .
+		               sprintf("%-76.76s", "cmd deregister") .
+		               sprintf("%-76.76s", "cmd list") .
+		               sprintf("%-76.76s", 
+				       "cmd <what you want me to do>")
+		    );
+
+register_bothandler(Match => "grope",
+		    Respond => "Me grope good!");		
+
+register_bothandler(Match => "answer",
+		    Respond => "The answer is 42, silly!");		
+
+register_bothandler(Match => "excuse",
+		    Respond => sub { 
+			$exc=getquote("http://www.cae.wisc.edu/cgi-bin/ballard/bofhserver.pl");
+			$exc =~ s/The cause of the problem is/Automatic Excuse/;		
+			if ($exc =~ /\S/) {
+			    return($exc);		
+			} else {
+			    return(undef);
+			}
+		    }
+		    );
+
+register_bothandler(Match => "surreal|weird|compliment",
+		    Respond => sub {
+			$comp=getquote("http://pharmdec.wustl.edu/cgi-bin/jardin_scripts/SCG");		
+			if ($comp =~ /\S/) {
+			    return($comp);		
+			} else {
+			    return(undef);
+			}
+		    }
+		    );
+
+#register_bothandler(Match => "localtime",
+#		    Respond => "CODE: \"Localtime=\" . localtime(time())");
 
 main();
 
@@ -65,10 +108,23 @@ sub main() {
 			  Order => 'after',
 			  Call => sub {
 			      my($event, $handler) = @_;
+			      
+			      print "$event->{Text}\n";
+			      # if we see a login prompt at this point, 
+			      # there was a problem logging in..
 			      if ($event->{Text} =~ /^login:/) {
 				  print "FATAL: Error logging in.\n";
 				  exit(0);
 			      }
+
+			      # Try to avoid reviewing :)
+			      if ($event->{Text} =~ /do you wish to review your output now?/) {
+				  print "(review prompt, sending 'N')\n";
+				  server_send("N\n");
+				  return 1;
+			      }
+			      
+			      # Fallback is to just hit enter at any prompt :)
 			      print "(sending enter at prompt)\n";
 			      server_send("\n");
 			      return 1;
@@ -97,61 +153,100 @@ sub main() {
 
 sub eventhandler {
     my($event,$handler) = @_;
+    my($cmdto,$to);
     
     if ($event->{ToUser}) {	
 	if ($event->{Type} eq "send") {
 	    if ($event->{Form} eq "private")   { 
 		$to=$event->{From}; 		
+		$to=~ s/\s/_/g;
 
-		# back door..
+		# bot commands all begin with the prefix "cmd".
 		if ($event->{Raw} =~ /cmd (.*)/) {
+		    $cmdto=$event->{From};
+		    $cmdto=~ s/\s/_/g;
+		}
 
-		    my $cmdto=$event->{From}; 		
-		    cmd_process($1, sub {
-			my ($event) = @_;
+		if ($event->{Raw} =~ /cmd deregister (.*)/) {
+		    my $id=$1;
+		    if (deregister_bothandler($id)) {
+			response("$cmdto;Deregistered handler $id.");
+		    } else {
+			response("$cmdto;Unable to deregister handler $id.");
+		    }
+		    return;
+		} 
 
-			if ($event->{Type} eq "begincmd") {
-			    $buffer="";
-			    return; 
-			} 
-
-			if ($event->{Type} eq "endcmd") { 
-			    $buffer=~s/[\r\n]/ /g;
-			    response("$cmdto;$buffer");
-			    $buffer="";
-			    return;
+		if ($event->{Raw} =~ /cmd list/) {
+		    my $ret=sprintf("%-76.76s","The following keywords are known:");
+		    foreach (keys %bot_handlers) {
+			if ($bot_handlers{$_}->{Private}) {
+			    $ret .= sprintf ("%-76.76s","$_) $bot_handlers{$_}->{Match} (private only)");			    
+			} else {
+			    $ret .= sprintf ("%-76.76s","$_) $bot_handlers{$_}->{Match}");			    
 			}
-			
-			$buffer .= $event->{Raw};
-		    });
+
+		    }
+		    response("$cmdto;$ret");			
+		    return;		    
+		} 
+		
+		if ($event->{Raw} =~ /cmd register [^\=]+\=.*/) {
+		    ($match,$respond)=($event->{Raw} =~ 
+				       /cmd register ([^\=]+)\=(.*)/);
+		    
+		    register_bothandler(Match => $match,
+					Respond => $respond);
+		    
+		    response("$cmdto;Registered handler to match \"$match\".");
 		    return;
 		}
+
+		if ($event->{Raw} =~ /cmd (.*)/) {
+		    cmd_process($1, sub {
+			    my ($event) = @_;
+			    
+			    if ($event->{Type} eq "begincmd") {
+				$buffer="";
+				return; 
+			    } 
+			    
+			    if ($event->{Type} eq "endcmd") { 
+				$buffer=~s/[\r\n]/ /g;
+				response("$cmdto;$buffer");
+				$buffer="";
+				return;
+			    }
+			    
+			    $buffer .= $event->{Raw};
+			});
+		    return;
+		}
+
 	    } elsif ($event->{Form} eq "public") { 
 		$to=join ',',@{$event->{To}}; 
+		$to=~ s/\s/_/g;
 	    }
 	    
-	    # silly responses..
-	    if ($event->{Raw} =~ /answer/i) {		
-		response("$to;The answer is 42, silly!");		
-	    }
+	    # ok, check for bot handlers that match this text..
+	    foreach $h (values %bot_handlers) {
+		if ($event->{Raw} =~ m/$h->{Match}/i) {
+		    next if (($event->{Form} eq "public") && $h->{Private});
 
-	    if ($event->{Raw} =~ /grope/i) {
-		response("$to;Me grope good!");		
-	    }
-
-	    if ($event->{Raw} =~ /excuse/i) {
-		$exc=getquote("http://www.cae.wisc.edu/cgi-bin/ballard/bofhserver.pl");
-		$exc =~ s/The cause of the problem is/Automatic Excuse/;
-		
-		if ($exc =~ /\S/) {
-		    response("$to;$exc");		
-		}
-	    }
-
-	    if ($event->{Raw} =~ /surreal|weird|compliment/i) {
-		$comp=getquote("http://pharmdec.wustl.edu/cgi-bin/jardin_scripts/SCG");		
-		if ($comp =~ /\S/) {
-		    response("$to;$comp");		
+		    if (ref($h->{Respond})) {
+			my $response=&{$h->{Respond}}($event->{Raw});
+			response("$to;$response\n") if $response;
+		    } elsif ($h->{Respond} =~ /^CODE: (.*)/) {
+			$code=$h->{Respond};
+			my $response=eval "\$send=\$event->{Raw}; $code";
+			if ($@) {
+			    response("$to;Error in eval: $@\n");
+			} else {
+			    response("$to;$response\n") if $response;
+			}
+		    } else {
+			response("$to;$h->{Respond}");
+		    }
 		}
 	    }
 	}
@@ -189,6 +284,31 @@ sub getquote {
     $ret;
 }
 
+
+sub register_bothandler {
+    my (%hdl)=@_;
+
+    $bhid++;
+    $bot_handlers{$bhid}=\%hdl;
+}
+
+sub deregister_bothandler {
+    my ($bhid)=@_;
+
+    if ($bot_handlers{$bhid}) {
+	delete $bot_handlers{$bhid};
+	return 1;
+    } else {
+	return 0;
+    }
+}
+
 1;
+
+
+
+
+
+
 
 
