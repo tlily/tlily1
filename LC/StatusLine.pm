@@ -1,6 +1,31 @@
 # -*- Perl -*-
 package LC::StatusLine;
 
+=head1 NAME
+ 
+LC::StatusLine - the status line
+ 
+=head1 SYNOPSIS
+ 
+    (as used from an extension:)
+
+    $mystatus='initial';
+
+    register_statusline(Var => \$mystatus,
+			Position => "PACKLEFT");
+    # Position may be either "PACKLEFT" or "PACKRIGHT" at present.
+
+    sub setit {
+	($mystatus)=@_; 
+	redraw_statusline();
+    } 
+    register_user_command_handler('statusline', \&setit);
+
+=head1 DESCRIPTION
+    
+=cut 
+
+
 use Exporter;
 use Tie::Hash;
 use LC::Server;
