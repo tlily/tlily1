@@ -52,6 +52,8 @@ sub render() {
     }
     
     ui_status($status_line);
+
+    return 0;
 }
 
 
@@ -93,6 +95,7 @@ sub statusline_init() {
 			  Call => sub {
 	my($event, $handler) = @_;
 	$status{Pseudo} = $event->{To} if ($event->{IsUser});
+	return 0;
     });
 
     register_eventhandler(Type => 'blurb',
@@ -100,6 +103,7 @@ sub statusline_init() {
 			  Call => sub {
 	my($event, $handler) = @_;
 	$status{Blurb} = $event->{Blurb} if ($event->{IsUser});
+	return 0;
     });
 
     register_eventhandler(Type => 'userstate',
@@ -107,6 +111,7 @@ sub statusline_init() {
 			  Call => sub {
 	my($event, $handler) = @_;
 	$status{State} = $event->{To} if ($event->{IsUser});
+	return 0;
     });
 
     register_eventhandler(Type => 'who',
@@ -115,6 +120,7 @@ sub statusline_init() {
 	my($event, $handler) = @_;
 	$status{Pseudo} = $event->{User} if ($event->{IsUser});
 	$status{Blurb} = $event->{Blurb} if ($event->{IsUser});
+	return 0;
     });
 
     register_timedhandler(Interval => 15,
