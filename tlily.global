@@ -35,6 +35,13 @@ $mono=0;
 $pager=1;
 $options_after_connect=1;
 $editor = $ENV{VISUAL} || $ENV{EDITOR} || 'vi';
+
+#$urlviewer_text=1;
+#$urlviewer="lynx";
+$urlviewer_text=0;
+$urlviewer="netscape -remote 'openURL(%URL%)'";
+
+
 # End defaults
 
 # Examples FOR YOUR SITE AND/OR USER CONFIG FILES!  DO NOT PUT THESE HERE
