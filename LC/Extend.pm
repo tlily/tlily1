@@ -1,5 +1,5 @@
 # -*- Perl -*-
-# $Header: /data/cvs/tlily/LC/Extend.pm,v 2.2 1998/06/13 21:57:27 mjr Exp $
+# $Header: /data/cvs/tlily/LC/Extend.pm,v 2.3 1998/10/21 04:42:46 mjr Exp $
 package LC::Extend;
 
 use Exporter;
@@ -99,18 +99,13 @@ sub extension($;$) {
 			   Safe => $safe };
     $Extensions{/current/} = $Extensions{$name};
 
-#    print STDERR "Pre-Dumping ", $safe->root, "($filename)\n";
-#    main::dumpvar($safe->root);
-#    print STDERR "Done pre-dumping ", $safe->root, "($filename)\n";
-#
     $safe->rdo($filename);
-    ui_output("* error: $@") if $@;
-#
-#    print STDERR "Dumping ", $safe->root, "($filename)\n";
-#    main::dumpvar($safe->root);
-#    print STDERR "Done dumping ", $safe->root, "($filename)\n";
-
     $Extensions{/current/} = $old;
+
+    if ($@) {
+      ui_output("* error: $@");
+      extension_unload($name);
+    }
 }
 
 

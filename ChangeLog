@@ -1,4 +1,9 @@
 Version 1.0.1-post
+  * [extensions/program.pl] Preliminary version of an extension for 
+    to enable server maintenance.  This version contains a very hackish
+    verb editor. [MJR]
+  * [LC/Extend] Modified to gracefully handle errors during extension
+    loading. [MJR]
   * [extensions/url.pl] Cleaned up handling of URLs ending in punctuation.
   * [extensions/url.pl] Added "tag_urls" config option to specify the
     URL number of each captured URL.  Added support for "%url ##" where
