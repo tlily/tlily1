@@ -62,40 +62,63 @@ sub httpd_process ($) {
 	return;
     }
 
-
-    foreach $line (split '[\r\n]', $buf) {
-	httpd_parse($line, $handler);
-    }
+    httpd_parse($buf, $handler);
 }
 
 # Parse the incoming http request
 sub httpd_parse ($$) {
-    my ($line, $handler) = @_;
+    my ($buf, $handler) = @_;
     my $fd = $fds{$handler->{Name}};
 
-    ui_output ("(httpd: Processing line: $line)");
+    # Get rid of blank lines.
+    $buf =~ s/^(\r?\n)+//;
 
     # Simple parsing for now.  Just support GET
-    if (my ($cmd, $file, $proto) = 
-	($line !~ /^(\w+)[ \t]+(\S+)(?:[ \t]+(HTTP\/\d+\.\d+))?[^\012]*\012/)) {
-	httpd_error($fd, "400 Bad Request");
+    if ($buf !~ s/^(\w+)[ \t]+(\S+)(?:[ \t]+(HTTP\/\d+\.\d+))?[^\n]*\n//) {
+	httpd_error($handler, 400, "Bad Request",
+	    "This server could not understand that request.");
+	return;
     }
-    ($cmd, $file, $proto) = ($1, $2, $3);
-    ui_output ("(httpd: Cmd: $cmd; File: $file; Proto: $proto)");
+    my ($cmd, $file, $proto) = ($1, $2, $3);
+
+    ui_output("(httpd: cmd: $cmd; file: $file; proto: $proto)");
+
     if ($cmd !~ /^GET$/) {
-	print $fd "<html><head>\n<title>400 Bad Request</title>\n";
-	print $fd "</head><body>\n<h1>Bad Request</h1>\n";
-	print $fd "This server could not understand that request.<p>\n";
+	httpd_error($handler, 400, "Bad Request",
+	    "This server could not understand that request.");
+	return;
+    }
+
+    # Special case for just /
+    if ($file =~ m!^/$!) {
+	print $fd "<html><head>\n<title>Tigerlily</title>\n";
+	print $fd "<\head><body>\n";
+	print $fd "<h1>Error</h1>\n";
+	print $fd "To retrieve a file from this server, you must ";
+	print $fd "know the random key assigned to the file.<p>\n";
 	print $fd "</body></html>\n";
 	close $fd;
 	delete $cxns{$handler->{Name}};
 	deregister_handler($handler);
 	return;
     }
+
+    httpd_error($handler, 404, "Permission Denied",
+	"Permission to access this resource is denied.");
 }
 
-sub httpd_error($$) {
-    my ($fd, $error) = @_;
+sub httpd_error($$$$) {
+    my ($handler, $num, $error, $longmsg) = @_;
+    my $fd = $fds{$handler->{Name}};
+
+    print $fd "<html><head>\n<title>${num} ${error}</title>\n";
+    print $fd "</head><body>\n<h1>${error}</h1>\n";
+    print $fd "${longmsg}<p>\n";
+    print $fd "</body></html>\n";
+    close $fd;
+    delete $cxns{$handler->{Name}};
+    deregister_handler($handler);
+    return;
 }
 
 # Find a and bind to a socket
