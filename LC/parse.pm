@@ -299,7 +299,6 @@ sub parse_line($$) {
 
     # you have created discussion...
     if ($line =~ /^\(you have created discussion (.*) \"/) {
-	ui_output("create");
 	%event = (Type => 'disccreate',
 		  Tags => [ 'paren' ],
 		  Name => $1);

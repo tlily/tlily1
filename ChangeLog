@@ -1,3 +1,6 @@
+Version 0.5d
+  * [LC/parse.pm] Discovered a bit of leftover debugging output.  [DPN]
+
 Version 0.5c
   * [LC/Extend.pm] Permit extensions access to $@.  This makes life better
     for the %eval command.  [DPN]
