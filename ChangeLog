@@ -1,4 +1,6 @@
 Version 1.0.2-post
+  * [LC/Httpd.pm, extensions/httpd.pl] Http daemon using tlily internals.
+    Second stage in client-to-client communications [SMC]
   * [extensions/parse.pl, LC/User.pm] First-cut attempt at handling emotes
     as sends.  (Enabling URL parsing in emote discs.)  [DPN]
   * [LC/SubClient.pm] Changed use of IO::Select to ui_select() so we don't
