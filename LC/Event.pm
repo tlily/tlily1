@@ -1,5 +1,5 @@
 # -*- Perl -*-
-# $Header: /data/cvs/tlily/LC/Event.pm,v 1.15 1998/05/29 06:09:27 josh Exp $
+# $Header: /data/cvs/tlily/LC/Event.pm,v 1.16 1998/06/12 05:28:03 albert Exp $
 package LC::Event;
 
 =head1 NAME
@@ -113,8 +113,8 @@ Example:
 
 Registers a timed event handler.  The event handler will be triggered
 after a given number of seconds.  Takes a hash as its parameter.  The hash
-should contain "Interval" and "Code" keys: Interval is the number of
-seconds until the handler is invoked, and Code is a reference to the
+should contain "Interval" and "Call" keys: Interval is the number of
+seconds until the handler is invoked, and Call is a reference to the
 code to call when the event occurs.  (This code will be called with the
 eventhandler as its argument.)  If the "Repeat" key is set to a true
 value, the handler will be invoked every Interval seconds until it is
@@ -124,7 +124,7 @@ Example:
 
     register_timedhandler(Interval => 60,
 			  Repeat => 1,
-			  Code => \&update_clock);
+			  Call => \&update_clock);
 
 =item deregister_handler()
 
