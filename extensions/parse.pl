@@ -233,7 +233,6 @@ sub parse_line($$) {
 	    $line = substr($line, 1);
 	    $review = '#';
 	}
-	ui_output("line = '$line'");
     }
 
 
