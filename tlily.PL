@@ -17,10 +17,6 @@ use LC::State;
 use LC::StatusLine;
 use LC::Extend;
 use LC::Event;
-use Socket;
-use Fcntl;
-use IO::Select;
-use POSIX;
 $|=1;
 
 if ( -f 'tlily.PL' ) {
