@@ -1,5 +1,7 @@
 Version 1.0-post
   * [lilybot.PL] Extensive modifications.  Try the "help" command. [JDW]
+  * [extensions/biff.pl] Redesign and rewrite, added RPI lightweight POP
+    mail check support. [MJR]
 
 Version 1.0
   * [LC/Extend.pm] Modified to work with ExoSafe.pm [MJR]
