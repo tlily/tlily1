@@ -1,5 +1,5 @@
 # -*- Perl -*-
-# $Header: /data/cvs/tlily/LC/Event.pm,v 2.2 1998/09/27 02:17:03 josh Exp $
+# $Header: /data/cvs/tlily/LC/Event.pm,v 2.3 1998/11/19 01:25:00 steve Exp $
 package LC::Event;
 
 # NOTES ON MEMORY LEAKS
@@ -239,6 +239,10 @@ sub deregister_handler($) {
 sub register_iohandler(%) {
     my(%h) = @_;
 
+    if (!defined($h{Handle})) {
+	ui_output("*WARNING: register_iohandler called without Handle");
+	return -1;	# Is this safe?
+    }
     $h{Id} = $token++;
     $h{Mode} ||= "rwe";
     push @io_handlers, \%h;
