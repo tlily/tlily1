@@ -55,6 +55,12 @@ sub sig_warn {
     ui_output("WARNING: " . $_[0]);
 }
 
+$SIG{PIPE} = \&sig_pipe;
+sub sig_pipe {
+    $SIG{PIPE} = \&sig_pipe;
+    ui_output("WARNING: Caught SIGPIPE.");
+}
+
 
 my $int_active = 0;
 $SIG{INT} = \&sig_int;

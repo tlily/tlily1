@@ -1,4 +1,5 @@
 Version 0.7b
+  * [tlily.PL] Catch SIGPIPE.  [DPN]
   * [extensions/countdown.pl] Countdown timer on the statusline.  [DPN]
   * [LC/User.pm] Fixed the laggy signals problem.  [DPN]
 
