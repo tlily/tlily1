@@ -10,7 +10,7 @@ LC::State - user/discussion state maintenance.
 The State module maintains a list of users and discussions (as well as some
 information on them), and the pseudo used by the current user.  It performs
 some editing on events to fill out information the Parse module is unable
-to determine.
+to determine.  It also keeps a list of groups.
 
 =head2 Canonical names
 
@@ -25,7 +25,7 @@ An unlimited number of state properties may be stored for each user; at
 this time, however, the only one in use is the 'Name' property, which
 contains the canonical lily name of the user.
 
-=head2 Group state information
+=head2 Discussion state information
 
 An unlimited number of state properties may be stored for each discussion; at
 this time, however, the only one in use is the 'Name' property, which
@@ -41,6 +41,9 @@ Translates a name into a full lily name.  For example, 'cougar' might become
 'Spineless Cougar', and 'comp' could become '-computer'.  The name returned
 will be identical to canonical one used by lily for that abberviation,
 with the exception that discussions are returned with a preceding '-'.
+If the name is an exact match (modulo case) for a group, the group name
+is returned.  Substrings of groups are not, however, expanded.  This is
+in line with current lily behavior.
 Example:
 
     expand_name('comp');
@@ -133,6 +136,7 @@ use POSIX;
 
 my %Users = ();
 my %Discs = ();
+my %Groups = ();
 
 
 # Map a user-entered name to a canonical lily name.
@@ -145,6 +149,9 @@ sub expand_name ($) {
     $disc = 1 if ($name =~ s/^-//);
 
     # Check for an exact match.
+    if ($Groups{$name}) {
+	return $Groups{$name}->{Name};
+    }
     if (!$disc && $Users{$name}) {
 	return $Users{$name}->{Name};
     }
@@ -318,10 +325,33 @@ sub destroy_disc ($) {
 }
 
 
+# Event handler for group updates.
+sub group_handler ($$) {
+    my($event,$handler) = @_;
+    my $group = lc($event->{Group});
+    if (!defined $Groups{$group}) {
+	@cand = grep { index($_, $group) == 0 } (keys %Groups);
+	if (scalar(@cand) == 1) {
+	    $group = $cand[0];
+	    $event->{Group} = $Groups{$group}->{Name};
+	} else {
+	    $Groups{$group}->{Name} = $event->{Group};
+	}
+    }
+    if ($event->{Members}) {
+	$Groups{$group}->{Members} = $event->{Members};
+    } else {
+	delete $Groups{$group};
+    }
+    return 0;
+}
+
+
 # Pulls all state information back into sync.
 sub state_sync () {
     %Users = ();
     %Discs = ();
+    %Groups = ();
 
     cmd_process('/who me', sub {
 	my($event) = @_;
@@ -343,6 +373,19 @@ sub state_sync () {
 	my($event) = @_;
 	$event->{ToUser} = 0;
 	return 0;
+    });
+
+    cmd_process('/group', sub {
+	my($event) = @_;
+	$event->{ToUser} = 0;
+	return 0 unless ($event->{Type} eq 'unparsed');
+	return 0 if ($event->{Text} =~ /^Group      Members/);
+	return 0 if ($event->{Text} =~ /^-----/);
+	my $group = substr($event->{Text}, 0, 11);
+	$group =~ s/\s*$//;
+	my @members = split /, /, substr($event->{Text}, 11);
+	$Groups{lc($group)}->{Name} = $group;
+	$Groups{lc($group)}->{Members} = \@members;
     });
 }
 
@@ -416,6 +459,21 @@ sub state_init () {
 	$event->{User} = $Me unless ($event->{User});
 	$event->{IsUser} = 1 if ($event->{User} eq $Me);
 	return 0;
+    });
+
+    register_eventhandler(Type => 'group',
+			  Order => 'before',
+			  Call => \&group_handler);
+
+    register_user_command_handler('group', sub {
+	my $group;
+	ui_output("Group      Members");
+	ui_output("-----      -------");
+	foreach $group (sort keys %Groups) {
+	    ui_output(sprintf("%-11s%s",
+			      $Groups{$group}->{Name},
+			      "@{$Groups{$group}->{Members}}"));
+	}
     });
 
     register_user_command_handler('sync', sub {
