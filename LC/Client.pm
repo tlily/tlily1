@@ -4,7 +4,15 @@ package LC::Client;
 
 use LC::Event;
 use LC::Server;
-
+BEGIN {
+    if ($main::load_ui) {
+	require LC::UI;  LC::UI->import();
+	require LC::User; LC::User->import();
+    } else {
+        sub ui_password { 0; }
+	sub user_password { 0; }
+    }
+}
 
 use Exporter;
 @ISA=qw(Exporter);
