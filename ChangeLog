@@ -1,3 +1,6 @@
+Version 0.5b
+  * [extensions/info.pl] Fixed the breeding backslash bug.  [DPN]
+
 Version 0.5a
   * [Build.PL] Bugfix:  The perl library 'use lib (...' line shouldn't have
     the trailing "/LC" on it [CWS]

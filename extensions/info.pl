@@ -60,6 +60,7 @@ sub info_edit($) {
 		       ($event->{Text} =~ /^\* Last Update: /));
 	    push @lines, substr($event->{Text},2);
 	} elsif ($event->{Type} eq 'endcmd') {
+	    map { s/\\(.)/$1/g } @lines;
 	    info_set($target, @lines);
 	}
 	return 0;
