@@ -1,4 +1,4 @@
-Version 0.6c-post
+Version 0.6d
   * [LC/UI.pm] Fixed the problem with newlines in output.  [DPN]
   * [LC/UI.pm] Better error reporting when a terminal module fail.  [DPN]
   * [LC/parse.pm] Bugfixes for parsing sends.  Removed quotewords.  [DPN]
