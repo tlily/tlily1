@@ -1,5 +1,5 @@
-@PERL@@
-# $Header: /data/cvs/tlily/lilybot.PL,v 1.4 1998/06/02 20:11:25 josh Exp $
+@@PERL@@
+# $Header: /data/cvs/tlily/lilybot.PL,v 1.5 1998/06/02 21:27:38 josh Exp $
 
 require 5.00307;
 
