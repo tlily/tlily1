@@ -719,8 +719,6 @@ sub ui_remove_callback ($$) {
 sub ui_process () {
     my $c;
 
-    attr_use('input_line');
-
     while (1) {
 	$c = term_get_char();
 	last if ((!defined($c)) || ($c eq '-1'));
@@ -728,6 +726,8 @@ sub ui_process () {
 	$status_update_time = 0;
 	$win_lastseen = $win_endline if ($win_endline > $win_lastseen);
 	scroll_info();
+
+	attr_use('input_line');
 
 	my @res;
 	foreach (@{$key_trans{$c}}) {
@@ -749,9 +749,10 @@ sub ui_process () {
 		term_refresh();
 	    }
 	}
+
+	attr_top();
     }	
 
-    attr_top();
     return shift @accepted_lines;
 }
 
