@@ -1,5 +1,5 @@
 # -*- Perl -*-
-# $Header: /data/cvs/tlily/LC/SubClient.pm,v 2.1 1998/06/12 08:56:16 albert Exp $
+# $Header: /data/cvs/tlily/LC/SubClient.pm,v 2.2 1998/06/23 20:25:04 steve Exp $
 package LC::SubClient;
 
 # bugs:
@@ -32,6 +32,7 @@ use IPC::Open3;
 use POSIX ":sys_wait_h";
 use IO::Select;
 use Exporter;
+use FileHandle;
 
 use LC::Event;
 use LC::UI; 
@@ -115,7 +116,10 @@ sub subclient_del {
 	$status="";
 	$SIG{CHLD} = "DEFAULT";
     } else {
-	$status= ui_escape("<$subcli[$subcli_num]>");
+#	$status= ui_escape("<$subcli[$subcli_num]>");
+	$status="<$subcli[$subcli_num]>";
+	# DEBUG
+#	ui_output($status);
 	$SIG{CHLD} = \&sig_chld_handler;
     }
 
@@ -190,7 +194,10 @@ sub subclient_start {
 				     Name => "SCE$subcli",
 				     Call => \&sc_input_process);
 
-    $status=ui_escape("<$subcli>");
+#    $status=ui_escape("<$subcli>");
+    $status=("<$subcli>");
+    # DEBUG
+#    ui_output($status);
     
     redraw_statusline();       
 }
@@ -244,7 +251,10 @@ sub sc_toggle_key {
     if ($#subcli == 0) {
 	$status="";
     } else {
-	$status=ui_escape("<$subcli[$subcli_num]>");
+#	$status=ui_escape("<$subcli[$subcli_num]>");
+	$status="<$subcli[$subcli_num]>";
+	# DEBUG
+#	ui_output($status);
     }
     redraw_statusline(1);       
 
