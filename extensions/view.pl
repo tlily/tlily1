@@ -15,7 +15,7 @@
 #Paul
   
 
-sub view_display(\\@) {
+sub view_display(\@) {
     my($lref) = @_;
     
     my $tmpfile = "/tmp/tlily.$$";
@@ -26,7 +26,7 @@ sub view_display(\\@) {
     my $fh = IO::File->new(">$tmpfile");
     foreach (@$lref) {
 	chomp;
-	1 while s/\<([^>]*)>(.*)\<\\/\\1>/$2/; # Nasty \<tag>...\</tag> filter
+	1 while s/\<([^>]*)>(.*)\<\/\1>/$2/; # Nasty \<tag>...\</tag> filter
 	$fh->print("$_\\n"); 
     }
     $fh->close();
@@ -60,7 +60,7 @@ sub view_cmd($;$$) {
 }
 
 
-register_user_command_handler('view', \\&view_cmd);
+register_user_command_handler('view', \&view_cmd);
 register_help_short('view', 'sends output of lily command to temp buffer');
 register_help_long('view',
 "This allows you to get the output of a command into a temporary buffer for
