@@ -1,3 +1,11 @@
+Version 0.2d
+  * Command handlers' arguments' no longer have trailing whitespace.  (As of
+    0.2c, they were receiving a terminating \n, which made just about every
+    command handler break.)
+
+Version 0.2c
+  * Fixed a bug which made 0.2b unable to run.
+
 Version 0.2b
   * Redesigned the event model.
   * Began documenting; Event.pm and State.pm have manpages.
