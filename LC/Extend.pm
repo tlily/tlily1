@@ -44,14 +44,17 @@ sub extension($;$) {
 	return ;
     }
 
-    my @ext_dirs = ("$ENV{HOME}/.lily/tlily/extensions", $main::TL_EXTDIR);
-    my $dir;
-    foreach $dir (@ext_dirs) {
-	if (-f "${dir}/${name}.pl") {
-	    $filename = "${dir}/${name}.pl";
-	    last;
+    if (!defined $filename) {
+	my @ext_dirs = ("$ENV{HOME}/.lily/tlily/extensions", $main::TL_EXTDIR);
+	my $dir;
+	foreach $dir (@ext_dirs) {
+	    if (-f "${dir}/${name}.pl") {
+		$filename = "${dir}/${name}.pl";
+		last;
+	    }
 	}
     }
+
     if (!defined $filename) {
 	ui_output("(Cannot locate extension \"$name\")");
 	return;

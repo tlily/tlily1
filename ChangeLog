@@ -1,4 +1,5 @@
 Version 0.8b
+  * [LC/Extend.pm] Load extensions properly when a path is specified. [DPN]
   * [extensions/after.pl] %after lists afterids.  %after cancel <id>
                           cancels an after. [CWS]
   * [Build.PL] Allow the releaser to edit the announcement message. [CWS]
