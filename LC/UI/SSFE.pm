@@ -50,21 +50,6 @@ sub ui_end {
 
 }
 
-sub ui_attr {
-    my ($self)=shift;
-
-}
-
-sub ui_filter {
-    my ($self)=shift;
-
-}
-
-sub ui_resetfilter {
-    my $self=shift;
-
-}
-
 sub ui_status {
     my ($self, $newstatus)=@_;
 
@@ -96,22 +81,6 @@ sub ui_process {
     if ($line eq "\n") { $line = " \n"; }
 
     return $line;
-}
-
-sub ui_callback($$) {
-    my $self=shift;
-
-}
-
-sub ui_remove_callback($$) {
-    my $self=shift;
-
-}
-
-sub ui_bell {
-    my $self=shift;
-
-    print "";
 }
 
 sub ui_password($) {
