@@ -725,7 +725,6 @@ sub ui_process () {
 
 	$status_update_time = 0;
 	$win_lastseen = $win_endline if ($win_endline > $win_lastseen);
-	scroll_info();
 
 	attr_use('input_line');
 
@@ -753,6 +752,7 @@ sub ui_process () {
 	attr_top();
     }	
 
+    scroll_info();
     return shift @accepted_lines;
 }
 
