@@ -45,7 +45,7 @@ sub bang_handler($$) {
 
 # %version handler
 sub version_handler {
-    ui_output("(Tigerlily version $TL_VERSION)\n");
+    ui_output("(Tigerlily version $TL_VERSION)");
     server_send("/display version\r\n");
     return 0;
 }
