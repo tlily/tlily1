@@ -120,6 +120,9 @@ sub init() {
 			      if ($event->{ToUser}) {
 				  ui_output($event->{Text});
 			      }
+			      if ($event->{Signal}) {
+				  ui_bell();
+			      }
 			      return 0;
 			  });
 
