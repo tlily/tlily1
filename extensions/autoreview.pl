@@ -60,16 +60,18 @@ sub review_handler {
 		$rev_start = undef;
 	} elsif ($event->{Type} eq 'endcmd') {
 		review();
-	} elsif ($event->{Text} =~ /^\(Beginning review of.*\)/) {
+	} elsif ($event->{Raw} =~ /^\(Beginning review of.*\)/) {
 		$rev_start = $event->{Text};
 		$event->{ToUser} = 0;
-	} elsif ($event->{Text} =~ /^\(End of review of.*\)/) {
+	} elsif ($event->{Raw} =~ /^\(End of review of.*\)/) {
 		$event->{ToUser} = 0 unless ($rev_interesting);
-	} elsif ($event->{Text} =~ /^\(No events to review for .*\)/) {
+	} elsif ($event->{Raw} eq "") {
+		$event->{ToUser} = 0 unless ($rev_interesting);
+	} elsif ($event->{Raw} =~ /^\(No events to review for .*\)/) {
 		$event->{ToUser} = 0;
-	} elsif ($event->{Text} =~ /^# \*\*\*/) {
+	} elsif ($event->{Raw} =~ /^# \*\*\*/) {
 		$event->{ToUser} = 0;
-	} elsif ($event->{Text} =~ /^# ###/ && !$rev_interesting) {
+	} elsif ($event->{Raw} =~ /^# ###/ && !$rev_interesting) {
 		$event->{ToUser} = 0;
 		$rev_start .= "\n" . $event->{Text};
 	} elsif (!$rev_interesting) {
