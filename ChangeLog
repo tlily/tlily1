@@ -1,4 +1,4 @@
-Version 0.8c-post
+Version 0.9a
   * [LC/Extend.pm] Better error handling, reporting. [DPN]
   * [extensions/gag.pl] Made %gag work with the new ui_filter [SMC]
   * [tlily.PL] Better error handling on failed connect to server. [DPN]
