@@ -46,9 +46,7 @@ The exact server output for the line.
 
 
 use Exporter;
-use LC::config;
 use LC::UI;
-use LC::log;
 use LC::Event;
 use POSIX;
 
