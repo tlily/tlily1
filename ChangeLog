@@ -1,4 +1,6 @@
 Version 0.6c
+  * [extensions/hidesend.pl] New extension: don't display user's sends.
+    Useful for people with message_echo turned on.  [DPN]
   * [*/*] Extended the way user input is handled; the parser now parses
     userinput events and generates events for different forms of input.
     The new events are: ccommand, scommand, usend, and uunknown.  [DPN]
