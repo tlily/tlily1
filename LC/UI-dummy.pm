@@ -10,6 +10,9 @@
 #   somewhat usable in a pinch.  Good for testing.
 # 0 means to show everything, don't try to make it too pretty.  Good for other
 #   kinds of testing :)
+#
+# Note that for whatever reason, you have to log in with your username
+# and password on the same line.
 
 package LC::UI;
 
@@ -84,6 +87,7 @@ sub ui_output {
        $text=~s/\<\/?pubmsg\>//g;              
        $text=~s/\<\/?usersend\>//g;
        $text=~s/\<\/?blurb\>//g;                            
+       $text=~s/\<\/?review\>//g;                                   
        
        print "$text\n";
     } else {

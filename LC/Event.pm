@@ -1,6 +1,16 @@
 # -*- Perl -*-
-# $Header: /data/cvs/tlily/LC/Event.pm,v 2.1 1998/06/12 08:56:08 albert Exp $
+# $Header: /data/cvs/tlily/LC/Event.pm,v 2.2 1998/09/27 02:17:03 josh Exp $
 package LC::Event;
+
+# NOTES ON MEMORY LEAKS
+# ---------------------
+# I've experimented with some limited memory leak detection.  If you would like
+# to try it, you need the following:
+# perl 5.005 or greater.
+# Devel::Leak
+# set up the client to use UI-dummy to avoid UI memory leaks for now
+# uncomment all the blocks marked "LEAKDEBUG" below.
+# run tlily 2>/dev/null 
 
 =head1 NAME
 
@@ -145,7 +155,7 @@ it).
 
 =cut
 
-
+#use Devel::Leak;  # LEAKDEBUG
 use Carp;
 use Exporter;
 use IO::Select; 
@@ -349,9 +359,20 @@ sub event_loop {
 		if (fileno($fh) == fileno($h->{Handle})) {
 		    if (index($h->{Mode}, 'r') != -1) {
 			print STDERR "Readable on $h->{Handle}\n"
-			    if ($config{edebug});
+			   if ($config{edebug});
+			   
+			# LEAKDEBUG			   
+#			my ($sv_count,$sv_count2); 
+#			$sv_count = Devel::Leak::NoteSV($handle); 
+			
 			eval { my $rc = &{$h->{Call}}($h); };
 			warn("Event error: $@") if ($@);
+			
+#			# LEAKDEBUG
+#			$sv_count2 = Devel::Leak::CheckSV($handle);	
+#			print "\n" . ("-" x 80) . 
+#			      "\n<<<< io_handler: sv_count=$sv_count / sv_count2=$sv_count2 => (" . ($sv_count2-$sv_count) . " new)\n" .
+#			      ("-" x 80) . "\n" if ($sv_count != $sv_count2);
 		    }
 		}
 	    }
