@@ -1,5 +1,5 @@
 # -*- Perl -*-
-# $Header: /data/cvs/tlily/tlily.global,v 2.3 1998/12/08 21:36:51 steve Exp $
+# $Header: /data/cvs/tlily/tlily.global,v 2.4 1998/12/08 21:46:09 steve Exp $
 # Global defaults for tlily
 # PLEASE DO NOT EDIT EXCEPT FOR DEVELOPMENT!
 # EDIT YOUR SITE CONFIG FILE INSTEAD!
@@ -53,7 +53,7 @@ $clockdelta=0;
 $httpdtimeout=300;
 
 # If 0, then don't print httpd debug messages.
-$debughttpd=1;
+$debughttpd=0;
 
 # End defaults
 

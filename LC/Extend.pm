@@ -1,5 +1,5 @@
 # -*- Perl -*-
-# $Header: /data/cvs/tlily/LC/Extend.pm,v 2.6 1998/12/04 01:10:49 josh Exp $
+# $Header: /data/cvs/tlily/LC/Extend.pm,v 2.7 1998/12/08 21:46:11 steve Exp $
 package LC::Extend;
 
 use Exporter;
@@ -9,6 +9,7 @@ use LC::Server;
 use LC::Command;
 use LC::Config;
 use LC::Event;
+use LC::Httpd;
 
 BEGIN {
     if ($LC::UI::ui_loaded) {
@@ -86,6 +87,7 @@ sub extension($;$) {
     push @share,@LC::Extend::EXPORT;
     push @share,@LC::StatusLine::EXPORT;
     push @share,@LC::SubClient::EXPORT;
+    push @share,@LC::Httpd::EXPORT;
 
     $safe->share(@share);
     # This only works in perl 5.003_07+
@@ -263,7 +265,6 @@ sub deregister_handler($) {
     &LC::Event::deregister_handler($id);
     list_remove @{$Extensions{/current/}->{EventHandlers}}, $id;
 }
-
 
 BEGIN {
     if ($LC::UI::ui_loaded) {

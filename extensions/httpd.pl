@@ -1,169 +1,134 @@
-# http daemon for tigerlily
-# hopefully the beginnings of a CTC protocol.
+# -*- Perl -*-
+# $Header: /data/cvs/tlily/extensions/httpd.pl,v 1.5 1998/12/08 21:46:21 steve Exp $
 
-# Bugs so far:
-# The unload() sub doesn't actually close the listening socket, though it
-#    should.  A strace shows an error of ENOTCONN.  I forget my networking!
+=head1 NAME
 
-use Socket;
-use FileHandle;
+extensions/httpd.pl - The parsing end to LC::Httpd.
 
-my $sockfd, $port;
-my $listenhandler;
-# There is little to hash this on, so I will use an ever-increasing
-# scalar to hash on.
-my %cxns, %fds;
+=head1 DESCRIPTION
 
-my $name = "deadbeef";
+This is where all the parsing gets done for the http daemon.
 
-# This process accept()s an incoming connection
-sub httpd_accept ($) {
-    my ($hdr) = @_;
+=cut
 
-    return if $hdr->{Name} !~ /^Httpd$/;
+# The partial part of the last chunk of data sent.
+my $partial = '';
 
-    accept New, $sockfd;
+# Break the input up into lines.
+sub httpd_parse($$) {
+    my ($event, $handle) = @_;
 
-    ui_output("(httpd: accepted a connection)");
+    my $text = $partial . $event->{Text};
 
-    $newh = register_iohandler (Handle => \*New,
-				Name => $name,
-				Mode => 'r',
-				Call => \&httpd_process);
+    my @lines = split /(\r?\n)/, $text;
 
-    $fds{$name} = \*New;
-    $cxns{$name++} = $newh;
+    if (($partial = pop @lines) =~ /^\r?\n$/) {
+	$partial = '';
+    }
+
+    foreach (@lines) {
+	next if /^\r?\n$/;
+	dispatch_event( { Type   => 'httpdline',
+			  Text   => $_,
+			  Handle => $event->{Handle},
+			  ToUser => 0,
+		      } );
+    }
 }
 
-sub httpd_process ($) {
-    my ($handler) = @_;
+# State variables.  These are used to keep track of what's going on in
+# each connection.  The hashs (all of them?) are hashed on $handle->{Id}.
+my %state;
 
-    my $fd = $fds{$handler->{Name}};
-    my $buf;
-    my $s = new IO::Select;
-    $s->add($fd);
-    return if (! ($s->can_read(0)));
+sub httpd_parse_line($$) {
+    my ($event, $handle) = @_;
 
-    my $rc = sysread($fd, $buf, 4096);
-    if (($rc < 0)) {
-	return if $errno == EAGAIN;
-	close $fd;
-	delete $cxns{$handler->{Name}};
-	deregister_handler($handler);
-	ui_output("(httpd: Error reading socket: $!)");
+    my $text = $event->{Text};
+
+    my $st = \$state{$event->{Handle}->{Id}};
+
+    ui_output("(httpd.pl: parsing line $text)") if $config{debughttpd};
+
+    if (!($$st->{xCommand})) {
+	if ($text !~ /^(\w+)[ \t]+(\S+)(?:[ \t]+(HTTP\/\d+\.\d+))?$/) {
+	    httpd_error( Handle => $event->{Handle},
+			 ErrNo  => 400,
+			 Title  => "Bad Request",
+			 Long   => "This server did not understand that " .
+				   "request." );
+	    close_webhandle($event->{Handle})
+		unless exists $event->{Handle}->{Persist};
+	    return;
+	}
+
+	$$st = { xCommand  => $1,
+		 xFile     => $2,
+		 xProtocol => $3, };
+
+	# We're doing nothing at the moment..
+	ui_output("(httpd.pl: Got a valid http request cmd: $1, file: $2)")
+	    if $config{debughttpd};
 	return;
     }
 
-# Closed connection
-    if ($rc == 0) {
-	close $fd;
-	delete $cxns{$handler->{Name}};
-	deregister_handler($handler);
+    if ($text =~ /^(\w+):(.+)$/) {
+	$$st->{$1} = $2;
 	return;
     }
 
-    httpd_parse($buf, $handler);
-}
+    # End of headers.
+    if ($text eq '') {
+	if (($$st->{xCommand} !~ /^GET$/) && ($$st->{xCommand} !~ /^HEAD$/)) {
+	    httpd_error( Handle => $event->{Handle},
+			 ErrNo  => 501,
+			 Title  => "Not Implemented",
+			 Long   => "This server did not understand that " .
+				   "request." );
+	    close_webhandle($event->{Handle})
+		unless exists $event->{Handle}->{Persist};
+	    return;
+	}
 
-# Parse the incoming http request
-sub httpd_parse ($$) {
-    my ($buf, $handler) = @_;
-    my $fd = $fds{$handler->{Name}};
+	# Special case for /
+	if ($$st->{xFile} =~ m|^/$|) {
+	    my $fd = $event->{Handle}->{Handle};
 
-    # Get rid of blank lines.
-    $buf =~ s/^(\r?\n)+//;
+	    print $fd "HTTP/1.0 200 OK\r\n";
+	    print $fd "Date: " . httpd_date() . "\r\n";
+	    print $fd "Connection: close\r\n\r\n";
+	    if ($$st->{xCommand} =~ /^GET$/) {
+		print $fd "<html><head>\n<title>Tigerlily</title>\n";
+		print $fd "</head><body>\n";
+		print $fd "To download the lastest version of Tigerlily, ";
+		print $fd "click ";
+		print $fd "<a href=\"http://www.hitchhiker.org/tigerlily\">\n";
+		print $fd "here</a>\n</body></html>\n";
+	    }
+	    close_webhandle($event->{Handle})
+		unless exists $event->{Handle}->{Persist};
+	    return;
+	}
 
-    # Simple parsing for now.  Just support GET
-    if ($buf !~ s/^(\w+)[ \t]+(\S+)(?:[ \t]+(HTTP\/\d+\.\d+))?[^\n]*\n//) {
-	httpd_error($handler, 400, "Bad Request",
-	    "This server could not understand that request.");
-	return;
-    }
-    my ($cmd, $file, $proto) = ($1, $2, $3);
+	$$st->{xFile} =~ s|/||;
 
-    ui_output("(httpd: cmd: $cmd; file: $file; proto: $proto)");
-
-    if ($cmd !~ /^GET$/) {
-	httpd_error($handler, 400, "Bad Request",
-	    "This server could not understand that request.");
-	return;
-    }
-
-    # Special case for just /
-    if ($file =~ m!^/$!) {
-	print $fd "<html><head>\n<title>Tigerlily</title>\n";
-	print $fd "<\head><body>\n";
-	print $fd "<h1>Error</h1>\n";
-	print $fd "To retrieve a file from this server, you must ";
-	print $fd "know the random key assigned to the file.<p>\n";
-	print $fd "</body></html>\n";
-	close $fd;
-	delete $cxns{$handler->{Name}};
-	deregister_handler($handler);
-	return;
-    }
-
-    httpd_error($handler, 404, "Permission Denied",
-	"Permission to access this resource is denied.");
-}
-
-sub httpd_error($$$$) {
-    my ($handler, $num, $error, $longmsg) = @_;
-    my $fd = $fds{$handler->{Name}};
-
-    print $fd "<html><head>\n<title>${num} ${error}</title>\n";
-    print $fd "</head><body>\n<h1>${error}</h1>\n";
-    print $fd "${longmsg}<p>\n";
-    print $fd "</body></html>\n";
-    close $fd;
-    delete $cxns{$handler->{Name}};
-    deregister_handler($handler);
-    return;
-}
-
-# Find a and bind to a socket
-sub find_port ($) {
-    my ($fd) = @_;
-
-    $port = 31336;
-    # Find a port, but don't search forever..
-    while (++$port < 40000) {
-	last if bind($fd, sockaddr_in($port, INADDR_ANY));
-    }
-
-    die "Could not find a port to bind to!" if $port >= 40000;
-    ui_output("(httpd: listening on port $port)");
-}
-
-sub make_socket {
-    
-    socket(HTTPD, PF_INET, SOCK_STREAM, getprotobyname('tcp')) ||
-	die "Error getting socket for httpd: $!";
-
-    return \*HTTPD;
-}
-
-# Close the listening socket when unloading
-sub unload {
-    ui_output("(httpd: Cleaning up)");
-    close($sockfd);
-    deregister_handler($listenhandler);
-    foreach $handler (keys (%cxns)) {
-	close($fd{$handler});
-	deregister_handler($cxns{$handler});
+	unless (send_webfile($$st->{xFile}, $event->{Handle},
+	    ($$st->{xCommand} =~ /^HEAD$/))) {
+	    close_webhandle($event->{Handle})
+		unless exists $event->{Handle}->{Persist};
+	}
     }
 }
 
-# Initialize the module.  Get a socket, bind it, and start listening.
-$sockfd = make_socket;
-find_port($sockfd);
+sub unload () {
+    deregister_webfile('xyz') if $config{debughttpd};
+}
 
-# Before we start listening, we want to set up the iohandler, so no
-# connections get missed.
-$listenhandler = register_iohandler( Handle => $sockfd,
-				     Mode => 'r',
-				     Name => "Httpd",
-				     Call => \&httpd_accept);
+register_eventhandler( Type => 'httpdinput',
+		       Call => \&httpd_parse );
 
-# Now, it is ok to call listen() and get everything started
-listen($sockfd, SOMAXCONN);
+register_eventhandler( Type => 'httpdline',
+		       Call => \&httpd_parse_line );
+
+$port = register_webfile( File => 'xyz' ) if $config{debughttpd};
+
+1;
