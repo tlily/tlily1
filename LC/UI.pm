@@ -60,6 +60,7 @@ my %key_trans = ('kl'   => \&input_left,
 		 'C-b'  => \&input_pageup,
 		 'pgdn' => \&input_pagedown,
 		 'C-f'  => \&input_pagedown,
+		 'C-t'  => \&input_twiddle,
 		 'nl'   => \&input_accept,
 		 'C-y'  => \&input_yank,
 		 'C-w'  => \&input_killword,
@@ -561,6 +562,18 @@ sub input_killtohome ($$$) {
     my($key, $line, $pos) = @_;
     $input_killbuf = substr($line, 0, $pos);
     return (substr($line, $pos), 0, 2);
+}
+
+
+# Rotates the position of the previous two characters.
+sub input_twiddle ($$$) {
+    my($key, $line, $pos) = @_;
+    return if ($pos == 0);
+    $pos++ if ($pos < length($line));
+    my $tmp = substr($line, $pos-2, 1);
+    substr($line, $pos-2, 1) = substr($line, $pos-1, 1);
+    substr($line, $pos-1, 1) = $tmp;
+    return ($line, $pos, 2);
 }
 
 
