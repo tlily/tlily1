@@ -48,7 +48,9 @@ it is left unset, it will default to 'during'.
 This parameter should be set to a code reference to execute when an event
 is received.  This code will be called with two parameters: the first
 is the event (a hash reference), and the second is a hash reference to
-the event handler\'s definition.
+the event handler for which the code was invoked.  If this function
+returns true, then no further event handlers will be processed for this
+event.
 
 =item Id
 
@@ -68,22 +70,33 @@ the 'Type' field controls which event handlers an event is transmitted to.
 
 =over 10
 
-=item register_eventhandler
+=item register_eventhandler()
 
 Registers a new event handler.  Takes an event handler (a hash of options)
-as its parameter.
+as its parameter.  Example:
 
-=item deregister_eventhandler
+    $id = register_eventhandler(Type => 'serverline',
+				Order => 'after',
+				Call => \&logger);
+
+=item deregister_eventhandler()
 
 Deregisters an event handler.  Takes the id of a registered event handler.
 While it is possible to deregister an event handler while in the middle of
 event processing, the handler will still execute for the current event.
+Example:
 
-=item dispatch_event
+    deregister_eventhandler($id);
+
+=item dispatch_event()
 
 Transmits an event.  Takes an event (a hash reference) as its parameter.
 Events are processed in the order they are received.  All event handlers
 for a given event will run to completion before the next event is processed.
+Example:
+
+    dispatch_event(Type => 'serverline',
+		   Text => $s);
 
 =back
 

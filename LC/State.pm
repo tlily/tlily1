@@ -1,26 +1,133 @@
 # -*- Perl -*-
 package LC::State;
 
+=head1 NAME
+
+LC::State - user/discussion state maintenance.
+
+=head1 DESCRIPTION
+
+The State module maintains a list of users and discussions (as well as some
+information on them), and the pseudo used by the current user.  It performs
+some editing on events to fill out information the Parse module is unable
+to determine.
+
+=head2 Canonical names
+
+Lily permits the use of abbreviations to refer to users and discussions.
+Every user and discussion, however, has a 'canonical' name -- the name
+lily uses to refer to that entity.  (In the case of a user, this name is
+the user\'s pseudo, which may change with time.)
+
+=head2 User state information
+
+An unlimited number of state properties may be stored for each user; at
+this time, however, the only one in use is the 'Name' property, which
+contains the canonical lily name of the user.
+
+=head2 Group state information
+
+An unlimited number of state properties may be stored for each discussion; at
+this time, however, the only one in use is the 'Name' property, which
+contains the canonical lily name of the discussion.
+
+=head2 Functions
+
+=over 10
+
+=item expand_name()
+
+Translates a name into a full lily name.  For example, 'cougar' might become
+'Spineless Cougar', and 'comp' could become '-computer'.  The name returned
+will be identical to canonical one used by lily for that abberviation,
+with the exception that discussions are returned with a preceding '-'.
+Example:
+
+    expand_name('comp');
+
+=item get_user_state()
+
+Retrieves state parameters for a user.  This function takes a hash as a
+paramters, with parameter names as the keys, and variable references as the
+values.  The 'Name' parameter is required, and should specify the name
+of the user to retrieve information for.
+
+    get_user_state(Name => 'damien',
+		   Parameter => \$parameter);
+
+=item get_disc_state()
+
+Retrieves state parameters for a discussion.  This function takes a hash as a
+paramters, with parameter names as the keys, and variable references as the
+values.  The 'Name' parameter is required, and should specify the name
+of the discussion to retrieve information for.
+
+    get_user_state(Name => 'computer',
+		   Parameter => \$parameter);
+
+=item state_sync()
+
+Forces a full synchronization of the state database.  Example:
+
+    state_sync();
+
+=item user_name
+
+The pseudo used by the current user.  Example:
+
+    $Me = user_name;
+
+=back
+
+=head1 EVENTS
+
+=over 10
+
+=item rename, userstate, blurb
+
+The 'Name' field is set to the pseudo of the current user if it is undefined.
+The 'IsUser' field is set to 1 if the event pertains to the current user.
+See Parse.pm for a complete description of these events.
+
+=item who
+
+The 'IsUser' field is set to 1 if the event pertains to the current user.
+See Parse.pm for a complete description of this event.
+
+=item disccreate, discdestroy, what
+
+See Parse.pm for a complete description of these events.
+
+=back
+
+=head1 COMMANDS
+
+=over 10
+
+=item %sync
+
+Resynchronizes the user and discussion databases with the server.
+
+=back
+
+=cut
+
+
 use Exporter;
 use LC::UI;
 use LC::Command;
 use LC::parse;
 use LC::Event;
 use LC::StatusLine;
+use LC::User;
 use POSIX;
 
 @ISA = qw(Exporter);
 
 @EXPORT = qw(&expand_name
-	     &set_user_state
 	     &get_user_state
-	     &rename_user
-	     &destroy_user
-	     &set_disc_state
 	     &get_disc_state
-	     &destroy_disc
 	     &state_sync
-	     &state_init
 	     &user_name);
 
 
@@ -275,6 +382,7 @@ sub state_init () {
 			  Order => 'before',
 			  Call => sub {
 	my($event,$handler) = @_;
+	$event->{IsUser} = 1 if ($event->{User} eq $Me);
 	set_user_state(Name => $event->{User});
 	return 0;
     });
@@ -309,7 +417,22 @@ sub state_init () {
 	$event->{IsUser} = 1 if ($event->{User} eq $Me);
 	return 0;
     });
+
+    register_user_command_handler('sync', sub {
+	ui_output('(Synchronizing state with the server)');
+	state_sync();
+	return 0;
+    });
+
+    register_help_short('sync', 'synchronize state with server');
+    register_help_long('sync',
+"The %sync command synchronizes the internal user and discussion databases
+with the server.
+usage: %sync");
 }
+
+
+state_init();
 
 
 1;
