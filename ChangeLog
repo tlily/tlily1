@@ -1,4 +1,5 @@
 Version 0.7a
+  * [extensions/smartexit.pl] Fix recognition of /det and /bye [FeRD@RPI][CWS]
   * [LC/Config.pm] Added some pod docs [CWS]
   * [LC/UI.pm] Changed Paste mode keymapping to M-p to match documentation
   * [README] Describe %color_attrs, %mono_attrs, and @slash better to prevent
