@@ -1,5 +1,5 @@
 # -*- Perl -*-
-# $Header: /data/cvs/tlily/LC/StatusLine.pm,v 1.21 1998/05/29 05:12:21 mjr Exp $
+# $Header: /data/cvs/tlily/LC/StatusLine.pm,v 1.22 1998/05/29 19:50:07 josh Exp $
 package LC::StatusLine;
 
 =head1 NAME
@@ -129,6 +129,7 @@ sub statusline_init() {
 	my($event, $handler) = @_;
 	if ($event->{Text} =~ /^Welcome to \w* at\s+(.*?)\s*$/) {
 	    $status_Server = $1;
+	    $config{site} = $1;
 	    deregister_handler($handler->{Id});
 	    redraw_statusline();	    
 	}
