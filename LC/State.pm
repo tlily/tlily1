@@ -170,6 +170,15 @@ sub expand_name ($) {
 	
     @unames = keys %Users;
     @dnames = keys %Discs;
+
+    # Check the "preferred match" list.
+    if (ref($config{prefer}) eq "ARRAY") {
+	my $m;
+	foreach $m (@{$config{prefer}}) {
+	    return $m if (index($m, $name) == 0);
+	    return $m if ($m =~ /^-/ && index($m, $name) == 1);
+	}
+    }
 	
     # Check for a prefix match.
     unless ($disc) {

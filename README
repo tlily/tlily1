@@ -103,6 +103,20 @@ $terminal
 	    # allow /info to be overridden.
 	By default, no slash commands will be allowed to be intercepted.  This
 	can be overridden in the site and/or user CFs using this method.
+
+@prefer
+        This variable contains a list of destinations to "prefer" when
+        doing autoexpansion.  If a partial destination is a prefix to
+        an element in this list, it will always be expanded to it.
+        Examples:
+          @prefer = ('-security');
+          The "security" discussion exists, as does the user "Secret Agent".
+          "sec" will expand to "-security".
+
+          @prefer = ('damien_clone');
+          The users "damien" and "damien clone" both exist.
+          "dam" will expand to "damien_clone".  "damien" exactly matches
+          a user, and will not expand.
 	
 Extensions can each have options to configure them; see the documentation
 for the specific module to see what options can be set.
