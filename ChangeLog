@@ -1,4 +1,4 @@
-Version 0.9b-post
+Version 1.0
   * [LC/CTerminal.pm] Added definitions for the home and end keys. [CWS]
   * [LC/UI.pm] Made home and end do something. [CWS]
   * [extensions/startup.pl] added a %help. [CWS]
