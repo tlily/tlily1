@@ -17,7 +17,7 @@ sub config_init {
 #    print STDERR join(", ", @{$config{load}}), "\n";
 #    print STDERR "*** Done load list ***\n";
 
-    collapse_list($config{load});
+    $config{load} = collapse_list($config{load});
 
 #    print STDERR "*** Final load list ***\n";
 #    print STDERR join(", ", @{$config{load}}), "\n";
@@ -27,7 +27,7 @@ sub config_init {
 #    print STDERR join(", ", @{$config{slash}}), "\n";
 #    print STDERR "*** Done slash list ***\n";
 
-    collapse_list($config{slash});
+    $config{slash} = collapse_list($config{slash});
 
 #    print STDERR "*** Final slash list ***\n";
 #    print STDERR join(", ", @{$config{slash}}), "\n";
@@ -158,7 +158,7 @@ sub collapse_list {
 #	print STDERR join(", ",keys(%list)), "\n";
 #	print STDERR "*** Done interim list ***\n";
     }
-    $lref = [keys %list];
+    [keys %list];
 }
 
 sub config_ask {
