@@ -1,4 +1,5 @@
 Version 0.9a-post
+  * [extensions/expand.pl] Fixed a minor expansion bug. [DPN]
   * [extensions/look.pl] Added some () messages to look. [JDW]
   * [extensions/look.pl] Fix bug that passed non-alpha chars to look. [MJR]
   * [LC/CTerminal.pm] Added definitions for the home and end keys. [CWS]

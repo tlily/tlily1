@@ -1,5 +1,5 @@
 # -*- Perl -*-
-# $Header: /data/cvs/tlily/extensions/expand.pl,v 1.12 1998/05/29 05:12:26 mjr Exp $
+# $Header: /data/cvs/tlily/extensions/expand.pl,v 1.13 1998/06/05 04:21:29 neild Exp $
 
 my %expansions = ('sendgroup' => '',
 		  'sender'    => '',
@@ -39,6 +39,7 @@ sub exp_expand($$$) {
 	my $aft  = substr($line, $pos);
 
 	return if ($fore =~ /[:;]/);
+	return if ($fore =~ /^\s*[\/\$\?%]/);
 
 	my @dests = split(/,/, $fore);
 	foreach (@dests) {
