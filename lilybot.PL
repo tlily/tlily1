@@ -1,5 +1,5 @@
 @@PERL@@
-# $Header: /data/cvs/tlily/lilybot.PL,v 2.9 1999/02/05 22:41:17 josh Exp $
+# $Header: /data/cvs/tlily/lilybot.PL,v 2.10 1999/02/06 00:05:03 josh Exp $
 
 # This is the source to the bot running as "MechaJosh" on RPI-Lily.
 
@@ -102,6 +102,7 @@ sub getsearch {
       $ret =~ s/[\r\n]//g;
       close(E);
       last unless ($ret =~ /Choose a Channel/);
+      $ret = "Unable to get a response from the SearchTicker.";
       sleep 1;      
     }
     $ret;

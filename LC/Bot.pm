@@ -1,5 +1,6 @@
 use LC::Version;
 use LC::Config;
+use LC::State;
 use LC::Server;
 use LC::Command;
 use LC::Extend;
@@ -83,7 +84,8 @@ sub bot_mainloop {
 
     # "keepalive" so we notice if we get disconnected.
     register_timedhandler(Interval => 120,
-			  Call => sub { server_send("/display time\n"); } );
+			  Repeat => 1,
+			  Call => sub { server_send("/display time\r\n"); } );
 
     register_exithandler(\&bot_exit);
 
@@ -215,33 +217,46 @@ sub eventhandler {
 	    
 	    # ok, check for bot handlers that match this text..
 	    foreach $h (values %bot_handlers) {
-		if ($event->{Raw} =~ m/$h->{Match}/i) {
-		    next if (($event->{Form} eq "public") && $h->{Private});
+	      my $message = $event->{Raw};
+	      my $Me = user_name();
+	      last if ($event->{From} eq $Me);
 
-		    if (ref($h->{Respond})) {
-			my $response=&{$h->{Respond}}($event->{Raw});
-			response("$to;$response\n") if $response;
-		    } elsif ($h->{Respond} =~ /^CODE: (.*)/) {
-			$code=$h->{Respond};
-			my $cpt=new Safe;
-			my $send=$event->{Body}; $send=~s/[\r\n\']//g;
- 			my $response=$cpt->reval("\$send='$send'; $code");
-			$response=~s/[\r\n]//g;
-			if ($@) {
-			    response("$to;Error in eval: $@\n");
-			} else {
-			    response("$to;$response\n") if $response;
-			}
-		    } else {
-			response("$to;$h->{Respond}");
-		    }
+	      if ($event->{Emote}) {
+		if (/> \(to \S+\) /) {
+		  $message =~ s/[^>]*> \(to \S+\) //;
+		} else {
+		  $message =~ s/[^>]*> //;
 		}
+		last if ($message =~ /^$Me/);
+	      }
+	      chomp $message;
+
+
+	      if ($message =~ m/$h->{Match}/i) {
+		next if (($event->{Form} eq "public") && $h->{Private});
+		my $pfx = $event->{Emote} ? "\"" : "";
+		
+		if (ref($h->{Respond})) {
+		  my $response=&{$h->{Respond}}($message);
+		  response("$to;$pfx$response\n") if $response;
+		} elsif ($h->{Respond} =~ /^CODE: (.*)/) {
+		  $code=$h->{Respond};
+		  my $cpt=new Safe;
+		  my $send=$event->{Body}; $send=~s/[\r\n\']//g;
+		  my $response=$cpt->reval("\$send='$send'; $code");
+		  $response=~s/[\r\n]//g;
+		  if ($@) {
+		    response("$to;$pfxError in eval: $@\n");
+		  } else {
+		    response("$to;$pfx$response\n") if $response;
+		  }
+		} else {
+		  response("$to;$pfx$h->{Respond}");
+		}
+	      }
 	    }
-	}
-	
-	chomp($send=$event->{Raw});       
-#	print "$send\n";
-    }          
+	  }
+      }          
 
     
 }
