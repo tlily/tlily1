@@ -17,8 +17,24 @@ sub spellcheck($$$) {
     @res = `look $word`;
     chomp(@res);
 
-    foreach (@res) {
-	ui_output $_;
+    my $clen = 0;
+    foreach (@res) { $clen = length $_ if (length $_ > $clen); }
+    $clen += 2;
+
+    my $cols = int($ui_cols / $clen);
+    my $rows = int(@res / $cols);
+    $rows++ if (@res % $cols);
+
+    $rows = 5 if ($rows > 5);
+
+    my $i;
+    for ($i = 0; $i < $rows; $i++) {
+	ui_output(sprintf("%-${clen}s" x $cols,
+			  map{$res[$i+$rows*$_]} 0..$cols));
+    }
+
+    if (@res > $rows * $cols) {
+	ui_output("(" . (@res - ($rows * $cols)) . " more entries follow)");
     }
 
     return;
