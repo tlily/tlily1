@@ -73,25 +73,25 @@ sub info_cmd($) {
     my $cmd = shift @argv;
 
     if ($cmd eq 'set') {
-	info_set(shift @argv);
+		info_set(shift @argv);
     } elsif ($cmd eq 'edit') {
-	info_edit(shift @argv);
+		info_edit(shift @argv);
     } else {
-	server_send("/info $args\r\n");
+		server_send("/info $args\r\n");
     }
 }
 
 
 register_user_command_handler('info', \&info_cmd);
 
-if ($config{replace_info}) {
+if (config_ask("info")) {
     register_eventhandler(Type => 'userinput',
 			  Call => sub {
-	my($event,$handler) = @_;
-	if ($event->{Text} =~ m|^\s*/info\s*(.*?)\s*$|) {
-	    info_cmd($1);
-	    $event->{ToServer} = 0;
-	}
+		my($event,$handler) = @_;
+		if ($event->{Text} =~ m|^\s*/info\s*(.*?)\s*$|) {
+			info_cmd($1);
+			$event->{ToServer} = 0;
+		}
     });
 }
 
