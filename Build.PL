@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# $Header: /data/cvs/tlily/Build.PL,v 1.16 1998/06/12 06:27:47 albert Exp $
+# $Header: /data/cvs/tlily/Build.PL,v 1.17 1998/06/12 08:19:13 albert Exp $
 
 use Config;
 use Carp;
@@ -633,7 +633,7 @@ sub ask_version {
 sub ver2tag {
     my($ver) = @_;
     my($maj,$min,$sub) = split_version($ver);
-    "$STATE-$maj-$min-$sub";
+    "$STATE-$maj-$min".($sub?"-$sub":'');
 }
 
 sub split_version {
@@ -650,12 +650,12 @@ sub next_version {
     my($maj,$min,$sub) = split_version($ver);
     if($sub) { $sub++; }
     else { $sub = 1; }
-    "$maj.$min.$sub";
+    "$maj.$min".($sub?".$sub":'');
 }
 
 sub version_part {
     my($maj,$min,$sub) = split_version($_[0]);
-    "$maj.$min.$sub";
+    "$maj.$min".($sub?".$sub":'');
 }
 
 sub make_version_file {
