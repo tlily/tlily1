@@ -5,8 +5,8 @@
 register_eventhandler(Type => 'uunknown',
 		      Call => \&pipe_handler);
 
-register_help_short("pipes", "Pipe lily commands through shell commands");
-register_help_long("pipes", <<END
+register_help_short("&", "Pipe lily commands through shell commands");
+register_help_long("&", <<END
 Usage: &/who | grep foo
        &/review detach > output
 
