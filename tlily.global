@@ -3,7 +3,7 @@
 # EDIT YOUR SITE CONFIG FILE INSTEAD!
 # Begin defaults
 @load = qw(expand gag help info log look misc pager run_command
-           startup zone autologin);
+           startup zone autologin view url);
 @slash = ();
 %color_attrs = ( 'sender' => ['bold'],
 		'dest' => ['bold'],

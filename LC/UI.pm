@@ -152,6 +152,7 @@ use IO::Handle;
 use POSIX;
 
 use LC::CTerminal;
+use LC::Config;
 
 @ISA = qw(Exporter);
 
@@ -717,7 +718,7 @@ sub ui_output {
     }
     if (($h > 0) && ($text_l == $#text_lines - 1) &&
 	($text_r == line_height($text_l) - 1)) {
-	$scrolled_rows += $h;
+      $scrolled_rows += $h  if ($config{pager});
 	win_scroll($h);
     }
 

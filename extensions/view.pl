@@ -1,19 +1,17 @@
 # -*- Perl -*-
-
 #To: tigerlily@hitchhiker.org
 #Subject: My %view extension
 #Date: Wed, 10 Dec 1997 01:09:58 PST
 #From: Paul Stewart <stewart@parc.xerox.com>
 #
-#This allows you to get the output of a command into a temporary 
-#buffer for
-#leisurely perusal or perhaps a quick search or two.  My general mode 
-#of use is "%view /review ...", and then perhaps doing a save out of 
-#the editor window that appears.
+#This allows you to get the output of a command into a temporary
+#buffer for leisurely perusal or perhaps a quick search or two.  My
+#general mode of use is "%view /review ...", and then perhaps doing
+#a save out of the editor window that appears.
 #
 #--
 #Paul
-  
+
 
 sub view_display(\@) {
     my($lref) = @_;
@@ -26,8 +24,8 @@ sub view_display(\@) {
     my $fh = IO::File->new(">$tmpfile");
     foreach (@$lref) {
 	chomp;
-	1 while s/\<([^>]*)>(.*)\<\/\1>/$2/; # Nasty \<tag>...\</tag> filter
-	$fh->print("$_\\n"); 
+      1 while s/<([^>]*)>(.*)<\/\1>/$2/; # Nasty <tag>...</tag> filter
+      $fh->print("$_\n");
     }
     $fh->close();
 
@@ -68,6 +66,5 @@ leisurely perusal, or perhaps a quick search or two.  For example, you can
 do a \"%view /review detach\", and then save your detach buffer, so you
 can respond to real-time messages, while still keeping an eye on the past
 in another window.");
-
 
 1;
