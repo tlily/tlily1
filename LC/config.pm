@@ -16,13 +16,13 @@ sub init {
     #$config{server}='albert.einstein.to';
     #$config{server}='elsa.einstein.to';
     $config{server}='lily.acm.rpi.edu';
-    $config{login}='damien';  $config{pass}='pdp11';
+    #$config{login}='damien';  $config{pass}='pdp11';
     #$config{login}='josh';  $config{pass}='borfument';
-    #$config{login}='wilmesj';  $config{pass}='borfument';
+    $config{login}='wilmesj';  $config{pass}='borfument';
     $config{port}=7777;
     $config{mono}=0;
 #   $config{spoof_lclient}=1; 
-#    $config{options_after_connect}=1;
+    $config{options_after_connect}=1;
 
     GetOptions( 'm|mono!' => \$config{mono},
 	     's|server=s' => \$config{server},

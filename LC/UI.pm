@@ -71,9 +71,6 @@ my $attr_cur_fg = COLOR_WHITE;
 # Starts the curses UI.
 sub ui_start () {
     term_init();
-    ui_attr('status_line', 'reverse');
-    ui_attr('input_line', 'normal');
-    ui_attr('text_window', 'normal');
     &redraw;
 }
 

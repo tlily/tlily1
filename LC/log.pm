@@ -26,6 +26,8 @@ sub log_info {
 }
 
 sub log_debug {
+    return unless $main::debug;	
+
     my $s=IO::File->new(">>/tmp/foo.log");
     print $s "*DEBUG* $timestamp @_\n";
 }

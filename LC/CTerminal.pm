@@ -45,7 +45,7 @@ my %color_pairs = ('black:white' => 0);
 sub term_init () {
     return if ($term_up);
     initscr();
-    $term_lines = $LINES;
+    $term_lines = $LINES; 
     $term_cols = $COLS;
     noecho();
     cbreak();
@@ -60,6 +60,7 @@ sub term_init () {
 sub term_end () {
     return unless ($term_up);
     endwin();
+    %color_pairs = ('black:white' => 0);
     $term_up = 0;
 }
 
@@ -180,20 +181,22 @@ sub term_delete_char () {
     delch();
 }
 
+sub ALT_BACKSPACE () { return sprintf("%c",127); }
 
 my %key_map = (&KEY_DOWN      => 'kd',
 	       &KEY_UP        => 'ku',
 	       &KEY_LEFT      => 'kl',
 	       &KEY_RIGHT     => 'kr',
-	       &KEY_NPAGE     => 'pgup',
-	       &KEY_PPAGE     => 'pgdn',
+	       &KEY_PPAGE     => 'pgup',
+	       &KEY_NPAGE     => 'pgdn',
+	       &ALT_BACKSPACE => 'bs',     # fix for broken backspaces..
 	       &KEY_BACKSPACE => 'bs');
 
 # Returns a character if one is waiting, or undef otherwise.
 sub term_get_char () {
     my $ch = getch;
     #return undef if ($ch eq ERR || $ch eq '-1');
-    return undef if ($ch eq '-1');
+    return undef if ($ch eq '-1');    
     return $key_map{$ch} || $ch;
 }
 

@@ -6,21 +6,22 @@ use LC::Expand;
 
 @ISA = qw(Exporter);
 
-@EXPORT = qw(&parse_servercmd &parse_output $parse_state $cli_command);
+@EXPORT = qw(&parse_servercmd &parse_output $parse_state $cli_command @info);
 
-
+@info=();
 $cli_command=undef;
 $parse_state=undef;
 $sender=undef;      # sender as parsed from header
 $privsender=undef;  # sender as recieved from %sender
 $dest=undef;
 
-tie $parse_state, 'LC::status_update', 'parse_state';
+if ($main::debug) {
+    tie $parse_state, 'LC::status_update', 'parse_state';
+}
 
 sub parse_output {
     ($output)=@_;
 
-#    main::log_debug("parse_output: \"$output\"");
     foreach (split /\n/,$output) { parse_line($_); }
 
 }
@@ -110,7 +111,7 @@ sub parse_line {
 	$line="<privhdr>$line</privhdr>";
 	goto found;
     }
-    if (/^ -/ && $parse_state eq "privhdr")  { 
+    if (/^ -/ && $parse_state =~ /^priv/)  { 
 	$parse_state="privmsg";  
 	$line="<privmsg>$line</privmsg>";
 	goto found;
@@ -133,7 +134,8 @@ sub parse_line {
 	$line="<pubhdr>$line</pubhdr>";
 	goto found;
     }
-    if (/^ -/ && $parse_state eq "pubhdr")  { 
+
+    if (/^ -/ && $parse_state =~ /^pub/)  { 
 	$parse_state="pubmsg";
 	$line="<pubmsg>$line</pubmsg>";
 	goto found;
@@ -274,6 +276,20 @@ sub parse_servercmd {
 
     # stupid thing we dont care about ;-)
     if (/%recip_regexp/) { return; }
+
+    # export the info file woooo.
+    if (/^%export_file OKAY/ && $cli_command eq "info set") {
+	
+	foreach (@info) { 
+	    chomp;
+	    main::send_to_server("$_\n");
+	}
+	undef $cli_command;	    
+	return;
+    }
+
+    # export the info file.. it rejected me!  waaah!!
+    if (/^%export_file NOT/) {	return; }
 
     # default
     &main::log_info("SERVER: $_");

@@ -1,7 +1,8 @@
-#!/usr/local/bin/perl 
+#!/usr/bin/perl 
 #-w
 
 $TL_VERSION="0.6";
+$debug=0;
 
 use LC::log; 
 use LC::config;
@@ -43,11 +44,16 @@ if (! $config{mono}) {
     ui_attr('pubmsg',       'fg:white',   'bg:black');
     ui_attr('emote',        'fg:cyan',    'bg:black');
     ui_attr('review',       'fg:magenta', 'bg:black');
-    ui_attr('whiteblue',    'fg:white',   'bg_blue');
-    ui_attr('greenblue',    'fg:green',   'bg_blue',  'bold');
+    ui_attr('whiteblue',    'fg:white',   'bg:blue');
+    ui_attr('greenblue',    'fg:green',   'bg:blue',  'bold');
+    ui_attr('yellow',       'fg:yellow',  'bg:black',  'bold');
+    ui_attr('green',        'fg:green',   'bg:black',  'bold');
+    ui_attr('b',            'bold');
 }
 
 tie $page_status, 'LC::status_update', 'page_status';
+
+show_banner();
 login();
 $SIG{ALRM}=\&foo;
 connect_until("*** Disconnected ***");    
@@ -58,7 +64,7 @@ END {
 }
 
 ##############################################################################
-sub login {    
+sub login {   
     $parse_state="login";
     log_notice("Connecting to $config{server} $config{port}.");
     set_status(server => $config{server},
@@ -67,16 +73,16 @@ sub login {
     $sock = IO::Socket::INET->new(PeerAddr => $config{server},
 				  PeerPort => $config{port},
 				  Proto    => 'tcp');                         
-    if (! defined($sock)) { die "IO::Socket: $!\n"; }
+    if (! defined($sock)) { log_err("IO::Socket: $!\n"); }
     
-    fcntl($sock,F_SETFL,O_NONBLOCK) || die "fcntl: $!\n";
+    fcntl($sock,F_SETFL,O_NONBLOCK) || log_err("fcntl: $!\n");
     
     set_status(status => "CONN");
     
     log_notice("Connected.");
     
     pass_until("login:",10);
-    set_client_options() if (!$config{options_after_connect});
+    set_client_options(); # if (!$config{options_after_connect});
 
     if ($config{login} && $config{pass}) {
 	log_info("Sending autologin ($config{login})\n");
@@ -118,21 +124,34 @@ sub connect_until {
 	$str="";
 	foreach $rs (@ready) {      
 	    if ($rs == $sock) {
-		if (sysread($sock,$t,4096) < 1) { log_err("sysread: $!"); }
-		$u=$t;		
+		my $chunk="";
+		my $endtime=time() + 3;
+		while (time() <= $endtime) {
+		    my $crumb="";
+		    if (sysread($sock,$crumb,4096) < 1) {
+			if ($errno != EAGAIN) {
+			    log_err("sysread: $!"); 
+			}
+		    }
+		    $chunk .= $crumb;
+		    # break out if we're on a line boundary..
+		    if ($chunk =~ /\n$/) { last; }
+		    # break out if we're at a prompt (--> or (y/n)
+		    if ($chunk =~ /-->\s*$/) { last; }
+		    if ($chunk =~ /\(Y\/n\)\s*$/i) { last; }
+		}
+	        if ($debug && (time() > $endtime)) {
+		    log_notice("Chunk timeout\n"); 
+		}
+		$u=$chunk;		
 		
 		$u =~ s/^%.*$//gm;
 		# workaround for %recip_regexp at blurb prompt
 		$u =~ s/^--> %.*$/--> /gm;
 
-		# NOTE: Should also have code for if we got a partial line
-		#       (not in the 4096 buffer, whatever, foo my bar.)
-		# non critical, the command will be picked up later, but
-		# the user might see part of it. woo.
-		
 		parse_output($u);    # show it to the user..
 
-		$str .= $t;
+		$str .= $chunk;
 
 		# workaround for %recip_regexp at blurb prompt
 		if ( $str =~ /^--> (%.*)$/m ) {
@@ -146,7 +165,7 @@ sub connect_until {
 		}
 
 		if ($str =~ /$waitfor/) { return; }
-		if ($t eq '\n') { $str=""; }
+		if ($chunk eq '\n') { $str=""; }
 		next;
 	    }
 	    
@@ -158,15 +177,23 @@ sub connect_until {
 		    if (defined($line)) {		    
 			my $qline = $line; $qline =~ s/[\<\>]/\\$&/g;
 			ui_output($qline);
-			if ($line =~ /^%/) { 
+
+			if ($line =~ /^\!(.*)/) { 
+			    # !command handling
+			    ui_output(`$1`); 
+			} elsif ($line =~ /^%/) { 
 			    # handle client commands
 			    $line=~s/^%//g;
 			    my $output=eval($line); 
 			    ui_output($output);
 			    ui_output($@) if ($@);
 			} elsif ($line =~ /^([^:;]*)[;:]/) {
+			    # handle recipient caching for ;
 			    exp_set('recips', $1);
 			    send_to_server("$line\n");
+			} elsif ($line =~ /^\s*\/info set/i) {
+			    # handle /info set command.  
+			    set_info();
 			} else {
 			    # otherwise, send on to the server.
 			    send_to_server("$line\n");
@@ -315,9 +342,7 @@ sub set_status {
     my $name=$status{pseudo};
     $name .= "[$status{blurb}]" if (defined($status{blurb}));
     push @left, $name if length($name);
-    push @left," -- $status{page_status} -- " 
-                                     if (length($status{page_status}));
-    push @left,"Parse: $LC::parse::parse_state";
+    push @left,"Parse: $LC::parse::parse_state" if $debug;
     my @right;
     push @right, "$status{here} Here|$status{away} Away|$status{detached} Detach"
                                      if (defined($status{detached}));
@@ -326,22 +351,68 @@ sub set_status {
     
     my $left=join ' | ',@left;
     my $right=join ' | ',@right;
-    my $lr=length($right);
-    my $ll=80-$lr;    
+    my $ll=length($left);
+    my $lr=80-$ll;    
 
-    # favor things on the right over the left.
+    # favor things on the left over the right.
     $fmt="%-$ll.$ll" . "s%$lr.$lr" . "s";
     $status_line=sprintf($fmt,$left,$right);
 
     $status_line =~ s:\|:<whiteblue>\|</whiteblue>:g;
     $status_line =~ s:ONLINE:<greenblue>ONLINE</greenblue>:;
 
+    # -- MORE -- prompt
+    if (length($status{page_status})) {
+	$status_line="                                 -- $status{page_status} -- ";
+    }
     
     ui_status($status_line);
 
       
 }
 
+sub show_banner {
+
+    ui_output(qq[
+<yellow>     ("`-/")_.-'"``-._ </yellow>
+<yellow>      . . `; -._    )-;-,_`)</yellow>          <green>TigerLily $TL_VERSION</green>
+<yellow>     (v_,)'  _  )`-.\  ``-'</yellow>             <b>"Feel Free"</b>
+<yellow>    _.- _..-_/ / ((.'</yellow>
+<yellow>  ((,.-'   ((,/ </yellow>
+<b>------------------------------------------------------------------------------</b>
+]);
+}
+
+sub set_info {
+    # rather than using the chee-z line editor in emacs, we fire off an editor
+    # to let them edit the /info file.
+    
+    my $EDITOR=$ENV{VISUAL} || $ENV{EDITOR} || "vi";
+    
+    ui_end();
+    unlink ("/tmp/tlily.$$");
+    if (@info) {
+	open(F,">/tmp/tlily.$$");
+	foreach (@info) { chomp; print F "$_\n"; }
+	close(F);
+    }
+
+    system("$EDITOR /tmp/tlily.$$");
+    ui_start();
+
+    if (open(F,"</tmp/tlily.$$")) {
+	@info=<F>;
+	close(F);
+	unlink ("/tmp/tlily.$$");
+	my $size=@info;
+
+	$cli_command="info set";
+	send_to_server("\#\$\# export_file info $size\n");
+    } else {
+	log_notice("info buffer file not found.");
+    }
+    
+}
 
 1;
 
