@@ -22,7 +22,7 @@ sub waitfor {
 #print STDERR "Select...";
 		IO::Select::select($sel, undef, undef, undef);
 #print STDERR "done. (trf = $T->term_resize_flag)\n";
-		$T->term_winch() if ($T->term_resize_flag);
+#		$T->term_winch() if ($T->term_resize_flag);
 	}
 }
 
@@ -37,6 +37,8 @@ $T->term_init(\&resize);
 # Basic output tests.
 #
 
+$T->term_clear();
+$T->term_setattr('normal', 'fg:white', 'bg:black');
 $T->term_clear();
 $T->term_move(0, 0);
 $T->term_addstr("Basic terminal test.");
@@ -89,6 +91,8 @@ $T->term_setattr('normal', 'reverse');
 $T->term_move(3, 0); $T->term_addstr("Reverse");
 $T->term_setattr('normal', 'bold', 'reverse');
 $T->term_move(4, 0); $T->term_addstr("Bold reverse");
+$T->term_setattr('normal', 'bold', 'fg:green', 'bg:black');
+$T->term_move(5, 0); $T->term_addstr("Bold Color");
 $T->term_setattr('normal');
 waitfor();
 
