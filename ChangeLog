@@ -1,4 +1,5 @@
 Version 0.8c-post
+  * [extensions/info.pl] Tiny change to properly clean up. [SMC]
   * [misc] Added lilybot to distribution. [JDW]
   # [LC/Client.pm] Separated from tlily.PL [JDW]
   * [misc] Major hacks to make it possible to load tlily with no UI [JDW]
