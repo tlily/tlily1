@@ -34,7 +34,58 @@ You may temporarily switch between the two from within tlily with
 will display the currently used terminal.)
 
 
-Configuration (To be expanded)
+Colors
+------
+
+Color preferences are specified in the config files(See 'Configuration'
+below).  To change a color, set that color preference in your site or
+user configuration files.  Color preferences are in %color_attrs, and
+monochrome preferences are in %mono_attrs.
+
+Example:  To make the header on private messages red on white instead of
+green on black, add the following to your config file:
+
+    %color_attrs = ('pubhdr' => [ 'fg:red', 'bg:white' ]);
+
+/-command Overrides
+-------------------
+
+Tigerlily includes 3 client-side fixes/enhancements for existing lily
+commmands, implemented by intercepting the command before it is sent
+to the server:
+
+/info		Enhanced so that /info set and /info edit bring up your
+		editor for you to change your info.
+
+/oops		Fixed so as to reset your sendlist correctly for ;-expansion
+
+/also		Fixed so as to append the /also'ed people to your sendlist
+		for ;-expansion.
+
+To allow any of these overrides, put the command without the / in the
+@slash variable in your site or user configuration files.
+
+Example: To enable the /info override, add the following to your 
+	 user or site config files:
+
+@slash = ('info');
+
+To disallow an override, put the command without the / and with a leading
+'-' in the @slash variable in your site or user configuration files.
+
+Example: To disable the /also override, add the following to your 
+	 user or site config files:
+
+@slash = ('-also');
+
+Being concious not to override the existing behavior of lily commands, the
+current default is to not override any /-commands.
+
+There are those among the developers that want to change this default,
+though, and so this default may change.
+
+
+Configuration (Needs expanding)
 -------------
 
 TigerLily now has 4 levels of customization:
