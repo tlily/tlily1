@@ -125,7 +125,7 @@ use LC::parse;
 use LC::Event;
 use LC::StatusLine;
 use LC::User;
-use LC::config;
+use LC::Config;
 use POSIX;
 
 @ISA = qw(Exporter);
