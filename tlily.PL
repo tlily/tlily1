@@ -7,7 +7,6 @@ $debug=0;
 
 use lib qw(@@LIBMODDIR@@);
 use LC::Version;
-use LC::log; 
 use LC::Config;
 use LC::UI;
 use LC::Server;
@@ -63,9 +62,6 @@ if (! $config{mono}) {
 }
 
 statusline_init();
-
-my $state;
-my $ctrlcpress;
 
 #$SIG{__DIE__} = sub { ui_output("DIE: " . $_[0]); };
 
@@ -175,17 +171,17 @@ sub set_client_options() {
     # begun to think that the server designers had intentionally designed
     # things to prevent anything useful from being usable.)
     #
-    # But, alas, there is a serpent in paradise.  Nobody (and I mean NOBODY)
-    # other than lclient is allowed to receive %gs.  This means that signalling
-    # is utterly broken by my use of this option.  I therefore shall
-    # implement signalling entirely in the client, and to hell with the
-    # servers.
-    #
     # Another REALLY useful option is `leaf-msg'.  It doesn't work right on
-    # 2.2a1 cores.
+    # 2.2a1 cores.  In fact, enabling it there enables the new-style
+    # protocol, which is buggy.  I therefore enable `leaf-all' (which, on
+    # RPI core, enables `leaf-msg', among other things).  On 2.2a1 cores,
+    # `leaf-all' doesn't exist, and therefore does nothing.  Upshot: we have
+    # `leaf-msg' (a.k.a. %beginmsg/%endmsg support) on RPI core, but don't
+    # count on it anywhere else.
     #
     # And then there's the `connected' option!  Ah, what I wouldn't do to
-    # be able to use IT!
+    # be able to use IT!  Unfortunately, it doesn't seem to work on 2.2a1.
+    # I send it anyway, just for the hell of it.
     #
 
     server_send("\#\$\# client_version $TL_VERSION\n");
