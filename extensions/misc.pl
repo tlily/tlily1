@@ -1,3 +1,11 @@
+register_eventhandler(Type => 'userinput',
+		      Call => \&bang_handler);
+register_help_short('eval', "run perl code");
+register_help_long('eval', "usage: eval <perl code>");
+register_help_short('!', "run shell command");
+register_help_long('!', "usage: ! <command>");
+
+
 # %eval handler
 sub eval_handler($) {
     my($args) = @_;
@@ -19,5 +27,4 @@ sub bang_handler($$) {
     return 0;
 }
 
-register_eventhandler(Type => 'userinput',
-		      Call => \&bang_handler);
+
