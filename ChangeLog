@@ -1,4 +1,7 @@
 Version 0.8c-post
+  * [misc] Added lilybot to distribution. [JDW]
+  # [LC/Client.pm] Separated from tlily.PL [JDW]
+  * [misc] Major hacks to make it possible to load tlily with no UI [JDW]
   * [extensions/smartexit.pl] Made UI output "conformant" [()'s] [WJC]
   * [extensions/gag.pl] Made UI output "conformant" [()'s] [WJC]
   * [extensions/after.pl] Display shows time handler will go off,

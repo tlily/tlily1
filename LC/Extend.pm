@@ -1,18 +1,27 @@
 # -*- Perl -*-
-# $Header: /data/cvs/tlily/LC/Extend.pm,v 1.25 1998/05/29 05:12:19 mjr Exp $
+# $Header: /data/cvs/tlily/LC/Extend.pm,v 1.26 1998/05/29 06:09:28 josh Exp $
 package LC::Extend;
 
 use Exporter;
 use Safe;
 use File::Basename;
-use LC::UI;
 use LC::Server;
-use LC::User;
 use LC::Command;
-use LC::State;
 use LC::Config;
 use LC::Event;
-use LC::SubClient;
+
+BEGIN {
+    if ($main::load_ui) {
+	require LC::User;      LC::User->import();
+	require LC::State;     LC::State->import();
+	require LC::SubClient; LC::SubClient->import();
+	require LC::UI;        LC::UI->import();
+    } else {
+	sub ui_output { print "@_\n"; } 
+    }
+}
+
+
 #require "dumpvar.pl";
 
 @ISA = qw(Exporter);
@@ -80,7 +89,7 @@ sub extension($;$) {
     push @share,@LC::UI::EXPORT;
     push @share,@LC::Server::EXPORT;
     push @share,@LC::parse::EXPORT;
-    push @share,@LC::User::EXPORT;
+    push @share,@LC::User::EXPORT; 
     push @share,@LC::Command::EXPORT;
     push @share,@LC::State::EXPORT;
     push @share,@LC::Config::EXPORT;
@@ -90,7 +99,7 @@ sub extension($;$) {
 
     $safe->share(@share);
     # This only works in perl 5.003_07+
-    $safe->share_from('main', [ qw($TL_VERSION %ENV %INC @INC $@ $] $$) ]);
+    $safe->share_from('main', [ qw($TL_VERSION %ENV %INC @INC $@ $load_ui $] $$) ]);
         
     my $old = $Extensions{/current/};
     $Extensions{$name} = { File => $filename,
@@ -218,14 +227,16 @@ sub extension_cmd($) {
     }
 }
 
-LC::User::register_user_command_handler('extension', \&extension_cmd);
-LC::User::register_help_short('extension', "manage tlily extensions");
-LC::User::register_help_long('extension', "
+if ($main::load_ui) {
+  LC::User::register_user_command_handler('extension', \&extension_cmd);
+  LC::User::register_help_short('extension', "manage tlily extensions");
+  LC::User::register_help_long('extension', "
 usage: %extension list
        %extension load <extension>
        %extension unload <extension>
        %extension reload <extension>
 ");
+}
 
 
 
@@ -251,24 +262,6 @@ sub register_iohandler(%) {
     return $id;
 }
 
-sub register_statusline {
-    my(%h) = @_;
-    my $id = &LC::StatusLine::register_statusline(%h);
-    push @{$Extensions{/current/}->{StatusLines}}, $id;
-    redraw_statusline();
-    return $id;
-}
-
-sub deregister_statusline {
-    my($id) = @_;
-    &LC::StatusLine::deregister_statusline($id);
-    list_remove @{$Extensions{/current/}->{StatusLines}}, $id;
-}
-
-sub redraw_statusline {
-    &LC::StatusLine::redraw_statusline(@_);
-}
-
 sub register_timedhandler(%) {
     my(%h) = @_;
     my $id = &LC::Event::register_timedhandler(%h);
@@ -282,52 +275,76 @@ sub deregister_handler($) {
     list_remove @{$Extensions{/current/}->{EventHandlers}}, $id;
 }
 
-sub register_user_command_handler($&) {
-    my($cmd, $fn) = @_;
-    &LC::User::register_user_command_handler($cmd, $fn);
-    push @{$Extensions{/current/}->{Commands}}, $cmd;
+
+BEGIN {
+    if ($main::load_ui) {
+	sub register_statusline {
+	    my(%h) = @_;
+	    my $id = &LC::StatusLine::register_statusline(%h);
+	    push @{$Extensions{/current/}->{StatusLines}}, $id;
+	    redraw_statusline();
+	    return $id;
+	}
+
+        sub deregister_statusline {
+	    my($id) = @_;
+	    &LC::StatusLine::deregister_statusline($id);
+	    list_remove @{$Extensions{/current/}->{StatusLines}}, $id;
+	}
+
+        sub redraw_statusline {
+	    &LC::StatusLine::redraw_statusline(@_);
+	}
+
+	sub register_user_command_handler($&) {
+	    my($cmd, $fn) = @_;
+	    &LC::User::register_user_command_handler($cmd, $fn);
+	    push @{$Extensions{/current/}->{Commands}}, $cmd;
+	}
+
+        sub deregister_user_command_handler($) {
+	    my($cmd) = @_;
+	    &LC::User::deregister_user_command_handler($cmd);
+	    list_remove @{$Extensions{/current/}->{Commands}}, $cmd;
+	}
+
+        sub register_help_short {
+	    my($cmd, $help) = @_;
+	    &LC::User::register_help_short($cmd, $help);
+	    push @{$Extensions{/current/}->{ShortHelp}}, $cmd;
+	}
+
+        sub deregister_help_short {
+	    my($cmd) = @_;
+	    &LC::User::deregister_help_short($cmd); 
+	    list_remove @{$Extensions{/current/}->{ShortHelp}}, $cmd;
+	}
+
+        sub register_help_long {
+	    my($cmd, $help) = @_;
+	    &LC::User::register_help_long($cmd, $help);
+	    push @{$Extensions{/current/}->{LongHelp}}, $cmd;
+	}
+
+        sub deregister_help_long {
+	    my($cmd) = @_;
+	    &LC::User::deregister_help_long($cmd); 
+	    list_remove @{$Extensions{/current/}->{LongHelp}}, $cmd;
+	}
+
+        sub ui_callback($$) {
+	    my($key, $cmd) = @_;
+	    &LC::UI::ui_callback($key, $cmd); 
+	    push @{$Extensions{/current/}->{UICallbacks}}, [ $key, $cmd ];
+	}
+
+        sub ui_remove_callback($$) {
+	    my($key, $cmd) = @_;
+	    &LC::UI::ui_remove_callback($key, $cmd); 
+	    my $l = $Extensions{/current/}->{UICallbacks};
+	    @$l = grep { ($_->[0] ne $key) || ($_->[1] ne $cmd) } @$l;
+	}
+    }
 }
 
-sub deregister_user_command_handler($) {
-    my($cmd) = @_;
-    &LC::User::deregister_user_command_handler($cmd);
-    list_remove @{$Extensions{/current/}->{Commands}}, $cmd;
-}
-
-sub register_help_short {
-    my($cmd, $help) = @_;
-    &LC::User::register_help_short($cmd, $help);
-    push @{$Extensions{/current/}->{ShortHelp}}, $cmd;
-}
-
-sub deregister_help_short {
-    my($cmd) = @_;
-    &LC::User::deregister_help_short($cmd);
-    list_remove @{$Extensions{/current/}->{ShortHelp}}, $cmd;
-}
-
-sub register_help_long {
-    my($cmd, $help) = @_;
-    &LC::User::register_help_long($cmd, $help);
-    push @{$Extensions{/current/}->{LongHelp}}, $cmd;
-}
-
-sub deregister_help_long {
-    my($cmd) = @_;
-    &LC::User::deregister_help_long($cmd);
-    list_remove @{$Extensions{/current/}->{LongHelp}}, $cmd;
-}
-
-sub ui_callback($$) {
-    my($key, $cmd) = @_;
-    &LC::UI::ui_callback($key, $cmd);
-    push @{$Extensions{/current/}->{UICallbacks}}, [ $key, $cmd ];
-}
-
-sub ui_remove_callback($$) {
-    my($key, $cmd) = @_;
-    &LC::UI::ui_remove_callback($key, $cmd);
-    my $l = $Extensions{/current/}->{UICallbacks};
-    @$l = grep { ($_->[0] ne $key) || ($_->[1] ne $cmd) } @$l;
-}
-
+1;

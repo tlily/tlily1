@@ -1,5 +1,5 @@
 # -*- Perl -*-
-# $Header: /data/cvs/tlily/LC/Event.pm,v 1.14 1998/05/29 05:12:18 mjr Exp $
+# $Header: /data/cvs/tlily/LC/Event.pm,v 1.15 1998/05/29 06:09:27 josh Exp $
 package LC::Event;
 
 =head1 NAME
@@ -148,9 +148,23 @@ it).
 
 use Carp;
 use Exporter;
+use IO::Select; 
 
-use LC::UI;
 use LC::Config;
+BEGIN {
+    if ($main::load_ui) {
+	require LC::UI;  LC::UI->import();	
+    } else {
+	sub ui_select ($$$$) {
+	    my($sel_r,$sel_w,$sel_e,$timeout)=@_;
+	    my $rh = IO::Select->new(@$sel_r); 
+	    my $wh = IO::Select->new(@$sel_w); 
+	    my $eh = IO::Select->new(@$sel_e);  
+	    return IO::Select->select($rh,$wh,$eh, $timeout); 
+	}
+    }
+}
+
 
 @ISA = qw(Exporter);
 

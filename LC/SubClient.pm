@@ -1,5 +1,5 @@
 # -*- Perl -*-
-# $Header: /data/cvs/tlily/LC/SubClient.pm,v 1.11 1998/05/29 05:12:21 mjr Exp $
+# $Header: /data/cvs/tlily/LC/SubClient.pm,v 1.12 1998/05/29 06:09:28 josh Exp $
 package LC::SubClient;
 
 # bugs:
@@ -31,11 +31,12 @@ input and output are accessable from within tlily.
 use IPC::Open3;
 use POSIX ":sys_wait_h";
 use IO::Select;
+use Exporter;
+
 use LC::Event;
-use LC::UI;
+use LC::UI; 
 use LC::User;
 use LC::StatusLine;
-use Exporter;
 
 @ISA    = qw(Exporter);
 @EXPORT = qw(&subclient_start

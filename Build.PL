@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# $Header: /data/cvs/tlily/Build.PL,v 1.14 1998/05/29 05:12:14 mjr Exp $
+# $Header: /data/cvs/tlily/Build.PL,v 1.15 1998/05/29 06:09:25 josh Exp $
 
 use Config;
 use Carp;
@@ -431,28 +431,31 @@ Library directory:  $LIBDIR
 );
 	return;
     }
-    print "Writing tlily\n";
-    if(-f 'tlily') { unlink 'tlily'; }
-
-    my($ifh) = new FileHandle("tlily.PL", "r");
-    die $! if not $ifh;
-
-    my($ofh) = new FileHandle("tlily", "w");
-    if(!$ofh) {
-	my($msg) = $!; close($ifh); die $msg;
+    
+    foreach $f (qw(tlily lilybot)) {
+	print "Writing $f\n";
+	if(-f $f) { unlink $f; }
+	
+	my($ifh) = new FileHandle("$f.PL", "r");
+	die $! if not $ifh;
+	
+	my($ofh) = new FileHandle($f, "w");
+	if(!$ofh) {
+	    my($msg) = $!; close($ifh); die $msg;
+	}
+	
+	while(<$ifh>) {
+	    s|\@\@PERL\@\@|$PERL|;
+	    s|\@\@LIBMODDIR\@\@|$LIBDIR|;
+	    s|\@\@LIBEXTDIR\@\@|$LIBDIR/$extdir|;
+	    s|\@\@LIBDIR\@\@|$LIBDIR|;
+	    s|\@\@ETCDIR\@\@|$ETCDIR|;
+	    print $ofh $_;
+	}
+	close($ifh);
+	close($ofh);
+	chmod(0555, $f); # To discourage editing
     }
-
-    while(<$ifh>) {
-	s|\@\@PERL\@\@|$PERL|;
-	s|\@\@LIBMODDIR\@\@|$LIBDIR|;
-	s|\@\@LIBEXTDIR\@\@|$LIBDIR/$extdir|;
-	s|\@\@LIBDIR\@\@|$LIBDIR|;
-	s|\@\@ETCDIR\@\@|$ETCDIR|;
-	print $ofh $_;
-    }
-    close($ifh);
-    close($ofh);
-    chmod(0555, "tlily"); # To discourage editing
 }
 
 sub Usage {

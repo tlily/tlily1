@@ -1,5 +1,5 @@
 # -*- Perl -*-
-# $Header: /data/cvs/tlily/extensions/parse.pl,v 1.13 1998/05/29 05:12:31 mjr Exp $
+# $Header: /data/cvs/tlily/extensions/parse.pl,v 1.14 1998/05/29 06:09:29 josh Exp $
 =head1 NAME
 
 parse.pl - The lily event parser
@@ -90,7 +90,7 @@ sub parse_server_data($$) {
 
     # Spin off an event for each line.
     foreach (@lines) {
-	user_accept();
+	user_accept() if $load_ui;
 	dispatch_event({Type => 'serverline',
 			Text => $_});
     }
@@ -119,7 +119,7 @@ sub parse_line($$) {
     my $p;
     foreach $p ($logged_in ? @connect_prompts : @login_prompts) {
 	if ($line =~ /$p/) {
-	    ui_prompt("$line");
+	    ui_prompt("$line") if $load_ui;
 	    %event = (Type => 'prompt');
 	    $hidden = 1;
 	    goto found;
