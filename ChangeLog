@@ -1,4 +1,5 @@
 Version 0.5b
+  * [extensions/misc.pl] %eval prints the result of the eval'd expr.  [DPN]
   * [extensions/info.pl] Fixed the breeding backslash bug.  [DPN]
 
 Version 0.5a

@@ -9,8 +9,9 @@ register_help_long('!', "usage: ! <command>");
 # %eval handler
 sub eval_handler($) {
     my($args) = @_;
-    eval($args);
+    my $rc = eval($args);
     ui_output("* Error: $@") if $@;
+    ui_output("-> $rc") if (defined $rc);
 }
 register_user_command_handler('eval', \&eval_handler);
 
