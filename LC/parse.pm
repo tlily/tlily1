@@ -412,14 +412,16 @@ sub parse_line($$) {
 	    push @msg_tags, "to:$d";
 	}
 
-	if (($line =~ /^( >> )/) || ($line =~ /^( \\<\\< )/)) { 
+	if (($line =~ /^\n?( >> )/) || ($line =~ /^\n?( \\<\\< )/)) { 
 	    $msg_type = 'private';
 	    $line = "<privhdr>$line</privhdr>";
 	    $msg_wrapchar = $1;
-	} elsif (($line =~ /^( -> )/) || ($line =~ /^( \\<- )/)) {
+	} elsif (($line =~ /^\n?( -> )/) || ($line =~ /^\n?( \\<- )/)) {
 	    $msg_type = 'public';
 	    $line = "<pubhdr>$line</pubhdr>";
 	    $msg_wrapchar = $1;
+	} else {
+	    $msg_type = 'unknown';
 	}
 
 	# Oooh, a hack!

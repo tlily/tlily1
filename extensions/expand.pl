@@ -87,9 +87,11 @@ register_eventhandler(Type => 'userinput',
 			  return 0;
 		      });
 
-register_eventhandler(Type => 'privhdr',
+register_eventhandler(Type => 'send',
 		      Call => sub {
 			  my($event,$handler) = @_;
+			  return 0 unless ($event->{First});
+			  return 0 unless ($event->{Form} eq 'private');
 			  exp_set('sender', $event->{From});
 			  my $me = user_name();
 			  my @group = @{$event->{To}};
