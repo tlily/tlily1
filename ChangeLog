@@ -1,4 +1,5 @@
 Version 1.0.1-post
+  * [extensions/url.pl] Cleaned up handling of URLs ending in punctuation.
   * [extensions/url.pl] Added "tag_urls" config option to specify the
     URL number of each captured URL.  Added support for "%url ##" where
     ## <= 0; this shows URLs off the bottom of the list.  [DPN]

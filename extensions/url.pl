@@ -1,4 +1,4 @@
-# $Header: /data/cvs/tlily/extensions/url.pl,v 2.2 1998/10/14 00:42:02 neild Exp $
+# $Header: /data/cvs/tlily/extensions/url.pl,v 2.3 1998/10/14 00:59:00 neild Exp $
 #
 # URL handling
 #
@@ -8,9 +8,13 @@ my @urls = ();
 sub handler {
     my($event, $handler) = @_;
 
-    $event->{Body} =~ s|(http://\S+)|push @urls, $1; my $t=$config{tag_urls}?'['.scalar(@urls).']':""; "<url>$1$t</url>";|ge;
-    $event->{Body} =~ s|(https://\S+)|push @urls, $1; "<url>$1</url>";|ge;
-    $event->{Body} =~ s|(ftp://\S+)|push @urls, $1; "<url>$1</url>";|ge;
+    my $type;
+    foreach $type ('http', 'https', 'ftp') {
+        $event->{Body} =~ s|($type://\S+[^\s\(\)\[\]\{\}\"\'\?\,\;\:\.])|
+            push @urls, $1;
+            my $t=$config{tag_urls}?'['.scalar(@urls).']':"";
+            "<url>$1$t</url>";|ge;
+    }
     return 0;
 }
 
@@ -33,10 +37,16 @@ sub url_cmd {
 	    ui_output("(usage: %url show <number|url> or %url show or %url <number>"); 
             return;
 	}
-	if ($num=~/^-?\d+$/ && $num>0) { $url=$urls[$num-1]; }
-	if ($num=~/^-?\d+$/) { $url=$urls[$#urls+$num]; }
-	else { $url=$num; }
-	if (! $url) { ui_output("(invalid URL number $num)"); return; }
+	if ($num=~/^-?\d+$/) {
+	    if ($num > @urls || $num < -@urls) {
+		ui_output("(invalid URL number $num)"); return;
+	    }
+            if ($num > 0) { $url=$urls[$num-1]; }
+            elsif ($num == 0) { $url=$urls[$#urls]; }
+            elsif ($num < 0) { $url=$urls[$#urls+$num+1]; }
+        } else {
+	    $url = $num;
+	}
 
 	ui_output("(viewing $url)");
 	my $cmd=$config{browser};
