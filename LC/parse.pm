@@ -1,6 +1,50 @@
 # -*- Perl -*-
 package LC::parse;
 
+=head1 NAME
+
+LC::parse - The lily event parser
+
+=head1 DESCRIPTION
+
+The parse module translates all output from the server into internal
+TigerLily events.  All server protocol support resides here.
+
+Output enters the parse module through the parse() function (see below).
+It then enters the event queue as a set of 'serverline' events, one for
+each line of server output.  The parse module catches 'serverline' events
+in the 'during' phase (so a 'before' handler can process these before
+the parser), and generates appropriate events for each line.  See
+the EVENTS section for a complete description of the generated events.
+
+=head2 Functions
+
+=over 10
+
+=item parse()
+
+Takes a chunk of raw server output, and processes it.  The output is
+divided into lines, and a 'serverline' event is generated for each line.
+
+=back
+
+=head1 EVENTS
+
+=head2 serverline
+
+A 'serverline' event is generated for each line of output from the server.
+
+=over 10
+
+=item Text
+
+The exact server output for the line.
+
+=back
+
+=cut
+
+
 use Exporter;
 use LC::config;
 use LC::UI;
@@ -252,6 +296,37 @@ sub parse_line($$) {
     if ($line =~ /^\(you have destroyed discussion (.*)\)/) {
 	%event = (Type => 'discdestroy',
 		  Name => $1);
+    }
+
+    # you have created group...
+    if ($line =~ /^\(you have created group \"(.*)\" with members (.*)\)/) {
+	my @members = split /, /, $2;
+	%event = (Type => 'group',
+		  Group => $1,
+		  Members => \@members);
+	goto found;
+    }
+
+    # you have deleted group...
+    # you have destroyed group, ...
+    # The first occurs after a /group kill, the second when you delete the
+    # last member of a group.
+    if (($line =~ /^\(you have deleted group \"(.*)\"\)/) ||
+	($line =~ /^\(you have destroyed group, \"(.*)\"\)/)) {
+	%event = (Type => 'group',
+		  Group => $1);
+	goto found;
+    }
+
+    # your group, "foo", now has members...
+    # Please note that the first comma appears when adding members, but
+    # not when deleting.  Augh.
+    if ($line =~ /^\(your group,? \"(.*)\", now has members (.*)\)/) {
+	my @members = split /, /, $2;
+	%event = (Type => 'group',
+		  Group => $1,
+		  Members => \@members);
+	goto found;
     }
 
     # unknown parenthetical

@@ -1,4 +1,5 @@
 Version 0.2d
+  * Groups are supported (the expander knows about them).
   * -- MORE -- works.
   * The password does not appear in the command history.
   * Command handlers' arguments' no longer have trailing whitespace.  (As of
