@@ -40,7 +40,10 @@ my $input_curhistory = 0;
 
 my $input_killbuf = "";
 
+my $page_status = 'normal';
 my $status_line = "";
+my $status_intern = "";
+my $status_update_time = 0;
 
 my @accepted_lines = ();
 
@@ -374,7 +377,16 @@ sub ui_output ($) {
 
 # Redraws the status line.
 sub sline_redraw () {
-    my $sline = "<status_line>" . $status_line . (' ' x $term_cols) .
+    my $s;
+    if ($page_status eq 'normal') {
+	$s = $status_line;
+    } else {
+	my $t = time;
+	return if ($t == $status_update_time);
+	$status_update_time = $t;
+	$s = $status_intern;
+    }
+    my $sline = "<status_line>" . $s . (' ' x $term_cols) .
 	"</status_line>";
     win_draw_line($term_lines-1-$input_height, $sline);
     input_position_cursor();
@@ -384,7 +396,6 @@ sub sline_redraw () {
 # Sets the status line.
 sub ui_status ($) {
     my ($s) = @_;
-    return if ($status_line eq $s);
     $status_line = $s;
     sline_redraw();
     term_refresh();
@@ -610,7 +621,7 @@ sub input_accept ($$$) {
 	return;
     }
 
-    if ($line ne '') {
+    if (($line ne '') && (!$password)) {
 	$input_history[$#input_history] = $line;
 	push @input_history, '';
 	$input_curhistory = $#input_history;
@@ -653,7 +664,7 @@ sub input_pagedown ($$$) {
 sub redraw () {
     term_clear();
     &win_redraw;
-    &sline_redraw;
+    &sline_redraw();
     &input_redraw;
     term_refresh();
 }
@@ -661,12 +672,18 @@ sub redraw () {
 
 # Returns scrollback information.
 sub scroll_info () {
-    if (($win_endline - $win_lastseen) >= $term_lines - 3) {
+    if ($win_endline < $text_lastline) {
 	my $lines = $text_lastline - $win_endline + 1;
-	return if (($main::page_status ne '') && ($lines % 10));
-	$main::page_status = "MORE " . $lines;
+	$page_status = 'more';
+	$status_intern = "-- MORE ($lines) --";
+	$status_intern = (' ' x int(($term_cols - length($status_intern)) / 2)) .
+	    $status_intern;
+	sline_redraw();
+	term_refresh();
     } else {
-	$main::page_status = '';
+	$page_status = 'normal';
+	sline_redraw();
+	term_refresh();
     }
 }
 
@@ -688,6 +705,7 @@ sub ui_process () {
 	$c = term_get_char();
 	last if ((!defined($c)) || ($c eq '-1'));
 
+	$status_update_time = 0;
 	$win_lastseen = $win_endline if ($win_endline > $win_lastseen);
 	scroll_info();
 
