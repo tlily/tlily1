@@ -2,8 +2,8 @@
 # PLEASE DO NOT EDIT EXCEPT FOR DEVELOPMENT!
 # EDIT YOUR SITE CONFIG FILE INSTEAD!
 # Begin defaults
-@load = qw(expand gag help info log look misc pager run_command
-           startup zone autologin view url terminal);
+@load = qw(after autologin expand gag help info log look misc pager
+           run_command startup terminal url view zone);
 @slash = ();
 $terminal = "LC::CTerminal";
 %color_attrs = ( 'sender' => ['bold'],
