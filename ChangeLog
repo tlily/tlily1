@@ -1,4 +1,6 @@
 Version 1.0.1-post
+  * [LC/UI] Added ui.pl extension and other infrastructure.  We now have fully
+    functional multi-window support in tlily!
   * [LC/UI/OutputWindow]  Created a new UI module.  Sort of a "status window"
     at this point.
   * [LC/UI] Major overhaul of UI subsystem.  Created LC::UI:: modules for each
