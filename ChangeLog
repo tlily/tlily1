@@ -1,4 +1,5 @@
 Version 0.6e
+  * [extensions/help.pl] Tweaked help output.  [DPN]
   * [extensions/pipes.pl]  Be careful of what you suggest... :>  [DPN]
   * [LC/parse.pm] Tweak for datestamps in reviews.  [DPN]
   * [LC/parse.pm] Fix for signals in sends.  [DPN]

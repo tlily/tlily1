@@ -5,6 +5,15 @@
 register_eventhandler(Type => 'uunknown',
 		      Call => \&pipe_handler);
 
+register_help_short("pipes", "Pipe lily commands through shell commands");
+register_help_long("pipes", <<END
+Usage: &/who | grep foo
+       &/review detach > output
+
+A piped command is begin with a "&".  The first component should be a lily command.  The command output may be filtered through shell commands, separated by pipes.  The final output may be redirected through a file with "> file".  If the output is not sent to a file, it is printed to the screen upon command termination.
+END
+		   );
+
 my $counter = 0;
 sub pipe_handler {
     my($event, $handler) = @_;

@@ -36,10 +36,14 @@ sub help_cmd {
     if ($helpon{$args}) {
 	ui_output("* Help on \'$args\'");
 	my $f=0;
-	if (help_get_short($args)) { ui_output("* $args: " . help_get_short($args)); $f=1;}
+	if (help_get_short($args)) {
+	    ui_output(Text => "* $args: " . help_get_short($args),
+		      WrapChar => '* ');
+	    $f=1;
+	}
 	my $longtxt= "* " . help_get_long($args);
 	$longtxt=~s/\n/\n\* /g;
-	if ($longtxt) { ui_output($longtxt); $f=1; 
+	if ($longtxt) { ui_output(Text => $longtxt, WrapChar => '* '); $f=1; 
 	}
 	if (! $f) { ui_output("* No further help for \'$args\'.  Feel like writing it?"); }
     } else {
