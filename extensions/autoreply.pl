@@ -14,6 +14,10 @@ register_help_long('autoreply',
     %autoreply
 ");
 
+$autoreply_status='';
+register_statusline(Var => \$autoreply_status,
+		    Position => "PACKLEFT");
+
 
 sub autoreply_event {
     my($event,$handler) = @_;
@@ -32,6 +36,9 @@ sub autoreply_event {
 	       $r=$reply;
             }
 	    ui_output("(sending automated reply to $from: \"$r\")");
+	    $send_count++;
+	    $autoreply_status="(autoreply $send_count)";
+	    redraw_statusline();
 	    server_send("$from:[automated reply] $r\r\n");
 			   
         } else {
@@ -53,9 +60,15 @@ sub autoreply_cmd {
     } elsif ($cmd eq "off") {
        $reply="";
        ui_output("(disabling automated reply to private messages)");       
+       $send_count=0;
+       $autoreply_status='';
+       redraw_statusline();       
     } else {
+       $send_count=0;
        $reply="@_";
        ui_output("(will send automated reply to private messages)");
+       $autoreply_status="(autoreply $send_count)";
+       redraw_statusline();
     }
 }
 
