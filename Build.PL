@@ -85,6 +85,7 @@ elsif($target eq 'install') {
 elsif($target eq 'release') {
 	my($cmd);
 
+	$VERSION = &next_version($VERSION);
 	&ask_version;
 	&make_version_file($VERSION);
 	
@@ -157,7 +158,6 @@ elsif($target eq 'release') {
 		system("$cmd");
 	}
 
-	&update_version($VERSION);
 }
 elsif($target eq 'clean') {
 	rmtree('buildtmp', 0, 0);
@@ -423,15 +423,11 @@ sub split_version {
 	($maj,$min,$sub,$1);
 }
 
-sub update_version {
+sub next_version {
 	my($ver)=@_;
 	my($maj,$min,$sub,$pre) = split_version($ver);
 	$sub++;
-#	if($pre) { $pre++; } else { $sub++; $pre=1; }
-#	$ver = "$maj.$min$sub".($pre?"-pre$pre":'');
-	$ver = "$maj.$min$sub";
-	&make_version_file($ver);
-	print "Next version will be $ver.\n";
+	"$maj.$min$sub";
 }
 
 sub version_part {
