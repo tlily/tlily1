@@ -36,7 +36,7 @@ sub parse_output {
 		  '# >> ' => 1,
 		  '# \<\< ' => 1,
 		  '*** ' => 1,
-		  '# ***' => 1);
+		  '# *** ' => 1);
 
 sub parse_line {
     ($line)=@_;
@@ -50,7 +50,7 @@ sub parse_line {
 	if ($time_prefixes{$1}) {
 	    $hour = $2;
 	    if ($config{'zonedelta'}) {
-		$hour += $config{'zonedelta'};
+		$hour = ($hour + $config{'zonedelta'} + 24) % 24;
 	    }
 	    $_ = $line = sprintf("%s<time>(%02d:%02d)</time>%s",
 				 $1, $hour, $3, $4);
