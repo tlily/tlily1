@@ -1,9 +1,9 @@
 Version 0.7b
   * [extensions/parse.pl] Fixed the stalls during /reviews (could be faster
-								  still, though) [SMC]
+                                                            still, though) [SMC]
   * [extensions/set.pl] Make space the default separation character [CWS]
   * [extensions/expand.pl, extensions/info.pl] Make changes to @slash effective
-    immediately  [CWS]
+                                               immediately  [CWS]
   * [LC/Config.pm] Fixed some command line parsing problems that would
                    cause infinite loops  [CWS]
   * [LC/State.pm] Handle 'me' as a destination.  [DPN]
