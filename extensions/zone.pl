@@ -4,6 +4,22 @@
 # This module rewrites dates into the local timezone.
 #
 
+register_help_short('zone', "timezone conversion extension");
+register_help_long('zone', 
+"The zone extension can convert timestamps from the server's native time zone to the your local time zone.   To use it, invoke tlily with the \"zonedelta\" option, which is a number of hours to add to the timestamps (it can be negative).");
+
+if ($config{zonedelta}) {
+    register_eventhandler(Type => 'serverline',
+			  Order => 'before',
+			  Call => \&zonewriter);
+
+    register_eventhandler(Type => 'who',
+			  Order => 'before',
+			  Call => \&whowriter);
+}
+
+
+
 %time_prefixes = (' -> ' => 1,
 		  ' <- ' => 1,
 		  ' >> ' => 1,
@@ -52,13 +68,4 @@ sub whowriter($$) {
     return 0;
 }
 
-if ($config{zonedelta}) {
-    register_eventhandler(Type => 'serverline',
-			  Order => 'before',
-			  Call => \&zonewriter);
-
-    register_eventhandler(Type => 'who',
-			  Order => 'before',
-			  Call => \&whowriter);
-}
-
+1;
