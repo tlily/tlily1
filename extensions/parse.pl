@@ -166,6 +166,10 @@ sub parse_line($$) {
 
     # %endmsg
     if ($line =~ /^%endmsg/) {
+	if ($msg_state eq 'emote') {
+	    $msg_state = '';
+	    return 0;
+	}
 	$line = $msg_hdr;
 	%event = (Type => 'send',
 		  Tags => [ @msg_tags ],
@@ -580,6 +584,7 @@ sub parse_line($$) {
     if ($line =~ /^> /) { 
 	%event = (Type => 'emote');
 	$line = '<emote>' . $line . '</emote>';
+	$msg_state = 'emote' if ($msg_state eq 'msg');
 	goto found;
     }
 
@@ -760,7 +765,7 @@ sub init() {
 	my($e,$h) = @_;
 	if (($e->{Type} eq 'connected' || $e->{Type} eq 'send')) {
 	    $logged_in = 1;
-	    deregister_handler($e->{Id});
+	    deregister_handler($h->{Id});
 	}
 	return 0;
     });
