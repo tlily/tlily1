@@ -58,8 +58,11 @@ sub after_handler {
     elsif($F[0] =~ m/^(\d+)h$/) {
 	$T = $1 * 3600;
     }
+    elsif($F[0] =~ m/^(\d+)d$/) {
+	$T = $1 * 86400;
+    }
     else {
-	ui_output("Usage: %after (time) (command)");
+	ui_output("Usage: %after (time) (command)\n       %after cancel (id)");
 	return 0;
     }
     #ui_output("time = $T");
