@@ -119,8 +119,8 @@ sub parse_line($$) {
     # %begin, 2.2a1 cores.
     if ($line =~ /^%begin \((.*)\) \[(\d+)\]/) {
 	$cmdid = $2;
-	$hidden = 1;
 	%event = (Type => 'begincmd',
+		  Tags => ['intern'],
 		  Command => $1);
 	goto found;
     }
@@ -128,8 +128,8 @@ sub parse_line($$) {
     # %begin, RPI core.
     if ($line =~ /^%begin \[(\d+)\] (.*)/) {
 	$cmdid = $1;
-	$hidden = 1;
 	%event = (Type => 'begincmd',
+		  Tags => ['intern'],
 		  Command => $2);
 	goto found;
     }
@@ -143,37 +143,37 @@ sub parse_line($$) {
     # %end, all cores.
     if ($line =~ /^%end \[(\d+)\]/) {
 	$cmdid = $1;
-	$hidden = 1;
-	%event = (Type => 'endcmd');
+	%event = (Type => 'endcmd',
+		  Tags => ['intern']);
 	goto found;
     }
 
     # %beginmsg
     if ($line =~ /^%beginmsg/) {
-	$hidden = 1;
-	%event = (Type => 'beginmsg');
+	%event = (Type => 'beginmsg',
+		  Tags => ['intern']);
 	goto found;
     }
 
     # %endmsg
     if ($line =~ /^%endmsg/) {
-	$hidden = 1;
-	%event = (Type => 'endmsg');
+	%event = (Type => 'endmsg',
+		  Tags => ['intern']);
 	goto found;
     }
 
     # %connected
     if ($line =~ /^%connected/) {
-	$hidden = 1;
 	%event = (Type => 'connected',
-		Text => $line);
+		  Tags => ['intern'],
+		  Text => $line);
 	goto found;
     }
 
     # %export_file
     if ($line =~ /^%export_file (\w+)/) {
-	$hidden = 1;
 	%event = (Type => 'export',
+		  Tags => ['intern'],
 		  Response => $1);
 	goto found;
     }
@@ -186,8 +186,8 @@ sub parse_line($$) {
 
     # The options notification.  (OK, not a %command...but it fits here.)
     if ($line =~ /^\[Your options are/) {
-	$hidden = 1;
-	%event = (Type => 'options');
+	%event = (Type => 'options',
+		  Tags => ['intern']);
 	goto found;
     }
 
@@ -244,6 +244,7 @@ sub parse_line($$) {
     # your blurb has been set to...
     if ($line =~ /^\(your blurb has been set to \[(.*)\]\)/) {
 	%event = (Type => 'blurb',
+		  Tags => [ 'paren' ],
 		  Blurb => $1);
 	goto found;
     }    
@@ -251,6 +252,7 @@ sub parse_line($$) {
     # your blurb has been turned off
     if ($line =~ /^\(your blurb has been turned off\)/) {
 	%event = (Type => 'blurb',
+		  Tags => [ 'paren' ],
 		  Blurb => undef);
 	goto found;
     }
@@ -258,6 +260,7 @@ sub parse_line($$) {
     # you are now named...
     if ($line =~ /^\(you are now named \"(.*)\"/) {
 	%event = (Type => 'rename',
+		  Tags => [ 'paren' ],
 		  To => $1);
 	goto found;
     }    
@@ -265,6 +268,7 @@ sub parse_line($$) {
     # you are now here
     if ($line =~ /^\(you are now here/) {
 	%event = (Type => 'userstate',
+		  Tags => [ 'paren' ],
 		  From => 'away',
 		  To => 'here');
 	goto found;
@@ -275,6 +279,7 @@ sub parse_line($$) {
     if ($line =~ /^\(you are now away/ ||
 	$line =~ /^\(you have idled \"away\"/) {
 	%event = (Type => 'userstate',
+		  Tags => [ 'paren' ],
 		  From => 'here',
 		  To => 'away');
 	goto found;
@@ -283,12 +288,14 @@ sub parse_line($$) {
     # you have created discussion...
     if ($line =~ /^\(you have created discussion (.*) \"/) {
 	%event = (Type => 'disccreate',
+		  Tags => [ 'paren' ],
 		  Name => $1);
     }
 
     # you have destroyed discussion...
     if ($line =~ /^\(you have destroyed discussion (.*)\)/) {
 	%event = (Type => 'discdestroy',
+		  Tags => [ 'paren' ],
 		  Name => $1);
     }
 
@@ -296,6 +303,7 @@ sub parse_line($$) {
     if ($line =~ /^\(you have created group \"(.*)\" with members (.*)\)/) {
 	my @members = split /, /, $2;
 	%event = (Type => 'group',
+		  Tags => [ 'paren' ],
 		  Group => $1,
 		  Members => \@members);
 	goto found;
@@ -308,6 +316,7 @@ sub parse_line($$) {
     if (($line =~ /^\(you have deleted group \"(.*)\"\)/) ||
 	($line =~ /^\(you have destroyed group, \"(.*)\"\)/)) {
 	%event = (Type => 'group',
+		  Tags => [ 'paren' ],
 		  Group => $1);
 	goto found;
     }
@@ -318,6 +327,7 @@ sub parse_line($$) {
     if ($line =~ /^\(your group,? \"(.*)\", now has members (.*)\)/) {
 	my @members = split /, /, $2;
 	%event = (Type => 'group',
+		  Tags => [ 'paren' ],
 		  Group => $1,
 		  Members => \@members);
 	goto found;
@@ -325,7 +335,8 @@ sub parse_line($$) {
 
     # unknown parenthetical
     if ($line =~ /^\(/) {
-	%event = (Type => 'parenthetical');
+	%event = (Type => 'parenthetical',
+		  Tags => [ 'paren' ]);
 	goto found;
     }
 
@@ -367,9 +378,16 @@ sub parse_line($$) {
 	    goto found;
 	}
 
+	my @tags = ( 'send', "from:$msg_sender" );
+	my $d;
+	foreach $d (@msg_dest) {
+	    push @tags, "to:$d";
+	}
+
 	if (($line =~ /^ >>/) || ($line =~ /^ \\<\\</)) { 
 	    # private headers
 	    %event = (Type => 'privhdr',
+		      Tags => [ 'private', @tags ],
 		      WrapChar => substr($line, 0, 4),
 		      From => $msg_sender,
 		      To => \@msg_dest);
@@ -380,6 +398,7 @@ sub parse_line($$) {
 	} else {
 	    # public headers
 	    %event = (Type => 'pubhdr',
+		      Tags => [ 'public', @tags ],
 		      WrapChar => substr($line, 0, 4),
 		      From => $msg_sender,
 		      To => \@msg_dest);
@@ -392,7 +411,15 @@ sub parse_line($$) {
 
     # message body
     if ($line =~ /^ - /)  { 
+	my @tags = ( 'send', "from:$msg_sender" );
+	my $d;
+	foreach $d (@msg_dest) {
+	    push @tags, "to:$d";
+	}
+	push @tags, $msg_state;
+
 	%event = (Type => 'send',
+		  Tags => [ @tags ],
 		  From => $msg_sender,
 		  To => \@msg_dest,
 		  Form => $msg_state);
@@ -414,6 +441,7 @@ sub parse_line($$) {
 	$line =~ /^\s+----\s+--------\s+----\s+-----\s*$/) {
 
 	%event = (Type => 'text',
+		  Tags => [ 'who' ],
 		  For => 'who');
 	goto found;
     }
@@ -438,6 +466,7 @@ sub parse_line($$) {
 
 	if ($name) {
 	    %event = (Type => 'who',
+		      Tags => [ 'who' ],
 		      User => $name,
 		      Blurb => $blurb,
 		      State => $state);
@@ -453,6 +482,7 @@ sub parse_line($$) {
 	$line =~ /^  ----    -----  ----  ---- -----/) {
 
 	%event = (Type => 'text',
+		  Tags => [ 'what' ],
 		  For => 'what');
 	goto found;
     }
@@ -466,6 +496,7 @@ sub parse_line($$) {
 	my $title = substr($line, 28);
 
 	%event = (Type => 'what',
+		  Tags => [ 'what' ],
 		  Disc => $name,
 		  Disctype => $type,
 		  Title => $title);
@@ -495,6 +526,7 @@ sub parse_line($$) {
 	my ($public,$private,$max) = ($1, $2, $3);
 
 	%event = (Type => 'howusers',
+		  Tags => [ 'send', 'emote' ],
 		  Public => $public,
 		  Private => $private,
 		  Max => $max);
@@ -611,12 +643,21 @@ sub parse_line($$) {
 	$line = '<review>' . $review . '</review>' . $line;
 	$event{RevType} = $event{Type};
 	$event{Type} = 'review';
+	push @{$event{Tags}}, 'review';
     }
 
     $event{ToUser} = 1 unless ($hidden);
     $event{Signal} = 'default' if ($signal);
     $event{Id} = $cmdid;
     $event{Text} = $line;
+
+    if (!defined $event{Tags}) {
+	$event{Tags} = [ 'normal' ];
+    }
+
+    if ($cmdid) {
+	push @{$event{Tags}}, "id:$cmdid";
+    }
     
     dispatch_event(\%event);
     return 0;

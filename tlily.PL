@@ -36,6 +36,8 @@ LC::config::init();
 ui_start();
 cmd_init();
 
+ui_set(Hide => [ 'intern' ]);
+
 ui_attr('sender','bold');
 ui_attr('dest','bold');
 ui_attr('b','bold');

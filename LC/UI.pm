@@ -166,6 +166,7 @@ use LC::CTerminal;
 	     &ui_bell
 	     &ui_password
 	     &ui_prompt
+	     &ui_set
 	     $ui_cols);
 
 
@@ -329,6 +330,9 @@ my @text_lines = (" ");
 # A list of formatting information for the text window.
 my @text_fmts = ( [] );
 
+# A list of tags to identify lines by.
+my @text_tags = ();
+
 # A list of line heights.  This is a cache; any line's height as stored
 # in here may be undef.
 my @text_heights = ();
@@ -341,6 +345,9 @@ my $text_r = 0;
 # The number of rows which have been scrolled up since the user last
 # examined the screen.
 my $scrolled_rows = 0;
+
+my @text_show_tags = ();
+my @text_hide_tags = ();
 
 
 # Draws one line (or a subset of the rows in a line) at a given position.
@@ -547,15 +554,52 @@ sub line_height($) {
 }
 
 
+# Determines if a given line should be shown or not.
+sub win_showline($) {
+    my($l) = @_;
+
+    print STDERR "Line $l: tags=";
+    print STDERR "@{$text_tags[$l]}" if ($text_tags[$l]);
+    print STDERR ", s=@text_show_tags, h=@text_hide_tags";
+
+    my $show = 1;
+    my $tag;
+    if (@text_show_tags) {
+	$show = 0;
+	foreach $tag (@text_show_tags) {
+	    $show = 1 if (grep { $_ eq $tag } @{$text_tags[$l]});
+	}
+    }
+
+    if (@text_hide_tags && $show) {
+	foreach $tag (@text_hide_tags) {
+	    $show = 0 if (grep { $_ eq $tag } @{$text_tags[$l]});
+	}
+    }
+
+    print STDERR ", r=$show\n";
+    return $show;
+}
+
+
 # Redraws the text window.
 sub win_redraw() {
     my $y = win_height() - $text_r;
     my $l = $text_l;
 
+    while (($l > 0) && (!win_showline($l))) {
+	$l--;
+    }
+
     while (($y > 0) && ($l > 0)) {
 	win_draw_line($y, $text_lines[$l], $text_fmts[$l],
 		      0, win_height() - $y + 1);
+
 	$l--;
+	while (($l > 0) && (!win_showline($l))) {
+	    $l--;
+	}
+
 	$y -= line_height($l) if ($l > 0);
     }
 
@@ -584,6 +628,9 @@ sub win_scroll($) {
 	    if ($text_r >= line_height($text_l)) {
 		$text_r = 0;
 		$text_l++;
+		while (($text_l <= $#text_lines) && (!win_showline($text_l))) {
+		    $text_l++;
+		}
 		last if ($text_l > $#text_lines);
 	    }
 
@@ -600,10 +647,13 @@ sub win_scroll($) {
 	my $i;
 
 	my($top_r, $top_l) = ($text_r, $text_l);
-	for ($i = 0; $i > $n; $i--) {
+	for ($i = 0; $i < win_height(); $i++) {
 	    $top_r--;
 	    if ($top_r < 0) {
 		$top_l--;
+		while (($top_l >= 0) && (!win_showline($top_l))) {
+		    $top_l--;
+		}
 		$top_r = ($top_l < 0) ? 0 : line_height($top_l) - 1;
 	    }
 	}
@@ -612,6 +662,9 @@ sub win_scroll($) {
 	    $text_r--;
 	    if ($text_r < 0) {
 		$text_l--;
+		while (($text_l >= 0) && (!win_showline($text_l))) {
+		    $text_l--;
+		}
 		last if ($text_l < 0);
 		$text_r = line_height($text_l) - 1;
 	    }
@@ -619,6 +672,9 @@ sub win_scroll($) {
 	    $top_r--;
 	    if ($top_r < 0) {
 		$top_l--;
+		while (($top_l >= 0) && (!win_showline($top_l))) {
+		    $top_l--;
+		}
 		$top_r = ($top_l < 0) ? 0 : line_height($top_l) - 1;
 	    }
 
@@ -663,6 +719,7 @@ sub ui_output {
 
     push @text_lines, $line;
     push @text_fmts, $fmt;
+    $text_tags[$#text_lines] = [ @{$h{Tags}} ] if (defined $h{Tags});
 
     my $h = line_height($#text_lines);
 
@@ -1120,6 +1177,23 @@ sub ui_prompt($) {
     $input_prompt = $_[0];
     input_redraw();
     term_refresh();
+}
+
+sub ui_set(%) {
+    my(%h) = @_;
+
+    my $key;
+    foreach $key (keys %h) {
+	if ($key eq 'Show') {
+	    @text_show_tags = @{$h{$key}};
+	    win_redraw();
+	    term_refresh();
+	} elsif ($key eq 'Hide') {
+	    @text_hide_tags = @{$h{$key}};
+	    win_redraw();
+	    term_refresh();
+	}
+    }
 }
 
 1;

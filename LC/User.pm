@@ -129,6 +129,7 @@ sub init() {
 			      my($event,$handler) = @_;
 			      if ($event->{ToUser}) {
 				  ui_output(Text => $event->{Text},
+					    Tags => $event->{Tags},
 					    WrapChar => $event->{WrapChar});
 			      }
 			      if ($event->{Signal}) {
