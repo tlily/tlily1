@@ -39,8 +39,7 @@ sub after_handler {
                           Call => sub {
 				ui_output("($F[0] of time have passed, running '$F[1]'.)");
 				dispatch_event({Type => 'userinput',
-					Text => $F[1]."\r\n",
-					ToServer => 1});
+					Text => $F[1]});
 			});
     ui_output("(After $F[0] of time, I will run '$F[1]'.)");
     return 0;
