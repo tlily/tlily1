@@ -41,8 +41,15 @@ ui_set(Hide => [ 'intern' ]);
 
 # Set colors from what the config files read
 my($k,$v);
-while (($k,$v) = each %{$config{($mono?'mono':'color').'_attrs'}}) {
-    ui_attr($k, @{$v});
+if($config{mono}) {
+    while (($k,$v) = each %{$config{'mono_attrs'}}) {
+	ui_attr($k, @{$v});
+    }
+}
+else {
+    while (($k,$v) = each %{$config{'color_attrs'}}) {
+	ui_attr($k, @{$v});
+    }
 }
 
 statusline_init();
