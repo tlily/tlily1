@@ -205,7 +205,8 @@ sub parse_line($$) {
     }
 
     # The options notification.  (OK, not a %command...but it fits here.)
-    if ($line =~ /^\[Your options are/) {
+    if ($line =~ /^\[Your options are/ ||
+	$line =~ /^%options/) {
 	%event = (Type => 'options',
 		  Tags => ['intern']);
 	goto found;
