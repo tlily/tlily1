@@ -219,9 +219,9 @@ sub main() {
     
     load_extensions();
 
-    log_notice("Connecting to $config{server} $config{port}.");
+    ui_output("*** Connecting to $config{server} $config{port}.");
     server_connect($config{server}, $config{port});
-    log_notice("Connected.");
+    ui_output("*** Connected.");
 
     init_connection_handling();
 
@@ -239,7 +239,7 @@ sub main() {
 
 	# Normal exit.
 	if ($@ eq '') {
-	    log_notice("Exiting.");
+	    ui_output("*** Exiting.");
 	    ui_end();
 	    exit;
 	}
