@@ -399,16 +399,18 @@ sub state_sync () {
 
 # Registers the handlers required to maintain lily state information.
 sub state_init () {
-	register_eventhandler(Type => 'connected',
+    register_eventhandler(Type => 'connected',
 			  Call => sub {
-		my($event,$handler) = @_;
-		state_sync();
-		deregister_handler($handler->{Id});
-	});
+        my($event,$handler) = @_;
+	state_sync();
+	deregister_handler($handler->{Id});
+	return 0;
+			  });
+
     register_eventhandler(Type => 'rename',
 			  Order => 'before',
 			  Call => sub {
-	my($event,$handler) = @_;
+        my($event,$handler) = @_;
 	$event->{From} = $Me unless $event->{From};
 	if ($event->{From} eq $Me) {
 	    $event->{IsUser} = 1;

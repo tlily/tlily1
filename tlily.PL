@@ -126,10 +126,11 @@ sub init_connection_handling() {
 	}
 	if ($state eq 'connected') {
 	    deregister_handler($handler->{Id});
-    	set_client_options();
-		dispatch_event({Type => 'connected',
-	               Text => '%connected unknown'});
+	    set_client_options();
+	    dispatch_event({Type => 'connected',
+			    Text => '%connected unknown'});
 	}
+	#ui_output("*** state: $os -> $state") if ($state ne $os);
 	return 0;
     });
 }

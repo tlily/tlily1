@@ -272,6 +272,9 @@ sub transmit_event($) {
 	    if ($@) {
 		warn("Event error: $@");
 	    }
+	    if (($rc != 0) && ($rc != 1)) {
+		warn("Event handler $handler->{Id} ($handler->{Type}) returned $rc.");
+	    }
 	    print STDERR "        handler returned $rc\n"
 		if ($rc && $event_debug);
 	    return if ($rc);
