@@ -19,9 +19,9 @@ sub page_command_handler($) {
 
     if ($args eq '') {
 	if ($config{pager}) {
-	    ui_output("(paging is currently turned on)");
+		ui_output("(paging is currently turned on)");
 	} else {
-	    ui_output("(paging is currently turned off)");
+		ui_output("(paging is currently turned off)");
 	}
 	return;
     }
