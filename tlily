@@ -309,11 +309,11 @@ sub alarm_handler {
 
 sub set_client_options {
     if ($config{spoof_lclient}) {
-	log_notice("Setting client options (lclient spoofing)..");
+	#log_notice("Setting client options (lclient spoofing)..");
 	send_to_server("\#\$\# client_version 0.8b-tiger\n");
 	send_to_server("\#\$\# client_name lily\n");
     } else {
-	log_notice("Setting client options..");
+	#log_notice("Setting client options..");
 	send_to_server("\#\$\# client_version $TL_VERSION\n");
 	send_to_server("\#\$\# client_name TigerLily\n");
         #The available options are sender, sendgroup,recip_regexp, connected,

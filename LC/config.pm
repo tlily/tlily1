@@ -1,3 +1,4 @@
+# -*- Perl -*-
 package LC::config;
 
 use Getopt::Long;
@@ -13,12 +14,7 @@ sub init {
     my ($snrub,$xyzzy);
 
     # default values
-    #$config{server}='albert.einstein.to';
-    #$config{server}='elsa.einstein.to';
     $config{server}='lily.acm.rpi.edu';
-    #$config{login}='damien';  $config{pass}='pdp11';
-    #$config{login}='josh';  $config{pass}='borfument';
-    $config{login}='wilmesj';  $config{pass}='borfument';
     $config{port}=7777;
     $config{mono}=0;
 #   $config{spoof_lclient}=1; 
