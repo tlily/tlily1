@@ -42,10 +42,23 @@ sub zonewriter($$) {
 	my $t = ($2 * 60) + $3;
 	$init =~ s/^%command \[\d+\] //;
 	if ($time_prefixes{$init}) {
+	    my($h,$m);
+	    my($ampm);
 	    $t += $config{zonedelta};
 	    $t += (60 * 24) if ($t < 0);
-	    $event->{Text} = sprintf("%s(%02d:%02d)%s",
-				     $prefix, int($t / 60), $t % 60, $suffix);
+	    $h = int($t / 60);
+	    $m = $t % 60;
+	    if(defined $config{zonetype}) {
+		if($h >= 12 && $config{zonetype} eq '12')  {
+		     $ampm = 'p';
+		     $h -= 12 if $h > 12;
+		}
+		elsif($h < 12 && $config{zonetype} eq '12') {
+		    $ampm = 'a';
+		}
+	    }
+	    $event->{Text} = sprintf("%s(%02d:%02d%s)%s",
+				     $prefix, $h, $m, $ampm, $suffix);
 	}
     }
 
