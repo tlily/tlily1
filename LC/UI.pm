@@ -47,30 +47,30 @@ my $status_update_time = 0;
 
 my @accepted_lines = ();
 
-my %key_trans = ('kl'   => \&input_left,
-		 'C-b'  => \&input_left,
-		 'kr'   => \&input_right,
-		 'C-f'  => \&input_right,
-		 'ku'   => \&input_prevhistory,
-		 'C-p'  => \&input_prevhistory,
-		 'kd'   => \&input_nexthistory,
-		 'C-n'  => \&input_nexthistory,
-		 'C-a'  => \&input_home,
-		 'C-e'  => \&input_end,
-		 'C-k'  => \&input_killtoend,
-		 'C-u'  => \&input_killtohome,
-		 'pgup' => \&input_pageup,
-		 'C-b'  => \&input_pageup,
-		 'pgdn' => \&input_pagedown,
-		 'C-f'  => \&input_pagedown,
-		 'C-t'  => \&input_twiddle,
-		 'nl'   => \&input_accept,
-		 'C-y'  => \&input_yank,
-		 'C-w'  => \&input_killword,
-		 'C-l'  => \&input_refresh,
-		 'C-d'  => \&input_del,
-		 'C-h'  => \&input_bs,
-		 'bs'   => \&input_bs
+my %key_trans = ('kl'   => [ \&input_left ],
+		 'C-b'  => [ \&input_left ],
+		 'kr'   => [ \&input_right ],
+		 'C-f'  => [ \&input_right ],
+		 'ku'   => [ \&input_prevhistory ],
+		 'C-p'  => [ \&input_prevhistory ],
+		 'kd'   => [ \&input_nexthistory ],
+		 'C-n'  => [ \&input_nexthistory ],
+		 'C-a'  => [ \&input_home ],
+		 'C-e'  => [ \&input_end ],
+		 'C-k'  => [ \&input_killtoend ],
+		 'C-u'  => [ \&input_killtohome ],
+		 'pgup' => [ \&input_pageup ],
+		 'C-b'  => [ \&input_pageup ],
+		 'pgdn' => [ \&input_pagedown ],
+		 'C-f'  => [ \&input_pagedown ],
+		 'C-t'  => [ \&input_twiddle ],
+		 'nl'   => [ \&input_accept ],
+		 'C-y'  => [ \&input_yank ],
+		 'C-w'  => [ \&input_killword ],
+		 'C-l'  => [ \&input_refresh ],
+		 'C-d'  => [ \&input_del ],
+		 'C-h'  => [ \&input_bs ],
+		 'bs'   => [ \&input_bs ]
 		 );
 
 my %attr_list = ();
@@ -618,7 +618,7 @@ sub input_accept ($$$) {
 
     if (($line eq '') && ($text_lastline != $win_endline)) {
 	input_pagedown();
-	return;
+	return ($line, $pos, 0);
     }
 
     if (($line ne '') && (!$password)) {
@@ -635,28 +635,31 @@ sub input_accept ($$$) {
 
 # Redraw the UI screen.
 sub input_refresh ($$$) {
+    my($key, $line, $pos) = @_;
     redraw();
-    return;
+    return($line, $pos, 0);
 }
 
 
 # Page up.
 sub input_pageup ($$$) {
+    my($key, $line, $pos) = @_;
     $win_lastseen = $win_endline if ($win_endline > $win_lastseen);
     &win_scroll(-win_height());
     scroll_info();
     term_refresh();
-    return;
+    return($line, $pos, 0);
 }
 
 
 # Page down.
 sub input_pagedown ($$$) {
+    my($key, $line, $pos) = @_;
     $win_lastseen = $win_endline if ($win_endline > $win_lastseen);
     &win_scroll(win_height());
     scroll_info();
     term_refresh();
-    return;
+    return($line, $pos, 0);
 }
 
 
@@ -691,7 +694,7 @@ sub scroll_info () {
 # Registers an input callback function.
 sub ui_callback ($&) {
     my($key, $cb) = @_;
-    $key_trans{$key} = $cb;
+    push @{$key_trans{$key}}, $cb;
 }
 
 
@@ -710,9 +713,11 @@ sub ui_process () {
 	scroll_info();
 
 	my @res;
-	if (defined $key_trans{$c}) {
-	    @res = &{$key_trans{$c}}($c, $input_line, $input_pos);
-	} elsif (isprint($c) && length($c) == 1) {
+	foreach (@{$key_trans{$c}}) {
+	    @res = &$_($c, $input_line, $input_pos);
+	    last if (@res);
+	}
+	if ((scalar(@res) == 0) && isprint($c) && length($c) == 1) {
 	    @res = input_add($c, $input_line, $input_pos);
 	}
 

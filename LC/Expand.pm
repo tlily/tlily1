@@ -36,7 +36,7 @@ sub exp_expand ($$$) {
 	} elsif ($key eq ';') {
 	    $exp = $expansions{'recips'};
 	} else {
-	    return LC::UI::input_add($key, $line, $pos);
+	    return;
 	}
 
 	$exp =~ tr/ /_/;
@@ -45,7 +45,7 @@ sub exp_expand ($$$) {
 	my $fore = substr($line, 0, $pos);
 	my $aft  = substr($line, $pos);
 
-	return LC::UI::input_add($key, $line, $pos) if ($fore =~ /[:;]/);
+	return if ($fore =~ /[:;]/);
 
 	my @dests = split(/,/, $fore);
 	foreach (@dests) {
@@ -59,7 +59,7 @@ sub exp_expand ($$$) {
 	return ($fore . $key . $aft, length($fore) + 1, 2);
     }
 
-    return LC::UI::input_add($key, $line, $pos);
+    return;
 }
 
 
@@ -86,10 +86,10 @@ sub exp_complete ($$$) {
 
 
 sub exp_init () {
-    ui_callback(':' => \&exp_expand);
-    ui_callback(';' => \&exp_expand);
-    ui_callback('=' => \&exp_expand);
-    ui_callback('C-i' => \&exp_complete);
+    ui_callback(':', \&exp_expand);
+    ui_callback(';', \&exp_expand);
+    ui_callback('=', \&exp_expand);
+    ui_callback('C-i', \&exp_complete);
 
     register_eventhandler(Type => 'userinput',
 			  Call => sub {
