@@ -1,6 +1,167 @@
 # -*- Perl -*-
 package LC::CTerminal;
 
+=head1 NAME
+
+LC::CTerminal - curses-based terminal implementation
+
+=head1 DESCRIPTION
+
+The Terminal interface is an abstract interface to a character-based display
+device.  It is intended to be replacable.  CTerminal is an implementation
+of the Terminal interface using Curses.pm.
+
+=head2 Attributes
+
+Text output to the screen may be displayed with a variety of attributes.
+See the term_getattr() and term_setattr() calls for information on accessing
+attributes.  The following attributes are defined:
+
+=over 10
+
+=item bold
+
+Bold text.  On a color terminal, selects bright color mode.
+
+=item reverse
+
+Inverse video.
+
+=item normal
+
+Neither bold, nor reversed.
+
+=item fg:color, bg:color
+
+Colored text is specified by attributes beginning with 'fg:' or 'bg:' (for
+foreground and background colors, respectively.)  The following colors may
+be used: black, red, green, yellow, blue, magenta, cyan, white.  A second
+set of bright colors may be used (in the foreground only), by specifying
+the 'bold' attribute.
+
+=back
+
+=head2 Character codes
+
+Printable ('normal') characters entered by the user are returned as themselves.
+Control characters are returned as 'C-c', where 'c' is the non-control version
+of the character.  The following other mappings are defined:
+
+    Down arrow  => 'kd'
+    Up arrow    => 'ku'
+    Left arrow  => 'kl'
+    Right arrow => 'kr'
+    Page up     => 'pgup'
+    Page down   => 'pgdn'
+    Backspace   => 'bs'
+    Newline     => 'nl'
+
+=head2 Variables
+
+=over 10
+
+=item $term_lines, $term_cols
+
+The number of lines and columns available on the screen.
+
+=back
+
+=head2 Functions
+
+All functions leave the cursor position unchanged unless otherwise
+specified.  No function is required to have a visible effect until
+term_refresh() is called.
+
+=over 10
+
+=item term_init()
+
+This function must be called prior to any use of the screen.
+
+=item term_end()
+
+This function shuts down the screen, and should be called prior to
+ending the program.
+
+=item term_clear()
+
+Clears the screen.
+
+=item term_getattr()
+
+Returns a list describing the current screen attributes.  If this list
+is passed to term_setattr() at a later time, the current attribute settings
+will be restored.
+
+=item term_setattr()
+
+Takes a list of screen attributes to set.  Example:
+
+    term_setattr('fg:white', 'bg:black', 'bold');
+
+=item term_addstr()
+
+Writes a string to the screen at the current cursor position.  The cursor
+is moved to the end of the text added.  The result of  writing off the end of
+a line is unspecified.  Example:
+
+    term_addstr('Kakanakereba narimasen.');
+
+=item term_move()
+
+Sets the current cursor position.  The position is specified row first,
+column second.  Example:
+
+    # Move to the lower right corner of the screen.
+    term_move($term_lines - 1, $term_cols - 1);
+
+=item term_delete_to_end()
+
+Clears all text from the current cursor position to the end of the line.
+
+=item term_insert_line()
+
+Inserts a line at the current cursor position.  All lines from the current
+one to the end of the screen are shifted down one line.  The last line on
+the screen vanishes.  The current line becomes blank.
+
+=item term_delete_line()
+
+Deletes the line at the current cursor position.  All lines from the one
+subsequent to the current one to the end of the screen are shifted up one
+line.  The last line of the screen becomes blank.
+
+=item term_insert_char()
+
+Inserts a character at the current cursor position.  All characters from the
+current one to the end of the line are shifted right one character.  The
+last character on the line disappears.  The current character position becomes
+blank.
+
+=item term_delete_char()
+
+Deletes the character at the current cursor position.  All characters from
+the one subsequent to the current one to the end of the line are shifted
+left one line.  The last character on the line becomes blank.
+
+=item term_get_char()
+
+Returns the next character entered by the user (see 'Character codes' above),
+if there is one, or undef otherwise.  This function does NOT block.
+
+=item term_refresh()
+
+Updates the screen with the most recent changes.
+
+=item term_bell()
+
+Sounds an audible bell.
+
+=back
+
+=cut
+
+
 use Exporter;
 use Curses;
 use POSIX;
