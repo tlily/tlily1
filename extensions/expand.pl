@@ -139,7 +139,7 @@ sub also_proc ($) {
 	exp_set('recips', join(",", $expansions{'recips'}, @dests));
 }
 
-if ($config{oops} =~ m|/|o) {
+if (config_ask("oops")) {
 	register_eventhandler(Type => 'userinput',
 		Call => sub {
 			my($event,$handler) = @_;
@@ -150,7 +150,8 @@ if ($config{oops} =~ m|/|o) {
 		}
 	);
 }
-elsif ($config{also} =~ m|/|o) {
+
+if (config_ask("also")) {
 	register_eventhandler(Type => 'userinput',
 		Call => sub {
 			my($event,$handler) = @_;
@@ -161,11 +162,7 @@ elsif ($config{also} =~ m|/|o) {
 		}
 	);
 }
-if ($config{oops} =~ m|%|o) {
-	register_user_command_handler('oops', \&oops_cmd);
-}
-if ($config{also} =~ m|%|o) {
-	register_user_command_handler('also', \&also_cmd);
-}
+register_user_command_handler('oops', \&oops_cmd);
+register_user_command_handler('also', \&also_cmd);
 
 1;
