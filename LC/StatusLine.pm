@@ -165,7 +165,6 @@ sub statusline_init() {
 	my($event, $handler) = @_;
 	if ($event->{IsUser}) {
 	    $status_Blurb = $event->{Blurb};
-	    $status_Blurb =~ s/</\</g; $status_Blurb =~ s/>/\\>/g;
 	    redraw_statusline();	
 	}
 	return 0;
@@ -178,7 +177,6 @@ sub statusline_init() {
 	if ($event->{IsUser}) {
 	    $status_Pseudo = $event->{User};
 	    $status_Blurb = $event->{Blurb};
-	    $status_Blurb =~ s/</\</g; $status_Blurb =~ s/>/\\>/g;	    
 	    redraw_statusline();
 	}
 	return 0;
@@ -231,6 +229,9 @@ sub status_time {
 sub status_username {
     my $name = $status_Pseudo;
     $name .= " [$status_Blurb]" if (defined($status_Blurb));
+    $name =~ s/\</\\\</g; $name =~ s/\>/\\\>/g;
+    $name =~ s/\\\\([<>])/\\$1/g;  #what the heck!
+
     return $name;    
 }
 
