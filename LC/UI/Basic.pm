@@ -79,28 +79,27 @@ sub ui_output {
     } else {
 	%h = @_;
     }
-    
-    if ($self->{usable}) {
-       # if I felt nice, i'd try to properly strip out the tags at this point,
-       # but that's non-trivial, and for performance testing, I want to keep 
-       # this as raw as I can.
-       my $text=$h{Text};
-       $text=~s/\<\/?sender\>//g;
-       $text=~s/\<\/?dest\>//g;
-       $text=~s/\<\/?emote\>//g;       
-       $text=~s/\<\/?pubhdr\>//g;                     
-       $text=~s/\<\/?pubmsg\>//g;              
-       $text=~s/\<\/?privhdr\>//g;                            
-       $text=~s/\<\/?privmsg\>//g;                     
-       $text=~s/\<\/?pubmsg\>//g;              
-       $text=~s/\<\/?usersend\>//g;
-       $text=~s/\<\/?blurb\>//g;                            
-       $text=~s/\<\/?review\>//g;                                   
-       
-       print "$text\n";
-    } else {
-       print "ui_output: $h{Text}\n";
-    }       
+
+    my $text=strip_tags($h{Text});
+
+    # NOTE:  This code does not do word wrapping.
+    my ($char,$line);
+    foreach $char (split //,$text) {
+	$line .= $char;
+	if (length($line) > $self->{ui_cols}) {
+	    $line=~s/^$h{WrapChar}$h{WrapChar}/$h{WrapChar}/;
+	    print "$line\n";
+	    $line=$h{WrapChar};
+	} elsif ($char =~ /[\r\n]/) {
+	    $line=~s/^$h{WrapChar}$h{WrapChar}/$h{WrapChar}/;
+	    print "$line";
+	    $line=$h{WrapChar};
+	}		
+    }
+    if ($line) {
+	$line=~s/^$h{WrapChar}$h{WrapChar}/$h{WrapChar}/;	
+	print "$line\n";
+    }
 }
 
 sub ui_status {
@@ -178,6 +177,38 @@ sub ui_select($$$$) {
     my @ret = IO::Select->select($r, $w, $e, $to);
 
     return @ret;
+}
+
+sub strip_tags {
+    my ($text)=@_;
+    $text =~ s/\\\\//g;
+    $text =~ s/\\\<//g;
+    $text =~ tr/</</;
+    $text =~ s/\\(.)/$1/g;
+    $text =~ tr//\\/;
+    
+    my $newtext;
+    while (length $text) {
+	if ($text =~ /^(([^\>]*)\>\>)/) {
+	    # <<filter>>
+	    $text = substr($text, length $1);
+	} elsif ($text =~ /^(\/([^\>]*)\>)/) {
+	    # </tag>
+	    $text = substr($text, length $1);
+	} elsif ($text =~ /^(([^\>]*)\>)/) {
+	    # <tag>
+	    $text = substr($text, length $1);
+	} elsif ($text =~ /^(\r?\n)/) {
+	    # newline
+	    $text = substr($text, length $1);
+	    $newtext .= "\n";
+	} elsif ($text =~ /^([^\r\n]+)/) {
+	    # text
+	    $text = substr($text, length $1);
+	    $newtext .= $1;
+	}
+    }                 
+    return $newtext;
 }
 
 1;

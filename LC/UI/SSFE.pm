@@ -18,9 +18,10 @@ It can be found at http://www.eleves.ens.fr:8080/home/espel/sirc/ssfe.c
 
 package LC::UI::SSFE;
 
+use LC::UI::Basic;
 use LC::Config;
 use vars qw(@ISA);
-@ISA=("LC::UI::Basic");
+@ISA = ("LC::UI::Basic");
 
 sub new {
     my ($class)=@_;
@@ -64,45 +65,10 @@ sub ui_resetfilter {
 
 }
 
-sub ui_output {
-    my $self=shift;
-
-    my %h;
-    if (@_ == 1) {
-	%h = (Text => $_[0]);
-    } else {
-	%h = @_;
-    }
-
-    my $text=strip_tags($h{Text});
-
-    # NOTE:  This code DISABLES ssfe's word wrapping, because it indents really
-    #        strangely when it does it.  Someone could write some word 
-    #        wrapping code to drop in here, but.. 
-    my ($char,$line);
-    foreach $char (split //,$text) {
-	$line .= $char;
-	if (length($line) > $self->{ui_cols}) {
-	    $line=~s/^$h{WrapChar}$h{WrapChar}/$h{WrapChar}/;
-	    print "$line\n";
-	    $line=$h{WrapChar};
-	} elsif ($char =~ /[\r\n]/) {
-	    $line=~s/^$h{WrapChar}$h{WrapChar}/$h{WrapChar}/;
-	    print "$line";
-	    $line=$h{WrapChar};
-	}		
-    }
-    if ($line) {
-	$line=~s/^$h{WrapChar}$h{WrapChar}/$h{WrapChar}/;	
-	print "$line\n";
-    }
-}
-
-
 sub ui_status {
     my ($self, $newstatus)=@_;
 
-    my $newstatus=strip_tags($newstatus);
+    my $newstatus=LC::UI::Basic::strip_tags($newstatus);
 
     if ($self->{laststatus} ne $newstatus) {
 	print "`#ssfe#s$newstatus\n";
@@ -160,49 +126,6 @@ sub ui_prompt {
     my ($self,$prompt)=@_;
     
     print "`#ssfe#p$prompt\n";
-}
-
-sub ui_select($$$$) {
-    my($self, $rr, $wr, $er, $to) = @_;
- 
-    my $r = IO::Select->new(@$rr);
-    my $w = IO::Select->new(@$wr);
-    my $e = IO::Select->new(@$er);
-    my @ret = IO::Select->select($r, $w, $e, $to);
-
-    return @ret;
-}
-
-sub strip_tags {
-    my ($text)=@_;
-    $text =~ s/\\\\//g;
-    $text =~ s/\\\<//g;
-    $text =~ tr/</</;
-    $text =~ s/\\(.)/$1/g;
-    $text =~ tr//\\/;
-    
-    my $newtext;
-    while (length $text) {
-	if ($text =~ /^(([^\>]*)\>\>)/) {
-	    # <<filter>>
-	    $text = substr($text, length $1);
-	} elsif ($text =~ /^(\/([^\>]*)\>)/) {
-	    # </tag>
-	    $text = substr($text, length $1);
-	} elsif ($text =~ /^(([^\>]*)\>)/) {
-	    # <tag>
-	    $text = substr($text, length $1);
-	} elsif ($text =~ /^(\r?\n)/) {
-	    # newline
-	    $text = substr($text, length $1);
-	    $newtext .= "\n";
-	} elsif ($text =~ /^([^\r\n]+)/) {
-	    # text
-	    $text = substr($text, length $1);
-	    $newtext .= $1;
-	}
-    }                 
-    return $newtext;
 }
 
 1;
