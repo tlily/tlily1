@@ -1,4 +1,6 @@
 Version 0.2d
+  * Extensions may be loaded and unloaded during a lily session.
+  * Timezone rewriting works again, through the 'zone' extension.
   * Groups are supported (the expander knows about them).
   * -- MORE -- works.
   * The password does not appear in the command history.
