@@ -41,7 +41,7 @@ print "-n: $nonono\n" if $debug;
 
 $VERSION = $TL_VERSION;
 $CVSTAG = &ver2tag($VERSION);
-$STATE = 'test';
+$STATE = 'release';
 $moddir="LC";
 $extdir="extensions";
 $modext='\.pm';
