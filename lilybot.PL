@@ -1,5 +1,5 @@
 @@PERL@@
-# $Header: /data/cvs/tlily/lilybot.PL,v 2.3 1998/06/14 09:02:39 josh Exp $
+# $Header: /data/cvs/tlily/lilybot.PL,v 2.4 1998/07/23 18:05:38 josh Exp $
 
 require 5.00307;
 
@@ -29,7 +29,7 @@ cmd_init();
 
 register_bothandler(Match => "help",
 		    Private => 1,
-		    Respond => "Hi.. I know the following commands: cmd register, cmd deregister, cmd list, cmd <what you want me to do>");
+		    Respond => "Hi.. I know the following commands: cmd register [private] keyphase=response, cmd deregister #, cmd list, cmd show #, cmd <what you want me to do>.  Note that a \"response\" can contain perl code prefixed by \"CODE:\".  Its return value will be sent to the sender.  The original send will be in \$send.");
 
 register_bothandler(Match => "grope",
 		    Respond => "Me grope good!");		
@@ -59,9 +59,6 @@ register_bothandler(Match => "surreal|weird|compliment",
 			}
 		    }
 		    );
-
-#register_bothandler(Match => "localtime",
-#		    Respond => "CODE: \"Localtime=\" . localtime(time())");
 
 main();
 
@@ -172,7 +169,7 @@ sub eventhandler {
 
 		if ($event->{Raw} =~ /cmd list/) {
 		    my $ret="The following keywords are known: ";
-		    foreach (keys %bot_handlers) {
+		    foreach (sort keys %bot_handlers) {
 			if ($bot_handlers{$_}->{Private}) {
 			    $ret .= "$_) $bot_handlers{$_}->{Match} (private only) | ";
 			} else {
@@ -184,10 +181,32 @@ sub eventhandler {
 		    return;		    
 		} 
 		
-		if ($event->{Raw} =~ /cmd register [^\=]+\=.*/) {
-		    ($match,$respond)=($event->{Raw} =~ 
-				       /cmd register ([^\=]+)\=(.*)/);
+		if ($event->{Raw} =~ /cmd show (\d+)/) {
+		    my $ret = "Handler $1 (matching $bot_handlers{$1}->{Match}): ";
+		    $ret.=$bot_handlers{$1}->{Respond};
+		    $ret=~s/[\n\r]/ /g;
+		    response("$cmdto;$ret");
+		    return;
+		}
+
+		if ($event->{Raw} =~ /cmd register private ([^\=]+)\=(.*)/) {
+		    ($match,$respond)=($1,$2);
+
+		    register_bothandler(Match => $match,
+					Private => 1,
+					Respond => $respond);
 		    
+		    response("$cmdto;Registered handler to match \"$match\". (in private sends only)");
+		    return;
+		}
+		
+		if ($event->{Raw} =~ /cmd register ([^\=]+)\=(.*)/) {
+		    ($match,$respond)=($1,$2);
+
+#XXX
+		    response("$cmdto;Registering public handlers is not supported at this time.  Try cmd register private.");
+		    return;
+#XXX
 		    register_bothandler(Match => $match,
 					Respond => $respond);
 		    
@@ -231,7 +250,10 @@ sub eventhandler {
 			response("$to;$response\n") if $response;
 		    } elsif ($h->{Respond} =~ /^CODE: (.*)/) {
 			$code=$h->{Respond};
-			my $response=eval "\$send=\$event->{Raw}; $code";
+			my $cpt=new Safe;
+			my $send=$event->{Body}; $send=~s/[\r\n\']//g;
+ 			my $response=$cpt->reval("\$send='$send'; $code");
+			$response=~s/[\r\n]//g;
 			if ($@) {
 			    response("$to;Error in eval: $@\n");
 			} else {
