@@ -1,0 +1,242 @@
+#!/usr/bin/perl 
+#-w
+
+use LC::log; 
+use LC::config;
+use LC::IO;
+use LC::parse;
+use Socket;
+use Fcntl;
+use IO::Socket;
+use IO::Select;
+$|=1;
+
+# package globals
+my $sock;
+
+# globals
+$have_pseudo=0;
+
+# cool code.
+
+#$SIG{ALRM}=sub { log_debug("ALARM! @_\n"); alarm_handler(); }; 
+#alarm(5);
+
+ui_start();
+login();
+connect_until("HELL FREEZES OVER");    
+log_notice("Exiting.");
+
+END {
+    ui_end;
+}
+
+##############################################################################
+sub login {    
+    $parse_state="login";
+    log_notice("Connecting to $config{server} $config{port}.");
+    ui_status(server => $config{server},
+	      status => "INIT");
+
+    $sock = IO::Socket::INET->new(PeerAddr => $config{server},
+				  PeerPort => $config{port},
+				  Proto    => 'tcp');                         
+    if (! defined($sock)) { die "IO::Socket: $!\n"; }
+    
+    fcntl($sock,F_SETFL,O_NONBLOCK) || die "fcntl: $!\n";
+    
+    ui_status(status => "CONN");
+    
+    log_notice("Connected.");
+    
+    pass_until("login:",10);
+    if ($config{login} && $config{pass}) {
+	log_info("Sending autologin ($config{login})\n");
+	send_to_server("$config{login} $config{pass}\n");
+    }
+
+    connect_until("***");
+
+    #heheheh this should be fixed!!!!
+    send_to_server("\#\$\# client_version 0.8b-zorak\n");
+    send_to_server("\#\$\# client_name lily\n");
+
+    ui_status(status => "ONLINE");
+    log_info("Connected");
+}
+
+
+# allow the user to type, a nice normal bidirectional connection until we
+# see the desired output.
+sub connect_until {
+    my ($waitfor)=@_;
+    my ($str,$t,$u);
+    
+    $waitfor=~ s/\*/\\\*/g;
+    $waitfor=~ s/\./\\\./g;
+
+    my $s = IO::Select->new();    
+
+    $s->add($sock);
+    $s->add(\*STDIN);
+
+    while (1) {
+
+	@ready=$s->can_read();
+	
+	$t="";
+	$str="";
+	foreach $rs (@ready) {      
+	    if ($rs == $sock) {
+		if (sysread($sock,$t,4096) < 1) { log_err("sysread: $!"); }
+		$u=$t;		
+		
+		$u =~ s/^%.*$//gm;
+		# workaround for %recip_regexp at blurb prompt
+		$u =~ s/^--> %.*$/--> /gm;
+
+		# NOTE: Should also have code for if we got a partial line
+		#       (not in the 4096 buffer, whatever, foo my bar.)
+		# non critical, the command will be picked up later, but
+		# the user might see part of it. woo.
+		
+		parse_output($u);    # show it to the user..
+
+		$str .= $t;
+
+		# workaround for %recip_regexp at blurb prompt
+		if ( $str =~ /^--> (%.*)$/m ) {
+		    parse_servercmd($1);
+		    $str =~ s/^--> %.*$/--> /gm;
+		} 
+
+		if ( $str =~ /^(%.*)$/m ) {
+		    parse_servercmd($1);
+		    $str =~ s/^%.*$//gm;
+		}
+
+		if ($str =~ /$waitfor/) { return; }
+		if ($t eq '\n') { $str=""; }
+		next;
+	    }
+	    
+	    if ($rs == \*STDIN) {
+		# check for UI events, deal wid' em.
+		while (1) {
+		    # get a line of input from the user if it's available.
+		    $line=ui_process();		
+		    if (defined($line)) {		    
+			ui_output($line);
+			if ($line =~ /^%/) { 
+			    # handle client commands
+			    $line=~s/^%//g;
+			    my $output=eval($line); 
+			    ui_output($output);
+			    ui_output($@) if ($@);
+			} else {
+			    # otherwise, send on to the server.
+			    send_to_server("$line\n");
+			}
+		    } else {
+#			log_debug("line undef"); 
+			last;
+		    }
+		}
+		next;
+	    }       	
+	    
+	    log_err("SKY IS FALLING!\n");
+	}
+    }   
+}
+
+# pass through all output from the server until a string is matched.
+sub pass_until {
+    my ($waitfor,$timeout)=@_;
+    my ($t,$str,$matched);
+    
+    my $s = IO::Select->new();
+
+    $s->add($sock);
+
+    my $stime=time();
+    my $now=$stime;
+    $t="";
+    $str="";
+    while ($now-$stime < $timeout) {	
+	if ($s->can_read($stime+$timeout-$now)) {
+	    if (sysread($sock,$t,1) != 1) { log_err("sysread: $!"); }
+	    $str .= $t;
+	    
+	    if ($str =~ /$waitfor$/) {
+		$matched=1;
+		last; 
+	    }
+
+	    if ($str =~ /\n/) {
+		parse_output($str);
+		$str = "";
+	    }
+	}
+	$now=time();
+    }
+
+    if ($str) { parse_output($str); }
+   
+    if (! $matched) {
+	log_err("Error waiting for $waitfor, $timeout sec timeout expired.\n");
+    }
+}
+
+
+sub send_to_server {
+    my ($s)=@_;
+    
+    my $t=$s;
+    $t=~s/\n/\[\\n\]/g;
+    log_debug("send_to_server: $t");
+    if (syswrite($sock,$s,length($s)) != length($s)) {
+	log_err("syswrite: $!"); 
+    }
+
+}
+
+
+sub do_how {
+    $cli_command="how";
+    
+    send_to_server("/how\n");
+}
+
+sub do_who_me {
+    $cli_command="who me";
+    
+    send_to_server("/who me\n");
+}
+
+sub alarm_handler {
+    log_info("alarm handler");
+
+    if ($parse_state eq undef) {
+	# we're idle, so we can send these commands.
+	
+	if (! $have_pseudo) {
+	    do_who_me() unless $cli_command;
+	}
+	
+	do_how() unless $cli_command;
+    }
+
+    if ($have_pseudo) {
+    log_info("alarm handler, set for 300");
+	alarm(300);		
+    } else {
+	log_info("alarm handler, set for 5");
+	alarm(5);
+    }
+}
+
+
+1;
+
+
