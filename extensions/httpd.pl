@@ -8,7 +8,7 @@
 use Socket;
 use FileHandle;
 
-my $rawfd, $sockfd, $port;
+my $sockfd, $port;
 my $listenhandler;
 # There is little to hash this on, so I will use an ever-increasing
 # scalar to hash on.
@@ -22,22 +22,16 @@ sub httpd_accept ($) {
 
     return if $hdr->{Name} !~ /^Httpd$/;
 
-    accept New, $rawfd;
+    accept New, $sockfd;
 
     ui_output("(httpd: accepted a connection)");
 
-    my $fd = new FileHandle;
-    my $newh;
-
-    $fd->fdopen(New, "r");
-
-    $newh = register_iohandler (Handle => $fd,
-				RealHandle => \*New,
+    $newh = register_iohandler (Handle => \*New,
 				Name => $name,
 				Mode => 'r',
 				Call => \&httpd_process);
 
-    $fds{$name} = $fd;
+    $fds{$name} = \*New;
     $cxns{$name++} = $newh;
 }
 
@@ -65,20 +59,43 @@ sub httpd_process ($) {
 	close $fd;
 	delete $cxns{$handler->{Name}};
 	deregister_handler($handler);
-	ui_output("(httpd: closing connection)");
 	return;
     }
 
 
     foreach $line (split '[\r\n]', $buf) {
-	ui_output("(httpd: received line: $line)");
-	httpd_parse($line);
+	httpd_parse($line, $handler);
     }
 }
 
 # Parse the incoming http request
-sub httpd_parse ($) {
-# It would be immensely useful to do something here.
+sub httpd_parse ($$) {
+    my ($line, $handler) = @_;
+    my $fd = $fds{$handler->{Name}};
+
+    ui_output ("(httpd: Processing line: $line)");
+
+    # Simple parsing for now.  Just support GET
+    if (my ($cmd, $file, $proto) = 
+	($line !~ /^(\w+)[ \t]+(\S+)(?:[ \t]+(HTTP\/\d+\.\d+))?[^\012]*\012/)) {
+	httpd_error($fd, "400 Bad Request");
+    }
+    ($cmd, $file, $proto) = ($1, $2, $3);
+    ui_output ("(httpd: Cmd: $cmd; File: $file; Proto: $proto)");
+    if ($cmd !~ /^GET$/) {
+	print $fd "<html><head>\n<title>400 Bad Request</title>\n";
+	print $fd "</head><body>\n<h1>Bad Request</h1>\n";
+	print $fd "This server could not understand that request.<p>\n";
+	print $fd "</body></html>\n";
+	close $fd;
+	delete $cxns{$handler->{Name}};
+	deregister_handler($handler);
+	return;
+    }
+}
+
+sub httpd_error($$) {
+    my ($fd, $error) = @_;
 }
 
 # Find a and bind to a socket
@@ -92,7 +109,7 @@ sub find_port ($) {
     }
 
     die "Could not find a port to bind to!" if $port >= 40000;
-    ui_output($port);
+    ui_output("(httpd: listening on port $port)");
 }
 
 sub make_socket {
@@ -106,7 +123,7 @@ sub make_socket {
 # Close the listening socket when unloading
 sub unload {
     ui_output("(httpd: Cleaning up)");
-    close($rawfd);
+    close($sockfd);
     deregister_handler($listenhandler);
     foreach $handler (keys (%cxns)) {
 	close($fd{$handler});
@@ -115,13 +132,8 @@ sub unload {
 }
 
 # Initialize the module.  Get a socket, bind it, and start listening.
-$rawfd = make_socket;
-find_port($rawfd);
-
-# We need a FileHandle for the iohandler, but we also need the raw socket for
-# the socket functions.
-$sockfd = new FileHandle;
-$sockfd->fdopen($rawfd, "r");
+$sockfd = make_socket;
+find_port($sockfd);
 
 # Before we start listening, we want to set up the iohandler, so no
 # connections get missed.
@@ -131,4 +143,4 @@ $listenhandler = register_iohandler( Handle => $sockfd,
 				     Call => \&httpd_accept);
 
 # Now, it is ok to call listen() and get everything started
-listen($rawfd, SOMAXCONN);
+listen($sockfd, SOMAXCONN);
