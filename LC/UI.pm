@@ -58,12 +58,12 @@ use strict;
 	     &ui_escape
 	    );
 
-my (%ui_map);
+my (%ui_map,$save_default_ui);
 
 sub ui_start { 
     my ($target,$type)=@_;
     if (! $target) {
-	if ($ui_map{default}) {
+	if ($ui_map{default} && ! $save_default_ui) {
 	    die "A default UI has already been registered!\n";
 	} else {
 	    $target='default';
@@ -75,10 +75,17 @@ sub ui_start {
 
     my $UI; 
 
-    eval "use LC::UI::$type; \$UI=new LC::UI::$type()";
-    die "Unable to load UI module: $@\n" if $@;
-    die "Error instantiating LC::UI::$type\n" unless ($UI);
-    
+    if ($target eq "default" && defined($save_default_ui)) {
+	$UI=$save_default_ui;
+	undef $save_default_ui;
+    }	    
+
+    if (! $UI) {
+	eval "use LC::UI::$type; \$UI=new LC::UI::$type()";
+	die "Unable to load UI module: $@\n" if $@;
+	die "Error instantiating LC::UI::$type\n" unless ($UI);
+    }
+
     $UI->ui_start($target); 
     # need to use a tied scalar here, for the time being.  $ui_cols should
     # die..
@@ -93,7 +100,16 @@ sub ui_end {
     $target ||= "default";
 
     $ui_map{$target}->ui_end();
-    delete $ui_map{$target};
+    if ($target eq "default") {
+	# because we may want to restart the default ui, we do _not_ destroy
+	# it if it is shut down.   This should be replaced with a ui_savestate
+	# and ui_restorestate function in each ui module later, but for now
+	# this hack should suffice.
+
+	$save_default_ui=$ui_map{$target} 
+    } else {
+	delete $ui_map{$target};
+    }
 }
 
 sub ui_attr {     
