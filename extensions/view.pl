@@ -23,9 +23,8 @@ sub view_display(\@) {
 
     my $fh = IO::File->new(">$tmpfile");
     foreach (@$lref) {
-	chomp;
-      1 while s/<([^>]*)>(.*)<\/\1>/$2/; # Nasty <tag>...</tag> filter
-      $fh->print("$_\n");
+       chomp;
+       $fh->print("$_\n");
     }
     $fh->close();
 
@@ -50,8 +49,9 @@ sub view_cmd($;$$) {
 	        view_display(@lines);
             }
 	} elsif ( $event->{Type} ne 'begincmd' &&
-                  ( ! $filter || &{$filter}($event->{Text}) ) ) {
-	    push @lines, $event->{Text};
+                  ( ! $filter || &{$filter}($event->{Raw}) ) ) {
+	    $event->{Raw}=~s/^\n//g;
+	    push @lines, $event->{Raw};
 	}
 	return 0;
     });
@@ -59,12 +59,12 @@ sub view_cmd($;$$) {
 
 
 register_user_command_handler('view', \&view_cmd);
-register_help_short('view', 'sends output of lily command to temp buffer');
+register_help_short('view', 'sends output of lily command to an editor');
 register_help_long('view',
-"This allows you to get the output of a command into a temporary buffer for
-leisurely perusal, or perhaps a quick search or two.  For example, you can
-do a \"%view /review detach\", and then save your detach buffer, so you
-can respond to real-time messages, while still keeping an eye on the past
-in another window.");
+"This allows you to get the output of a command into a temporary buffer
+and loads an editor to allow you to save it to a file or perhaps do a quick
+search or two.  For example, you can do a \"%view /review detach\", and then
+save your detach buffer, so you can respond to real-time messages, while still
+keeping an eye on the past in another window.");
 
 1;

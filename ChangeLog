@@ -3,7 +3,7 @@ Version 0.6e
   * [extensions/info.pl] Added %help. [JDW]
   * [extensions/view.pl] Fixed, improved %help. [JDW]
   * [LC/Extend.pm] Added some additional output and error messages [JDW]
-  * [extensions/vacation.pl] Added.  Automated responses to private sends [JDW]
+  * [extensions/autoreply.pl] Added.  Automated responses to private sends [JDW]
   * [extensions/look.pl]  Added a chomp() to remove exess newlines.  [DPN]
   * [extensions/info.pl, tlily.global]  Added an 'editor' config var.  [DPN]
   * [LC/State.pm] Added -f option to %sync.  [DPN]
