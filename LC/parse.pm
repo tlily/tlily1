@@ -739,7 +739,7 @@ sub parse_user() {
 	%ev = ( Type => 'scommand',
 		Command => $1,
 		Args => [ quotewords("\\s+", 0, $2) ] );
-    } elsif ($line =~ /^(\S*)[;:](.*)/) {
+    } elsif ($line =~ /^([\S;:]*)[;:](.*)/) {
 	%ev = ( Type => 'usend',
 		To => [ split /,/, $1 ],
 		Body => $2 );
