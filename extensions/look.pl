@@ -1,4 +1,4 @@
-# $Header: /data/cvs/tlily/extensions/look.pl,v 1.6 1998/06/05 03:22:49 mjr Exp $
+# $Header: /data/cvs/tlily/extensions/look.pl,v 1.7 1998/06/05 03:34:37 josh Exp $
 #
 # "look" tlily extension
 #
@@ -23,24 +23,33 @@ sub spellcheck($$$) {
     @res = `look $word`;
     chomp(@res);
 
-    my $clen = 0;
-    foreach (@res) { $clen = length $_ if (length $_ > $clen); }
-    $clen += 2;
+    if (@res == 0) {
+	ui_output("(\"$word\" not found in dictionary)");
+    } elsif (@res == 1) {
+	ui_output("(\"$word\" is spelled correctly)");	
+    } else {
 
-    my $cols = int($ui_cols / $clen);
+	ui_output("(The following possible words were found:)");
+
+	my $clen = 0;
+	foreach (@res) { $clen = length $_ if (length $_ > $clen); }
+	$clen += 2;
+	
+	my $cols = int($ui_cols / $clen);
     my $rows = int(@res / $cols);
-    $rows++ if (@res % $cols);
+	$rows++ if (@res % $cols);
+	
+	$rows = 5 if ($rows > 5);
 
-    $rows = 5 if ($rows > 5);
-
-    my $i;
-    for ($i = 0; $i < $rows; $i++) {
-	ui_output(sprintf("%-${clen}s" x $cols,
-			  map{$res[$i+$rows*$_]} 0..$cols));
-    }
-
-    if (@res > $rows * $cols) {
-	ui_output("(" . (@res - ($rows * $cols)) . " more entries follow)");
+	my $i;
+	for ($i = 0; $i < $rows; $i++) {
+	    ui_output(sprintf("%-${clen}s" x $cols,
+			      map{$res[$i+$rows*$_]} 0..$cols));
+	}
+	
+	if (@res > $rows * $cols) {
+	    ui_output("(" . (@res - ($rows * $cols)) . " more entries follow)");
+	}
     }
 
     return;
