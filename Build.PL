@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# $Header: /data/cvs/tlily/Build.PL,v 1.15 1998/05/29 06:09:25 josh Exp $
+# $Header: /data/cvs/tlily/Build.PL,v 1.16 1998/06/12 06:27:47 albert Exp $
 
 use Config;
 use Carp;
@@ -632,41 +632,30 @@ sub ask_version {
 
 sub ver2tag {
     my($ver) = @_;
-    my($maj,$min,$sub,$pre) = split_version($ver);
-    "$STATE-$maj-$min$sub".($pre?"-pre$pre":'');
+    my($maj,$min,$sub) = split_version($ver);
+    "$STATE-$maj-$min-$sub";
 }
 
 sub split_version {
     my($ver) = @_;
-    my($maj,$min,$sub,$pre);
-    $ver =~ m/(\d)\.(\d)([a-z]?)/o;
+    my($maj,$min,$sub);
+    $ver =~ m/(\d+)\.(\d+?)\.?(\d+)?/o;
     ($maj,$min,$sub) = ($1, $2, $3);
-    $ver =~ m/-pre(\d+)/o;
-    ($maj,$min,$sub,$1);
+    ($maj,$min,$sub);
 }
 
 sub next_version {
     my($ver)=@_;
     $ver =~ s/-post$//;
-    my($maj,$min,$sub,$pre) = split_version($ver);
-    if($sub) {
-	if($sub eq 'z') {$sub = ''; } else { $sub++; }
-    } else {
-	$sub = 'a';
-    }
-    if($sub eq '') {
-	if($min == 9) { $min = 0; } else { $min++; }
-    }
-    if($min == 0) {
-	$maj++;
-    }
-    "$maj.$min$sub";
+    my($maj,$min,$sub) = split_version($ver);
+    if($sub) { $sub++; }
+    else { $sub = 1; }
+    "$maj.$min.$sub";
 }
 
 sub version_part {
-    my($maj,$min,$sub,$pre) = split_version($_[0]);
-#    "$maj.$min$sub".($pre?"-pre$pre":'');
-    "$maj.$min$sub";
+    my($maj,$min,$sub) = split_version($_[0]);
+    "$maj.$min.$sub";
 }
 
 sub make_version_file {
