@@ -166,6 +166,7 @@ use LC::Config;
 	     &ui_bell
 	     &ui_password
 	     &ui_prompt
+	     &ui_select
 	     &ui_set
 	     $ui_cols);
 
@@ -1187,6 +1188,12 @@ sub ui_set(%) {
 	    $term->term_refresh();
 	}
     }
+}
+
+
+sub ui_select($$$$) {
+    my($r, $w, $e, $t) = @_;
+    return $term->term_select($r, $w, $e, $t);
 }
 
 1;

@@ -166,6 +166,7 @@ Sounds an audible bell.
 
 use Curses;
 use POSIX;
+use IO::Select;
 use LC::Config;
 
 
@@ -410,6 +411,17 @@ sub term_get_char () {
 sub term_refresh () {
     shift;
     refresh();
+}
+
+
+sub term_select ($$$$) {
+    shift;
+    my($rr, $wr, $er, $to) = @_;
+ 
+    my $r = IO::Select->new(@$rr);
+    my $w = IO::Select->new(@$wr);
+    my $e = IO::Select->new(@$er);
+    return IO::Select->select($r, $w, $e, $to);
 }
 
 

@@ -1,6 +1,7 @@
 # -*- Perl -*-
 package LC::TTerminal;
 
+use IO::Select;
 use Term::Cap;
 use POSIX;
 
@@ -271,5 +272,17 @@ sub term_refresh () {
     print $out;
     $out = '';
 }
+
+
+sub term_select ($$$$) {
+    shift;
+    my($rr, $wr, $er, $to) = @_;
+ 
+    my $r = IO::Select->new(@$rr);
+    my $w = IO::Select->new(@$wr);
+    my $e = IO::Select->new(@$er);
+    return IO::Select->select($r, $w, $e, $to);
+}
+
 
 1;
