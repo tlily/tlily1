@@ -81,11 +81,10 @@ sub extension($;$) {
     push @share,@LC::State::EXPORT;
     push @share,@LC::Config::EXPORT;
     push @share,@LC::Event::EXPORT;
-    $TL_VERSION=$main::TL_VERSION;
-    push @share,qw($TL_VERSION);
-    
-    $safe->share (@share);
-    $safe->share_from('main', [ qw(%ENV @INC %INC $@ $] $$) ]);
+
+    $safe->share(@share);
+    # This only works in perl 5.003_07+
+    $safe->share_from('main', [ qw($TL_VERSION %ENV %INC @INC $@ $] $$) ]);
         
     my $old = $Extensions{/current/};
     $Extensions{$name} = { File => $filename,
