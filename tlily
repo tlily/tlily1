@@ -74,12 +74,6 @@ $SIG{__WARN__} = sub { ui_output("WARNING: " . $_[0]); };
 main();
 
 
-log_notice("Exiting.");
-
-END {
-    ui_end;
-}
-
 ##############################################################################
 sub eventloop() {
     my $s = IO::Select->new($server_sock, \*STDIN);
@@ -216,7 +210,28 @@ sub main() {
     log_notice("Connected.");
 
     init_connection_handling();
-    eventloop();
+
+    while (1) {
+	eval { eventloop(); };
+
+	# Normal exit.
+	if ($@ eq '') {
+	    log_notice("Exiting.");
+	    ui_end();
+	    exit;
+	}
+
+	# Non-fatal errors.
+	if ($@ =~ /^Undefined subroutine/) {
+	    my $l = $@; $l =~ s/\\\</\\$@/g; chomp($l);
+	    ui_output "<yellow>ERROR: $l</yellow>";
+	    next;
+	}
+	
+	# Oh, well.  Guess we have a problem.
+	ui_end();
+	die $@;
+    }
 }
 
 
