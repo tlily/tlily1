@@ -39,7 +39,11 @@ sub extension($) {
 	$name = basename($name, ".pl", ".PL");
     }
 
-    return if (defined $Extensions{$name});
+    if (defined $Extensions{$name}) {
+	ui_output("(Extension \"$name\" already loaded.)");
+	return ;
+    }
+
 
     my @ext_dirs = ("$ENV{HOME}/.lily/tlily/extensions", $main::TL_EXTDIR);
     my $dir;
