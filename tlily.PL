@@ -52,9 +52,18 @@ if (! $config{mono}) {
 statusline_init();
 
 my $state;
+my $ctrlcpress;
 
 #$SIG{__DIE__} = sub { ui_output("DIE: " . $_[0]); };
 $SIG{__WARN__} = sub { ui_output("WARNING: " . $_[0]); };
+$SIG{INT} = sub { 
+    if (time()-$ctrlcpress < 5) {
+	die ("Ctrl-C Pressed\n");
+    } else {	
+	ui_output("(press ctrl-c again within 5 seconds to log off)");
+	$ctrlcpress=time();
+    }
+};
 
 main();
 
