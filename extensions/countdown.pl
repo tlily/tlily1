@@ -37,7 +37,43 @@ sub set_timer {
 	return 0;
     }
 
-    $timer = $u . $interval_c;
+    if($config{countdown_fmt}) {
+	my($days,$hrs,$mins,$secs,$rem);
+	$rem = $r;
+	$days = int($rem / (60*60*24));
+	$rem = int($rem % (60*60*24));
+	$hrs = int($rem / (60*60));
+	$rem = int($rem % (60*60));
+	$mins = int($rem / (60));
+	$rem = int($rem % (60));
+	$secs = int($rem);
+	#ui_output("$days/$hrs/$mins/$secs");
+	my $str = $config{countdown_fmt};
+	#ui_output($str);
+
+	if($days > 0) { $str =~ s/\%\{(\d*)d(.*?)\}/sprintf("%$1d",$days).$2/e; }
+	else { $str =~ s/\%\{(\d*)d.*?\}//; }
+	#ui_output($str);
+
+	if($hrs > 0) { $str =~ s/\%\{(\d*)h(.*?)\}/sprintf("%$1d",$hrs).$2/e; }
+	else { $str =~ s/\%\{(\d*)h.*?\}//; }
+	#ui_output($str);
+
+	if($mins > 0) { $str =~ s/\%\{(\d*)m(.*?)\}/sprintf("%$1d",$mins).$2/e; }
+	else { $str =~ s/\%\{(\d*)m.*?\}//; }
+	#ui_output($str);
+
+	if($interval_c eq 's' && $secs > 0) {
+	    $str =~ s/\%\{(\d*)s(.*?)\}/sprintf("%$1d",$secs).$2/e;
+	} else {
+	    $str =~ s/\%\{(\d*)s.*?\}//;
+	}
+	#ui_output($str);
+	$timer = $str;
+    }
+    else {
+	$timer = $u . $interval_c;
+    }
     redraw_statusline();
 
 
