@@ -100,7 +100,8 @@ sub user_accept() {
 	last unless (defined $text);
 	dispatch_event({Type => 'userinput',
 			Text => $text,
-			ToUser => 1});
+			ToUser => 1,
+			ToServer => 1});
     }
 }
 

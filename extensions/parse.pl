@@ -721,6 +721,8 @@ sub parse_user() {
     my $line = $event->{Text};
     my %ev;
 
+    $event->{ToServer} = 0;
+
     if ($line =~ /^\s*%(\S*)\s*(.*)/) {
 	%ev = ( Type => 'ccommand',
 		Command => $1,
