@@ -106,6 +106,9 @@ sub parse_command_line {
 	if($ARGV[0] =~ /^-(p|port)$/) {
 	    shift @ARGV; $config{port} = shift @ARGV; next;
 	}
+	if($ARGV[0] =~ /^-(m|mono)$/) {
+	    shift @ARGV; $config{mono} = 1; next;
+	}
 	if($ARGV[0] eq '-snrub') {
 	    shift @ARGV; $snrub = 1; next;
 	}
@@ -115,11 +118,12 @@ sub parse_command_line {
 	if($ARGV[0] =~ /^-(\w+)=(\w+)$/) {
 	    my($var,$val) = ($1,$2);
 	    $config{$var} = $val;
-	    shift @ARGV;
+	    shift @ARGV; next;
 	}
 	if($ARGV[0] =~ /^-(\w+)$/) {
 	    my($var) = $1;
 	    $config{$var} = 1;
+	    shift @ARGV; next;
 	}
     }
 #    GetOptions( 'm|mono!' => \$config{mono},
@@ -168,7 +172,7 @@ sub config_ask {
 
 sub Usage {
 	print STDERR qq(
-Usage: $0 [-m[ono]] [-zonedelta <delta>] [-[s]erver servername] [-[p]ort number] [-pager 0|1] [-<configvar>[=<configvalue>]\n";
+Usage: $0 [-m[ono]] [-zonedelta=<delta>] [-[s]erver servername] [-[p]ort number] [-pager=0|1] [-<configvar>[=<configvalue>]\n";
 );
 }
 
