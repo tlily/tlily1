@@ -1,15 +1,15 @@
 Version 0.9b-post
   * [LC/CTerminal.pm] Added definitions for the home and end keys. [CWS]
   * [LC/UI.pm] Made home and end do something. [CWS]
+  * [extensions/startup.pl] added a %help. [CWS]
   * [extensions/startup.pl] The Startup file is now lily/tlily commands,
                             processed as input events. [CWS]
   * [LC/Event.pm] Corrected example and description for timed handlers.
                   Changed Code => Call. [CWS]
   * [tlily.global] Added default for @prefer, and changed @slash's default
                    to (undef). [CWS]
-  * [LC/Config.pm] When finding an array type config var, if its value is
+  * [LC/Config.pm] Upon finding an array type config var, if its value is
                    (undef), set the variable to be an empty list. [CWS]
-  * [extensions/set.pl] Give an error for non-existent config vars. [CWS]
   * [LC/State.pm] Fixed discussion substring expansion.  [DPN]
   * [extensions/pipes.pl] Stop repeatedly writing to a closed handle.  [DPN]
   * [LC/UI.pm] Fixed a bug when typing more than one line of input while a
