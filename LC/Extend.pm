@@ -1,5 +1,5 @@
 # -*- Perl -*-
-# $Header: /data/cvs/tlily/LC/Extend.pm,v 1.26 1998/05/29 06:09:28 josh Exp $
+# $Header: /data/cvs/tlily/LC/Extend.pm,v 1.27 1998/06/02 18:33:17 neild Exp $
 package LC::Extend;
 
 use Exporter;
@@ -50,7 +50,7 @@ sub extension($;$) {
     }
 
     if (defined $Extensions{$name}) {
-	ui_output("(Extension \"$name\" already loaded.)");
+	ui_output("(extension \"$name\" already loaded)");
 	return ;
     }
 
@@ -66,11 +66,11 @@ sub extension($;$) {
     }
 
     if (!defined $filename) {
-	ui_output("(Cannot locate extension \"$name\")");
+	ui_output("(cannot locate extension \"$name\")");
 	return;
     }
     
-    ui_output("*** loading \'$name\' from $filename") if ($verbose);
+    ui_output("(loading \"$name\" from \"$filename\")") if ($verbose);
 
     my $safe=new Safe;
 
@@ -130,12 +130,12 @@ sub extension($;$) {
 sub extension_unload($) {
     my($name) = @_;
 
-    if (!defined $Extensions{$name}->{Safe}) {
-       ui_output("*** \'$name\' extension not loaded");
+    if (!defined $Extensions{$name}) {
+       ui_output("(extension \"$name\" is not loaded)");
        return; 
     }
     
-    ui_output("*** unloading \'$name\' extension");
+    ui_output("(unloading \"$name\")");
 
     my $old = $Extensions{/current/};
     my $ext = $Extensions{$name};
@@ -210,9 +210,13 @@ sub extension_cmd($) {
     } elsif ($cmd eq 'reload') {
 	my $ext;
 	foreach $ext (@argv) {
-	    my $f = $Extensions{$ext}->{File};
 	    extension_unload($ext);
-	    extension($f,1);
+	    if (defined $Extensions{$ext}) {
+	        my $f = $Extensions{$ext}->{File};
+	        extension($f,1);
+	    } else {
+		extension($ext,1);
+	    }
 	}
     } elsif ($cmd eq 'list') {
 	my $s = "(Loaded extensions:";
