@@ -1,3 +1,6 @@
+Version 1.0.3-post
+  * [extensions/keepalive.pl] Changes to keepalive: I think it should actually
+
 Version 1.0.3
   * [Build.PL] Remove lilybot on a 'perl Build.PL clean'
   * [LC/CTerminal.pm] Changed the 'use POSIX' line to only include the one
