@@ -8,6 +8,7 @@ use POSIX;
 my $ui_up = 0;
 
 my @text_lines = ();
+my @text_sizes = ();
 my $text_lastline = -1;
 
 my $win_endline = -1;
@@ -85,8 +86,10 @@ sub color_alloc ($$) {
 # Define a new attribute.
 sub defattr ($$$$) {
     my ($name,$fg,$bg,$attrs) = @_;
-    my $n = color_alloc($fg,$bg);
-    $attrs |= COLOR_PAIR($n);
+    if (defined($fg) && defined($bg)) {
+	my $n = color_alloc($fg,$bg);
+	$attrs |= COLOR_PAIR($n);
+    }
     $attr_list{$name} = $attrs;
 }
 
@@ -168,6 +171,17 @@ my $win_idx_cline_idx;
 my $win_idx_cline_num;
 my @win_idx_ctext;
 
+
+# Returns the number of lines in a block of text.
+sub linelen ($) {
+    my ($idx) = @_;
+
+    $text_sizes[$idx] = fmtline($text_lines[$idx])
+	unless (defined $text_sizes[$idx]);
+    return $text_sizes[$idx];
+}
+
+
 # Returns a given line (counting from the end) of text.
 sub win_index ($) {
     my($num) = @_;
@@ -177,20 +191,25 @@ sub win_index ($) {
     if (!defined $win_idx_cline_idx) {
 	$win_idx_cline_idx = 0;
 	$win_idx_cline_num = 0;
-	@win_idx_ctext = fmtline($text_lines[$win_idx_cline_idx]);
+	@win_idx_ctext = linelen($win_idx_cline_idx);
+#	@win_idx_ctext = fmtline($text_lines[$win_idx_cline_idx]);
     }
 
     while ($num < $win_idx_cline_num) {
 	$win_idx_cline_idx--;
-	@win_idx_ctext = fmtline($text_lines[$win_idx_cline_idx]);
+	@win_idx_ctext = linelen($win_idx_cline_idx);
+#	@win_idx_ctext = fmtline($text_lines[$win_idx_cline_idx]);
 	$win_idx_cline_num -= scalar(@win_idx_ctext);
     }
 
     while ($num >= $win_idx_cline_num + scalar(@win_idx_ctext)) {
 	$win_idx_cline_num += scalar(@win_idx_ctext);
 	$win_idx_cline_idx++;
-	@win_idx_ctext = fmtline($text_lines[$win_idx_cline_idx]);
+	@win_idx_ctext = linelen($win_idx_cline_idx);
+#	@win_idx_ctext = fmtline($text_lines[$win_idx_cline_idx]);
     }
+
+    @win_idx_ctext = fmtline($text_lines[$win_idx_cline_idx]);
 
     if (($num >= $win_idx_cline_num) &&
 	($num < $win_idx_cline_num + scalar(@win_idx_ctext))) {
@@ -204,6 +223,8 @@ sub win_index ($) {
 # Paints one line in the text window.
 sub win_draw_line ($$) {
     my($ypos,$line) = @_;
+
+    autoflush STDERR 1;
 
     $line = ' ' if ($line eq '');
 
@@ -312,10 +333,13 @@ sub addline ($) {
     push(@fmt, '---') if (@fmt == 0);
     $text_lastline += scalar(@fmt);
     if ($atend) {
-	win_scroll(scalar(@fmt));
-    } else {
-	win_redraw;
+	my $max_scroll = $LINES - 3 - ($win_endline - $win_lastseen);
+	if ($max_scroll > 0) {
+	    win_scroll($max_scroll > scalar(@fmt) ?
+		       scalar(@fmt) : $max_scroll);
+	}
     }
+    scroll_info();
     refresh;
 }
 
@@ -323,13 +347,9 @@ sub addline ($) {
 # Redraws the status line.
 sub sline_redraw () {
     getyx($y, $x);
-    my $sline = sprintf "%-".$COLS.".".$COLS."s", $status_line;
-
-    my $oldattr = getattrs;
-    attrset getattr('status_line');
-    addstr($LINES - 2, 0, $sline);
-    attrset $oldattr;
-    move($y,$x);
+    my $sline = "<status_line>${status_line}</status_line>";
+    win_draw_line($LINES-2, $sline);
+    move($y, $x);
 }
 
 
@@ -425,6 +445,10 @@ sub input_bs (;$) {
 
 # Handles entry of a new line.
 sub input_accept (;$) {
+    if (($input_line eq '') && ($text_lastline != $win_endline)) {
+	input_pagedown();
+	return;
+    }
     push @accepted_lines, $input_line;
     $input_line = "";
     $input_pos = 0;
@@ -441,14 +465,18 @@ sub input_refresh (;$) {
 
 # Page up.
 sub input_pageup (;$) {
-    &win_scroll(-($LINES - 4));
+    $win_lastseen = $win_endline if ($win_endline > $win_lastseen);
+    &win_scroll(-($LINES - 3));
+    scroll_info();
     refresh;
 }
 
 
 # Page down.
 sub input_pagedown (;$) {
-    &win_scroll($LINES - 4);
+    $win_lastseen = $win_endline if ($win_endline > $win_lastseen);
+    &win_scroll($LINES - 3);
+    scroll_info();
     refresh;
 }
 
@@ -463,11 +491,26 @@ sub redraw () {
 }
 
 
+# Returns scrollback information.
+sub scroll_info () {
+    if (($win_endline - $win_lastseen) >= $LINES - 3) {
+	my $lines = $text_lastline - $win_endline + 1;
+	return if (($main::page_status ne '') && ($lines % 10));
+	$main::page_status = "MORE " . $lines;
+    } else {
+	$main::page_status = '';
+    }
+}
+
+
 # Accepts input from the terminal.
 sub handle_input () {
     my $c;
     while ($c = getch) {
 	last if ((!defined($c)) || ($c eq '-1'));
+
+	$win_lastseen = $win_endline if ($win_endline > $win_lastseen);
+	scroll_info();
 
 	if (defined $key_trans{$c}) {
 	    &{$key_trans{$c}}($c);

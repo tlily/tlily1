@@ -30,6 +30,15 @@ sub parse_line {
     
 #    main::log_debug("parse_line: \"$line\"");
 
+    # login stuff ############################################################
+    if ($parse_state eq "login") {
+	if ( /^Welcome to lily at (.*)/ ) {
+	    my $s=$1;
+	    $s=~s/\s*$//g;
+	    &main::ui_status( server => $s );
+	}
+    }
+
     # enter blurb ######################################################
     if (/^-->/) { $parse_state="blurb"; goto found;}
     # don't fall out prematurely.  try to stay in this state until
@@ -69,6 +78,7 @@ sub parse_line {
     # /review ##########################################################
     if (/^\#/) {
 	$parse_state="review";
+	$line="<review>$line</review>";
 	goto found;
     }
 
@@ -86,10 +96,12 @@ sub parse_line {
 	}
 	$line=~s|from $sender|from <sender>$sender</sender>|;
 	$line=~s|\[$blurb\]|\[<blurb>$blurb</blurb>\]|;
+	$line="<privhdr>$line</privhdr>";
 	goto found;
     }
     if (/^ -/ && $parse_state eq "privhdr")  { 
-	$parse_state="privmsg";       
+	$parse_state="privmsg";  
+	$line="<privmsg>$line</privmsg>";
 	goto found;
     }
 
@@ -103,19 +115,21 @@ sub parse_line {
 	} else {
 	    ($sender,$dest)=/From (.*), to (.*):/;
 	}
-	$line=~s|From $sender .* to $dest|From <sender>$sender</sender> to <dest>$dest</dest>|;
+	$line=~s|From $sender, to $dest|From <sender>$sender</sender>, to <dest>$dest</dest>|;
 	$line=~s|\[$blurb\]|\[<blurb>$blurb</blurb\]|;
+	$line="\n<pubhdr>$line</pubhdr>";
 	goto found;
     }
     if (/^ -/ && $parse_state eq "pubhdr")  { 
 	$parse_state="pubmsg";
+	$line="<pubmsg>$line</pubmsg>";
 	goto found;
     }
 
     # sanity checks ####################################################
-    if (/^ -/ && ! ($parse_state =~ /(privhdr|privmsg|pubhdr|pubmsg)/)) {
-	main::log_info("Warning: message body text out of context?");
-    }
+#    if (/^ -/ && ! ($parse_state =~ /(privhdr|privmsg|pubhdr|pubmsg)/)) {
+#	main::log_info("Warning: message body text out of context?");
+#    }
 
     # /who output ######################################################
     if (/Name.*On Since/) {
@@ -130,7 +144,7 @@ sub parse_line {
 	goto found;
     }
     if ($parse_state eq "who me" && $cli_command eq "who me") {
-	my $me=substr($_,0,40);
+	my $me=substr($_,2,29);
 	my $blurb;
 	$me =~s/^\s*//g;
 	$me =~s/(\S)\s*$/$1/g;
@@ -176,6 +190,24 @@ sub parse_line {
 	goto found;
     }
     
+    
+    # *** notices ############################################################
+    if (/^\*\*\*/) {
+	s/^\*\*\*//;
+	if (/^(.*) has detached/) {
+	  main::ui_status( detached => "incr" );
+	  main::ui_status( here => "decr" );
+	}
+	if (/^(.*) has reattached/) {
+	  main::ui_status( detached => "decr" );
+	  main::ui_status( here => "incr" );
+	}
+	if (/^(.*) is now \"away\"/) {
+	  main::ui_status( here => "decr" );
+	  main::ui_status( away => "incr" );
+	}
+    }
+
     # default ################################################################
     # if we don't know what state we're in..
     if ($parse_state =~ /(who|what)/) {
@@ -200,7 +232,7 @@ sub parse_line {
 	    return;
 	}
     }
-    &main::ui_output($line);
+&main::ui_output($line);
 }
 
 
@@ -214,9 +246,15 @@ sub parse_servercmd {
     # sender commands, send before private messages.
     if (/^%sender (.*)/) { $privsender=$1; return; }
 
+    # connected.
+    if (/^%connected/) { main::alarm_handler(); return; }
+
     # beep commands
     if (/^%g/) { printf("\007"); return; }
-    
+
+    # stupid thing we dont care about ;-)
+    if (/%recip_regexp/) { return; }
+
     # default
     &main::log_info("SERVER: $_");
 }

@@ -10,8 +10,12 @@ my %status;
 
 @ISA = qw(Exporter);
 
-@EXPORT = qw(&ui_output &ui_status &ui_start &ui_process &ui_end);
+@EXPORT = qw(&ui_output &ui_status &ui_start &ui_process &ui_attr &ui_end);
 
+
+sub ui_attr {
+    &LC::UI::defattr(@_);
+}
 
 # put out a chunk of output..
 sub ui_output {
@@ -29,30 +33,44 @@ sub ui_output {
 sub ui_status {
     my %s2=@_;
 
-    foreach (keys %s2) { $status{$_}=$s2{$_}; }
-    
-    $n="";
-    $n=$status{pseudo} if (defined($status{pseudo}));
-    $n.=" [$status{blurb}]" if (defined($status{blurb}));
+    foreach (keys %s2) {
+	if ($s2{$_} eq "incr") {
+	    $status{$_}++;
+	} elsif ($s2{$_} eq "decr") {
+	    $status{$_}--;
+	} else {
+	    $status{$_}=$s2{$_}; 
+	}
+    }
 
-    $s="";
-    $s.="|$status{parse_state}|";
-    
-    my @s;
-    push @s, "$status{here} Here" if (defined($status{here}));
-    push @s, "$status{away} Away" if (defined($status{away}));
-    push @s, "$status{detached} Detach" if (defined($status{detached}));
-    $s .= join "|",@s;
-    
-    my $status_line=sprintf ("%-20.20s %26.26s %23.23s | %6.6s",
-			     $n,
-			     $s,
-			     $status{server},
-			     $status{status});
 
+    my @left;
+    my $name=$status{pseudo};
+    $name .= "[$status{blurb}]" if (defined($status{blurb}));
+    push @left, $name if length($name);
+    push @left," -- $status{page_status} -- " 
+                                     if (length($status{page_status}));
+    my @right;
+    push @right, "$status{here} Here|$status{away} Away|$status{detached} Detach"
+                                     if (defined($status{detached}));
+    push @right, $status{server}     if (defined($status{server}));
+    push @right, $status{status}     if (defined($status{server}));
+    
+    my $left=join ' | ',@left;
+    my $right=join ' | ',@right;
+    my $lr=length($right);
+    my $ll=80-$lr;    
+
+    # favor things on the right over the left.
+    $fmt="%-$ll.$ll" . "s%$lr.$lr" . "s";
+    $status_line=sprintf($fmt,$left,$right);
+
+    $status_line =~ s:\|:<whiteblue>\|</whiteblue>:g;
+    $status_line =~ s:ONLINE:<greenblue>ONLINE</greenblue>:;
+
+    
     LC::UI::sline_set($status_line);
 
-      
       
 }
 
