@@ -558,10 +558,6 @@ sub line_height($) {
 sub win_showline($) {
     my($l) = @_;
 
-    print STDERR "Line $l: tags=";
-    print STDERR "@{$text_tags[$l]}" if ($text_tags[$l]);
-    print STDERR ", s=@text_show_tags, h=@text_hide_tags";
-
     my $show = 1;
     my $tag;
     if (@text_show_tags) {
@@ -577,7 +573,6 @@ sub win_showline($) {
 	}
     }
 
-    print STDERR ", r=$show\n";
     return $show;
 }
 
