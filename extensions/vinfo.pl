@@ -49,6 +49,7 @@ sub vinfo_handler {
 
     if ($cmd eq 'request') {
 	foreach (@args) {
+	    ui_output("(sending version info request to $_)");
 	    command("$_;+++ tlily info +++");
 	}
     } elsif ($cmd eq 'send') {

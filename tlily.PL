@@ -18,6 +18,7 @@ use LC::State;
 use LC::StatusLine;
 use LC::Extend;
 use LC::Event;
+use LC::SubClient;
 $|=1;
 
 if ( -f 'tlily.PL' ) {

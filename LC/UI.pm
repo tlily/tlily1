@@ -174,7 +174,9 @@ use LC::Config;
 	     &ui_gagged
 	     &ui_ungag
 	     &ui_gaglist
-	     $ui_cols);
+	     $ui_cols
+	     &ui_escape
+	    );
 
 my %gagged;
 
@@ -1357,6 +1359,16 @@ sub ui_gagged($) {
 sub ui_gaglist() {    
     return keys %gagged;
 }
+
+sub ui_escape {
+    my ($line)=@_;
+    $line =~ s/\</\\\</g; $line =~ s/\>/\\\>/g;
+    $line =~ s/\\\\([<>])/\\$1/g;  #what the heck!
+
+    return $line;
+}
+
+
 
 1;
 

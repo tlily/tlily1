@@ -260,7 +260,7 @@ sub deregister_statusline {
 }
 
 sub redraw_statusline {
-    &LC::StatusLine::redraw_statusline();
+    &LC::StatusLine::redraw_statusline(@_);
 }
 
 sub register_timedhandler(%) {

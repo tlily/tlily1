@@ -13,7 +13,7 @@ LC::StatusLine - the status line
 
     register_statusline(Var => \$mystatus,
 			Position => "PACKLEFT");
-    # Position may be either "PACKLEFT" or "PACKRIGHT" at present.
+    # Position may be either "FORCELEFT", "PACKLEFT" or "PACKRIGHT" at present.
 
     sub setit {
 	($mystatus)=@_; 
@@ -21,6 +21,7 @@ LC::StatusLine - the status line
     } 
     register_user_command_handler('statusline', \&setit);
 
+    note: redraw_statusline(1) will override the default behavior of deferring the update if it was updated within the last second.
 =head1 DESCRIPTION
     
 =cut 
@@ -46,12 +47,17 @@ use LC::Event;
 my $current_id=42;
 my $lastredraw;
 
-sub redraw_statusline() {
+sub redraw_statusline {
+    my ($now)=@_;
     my(@left,@right);
 
-    # limit updates to 1 per second.
-    return if (time()-$lastredraw < 1);
-    $lastredraw=time();
+    if ($now && !ref($now)) {
+	# force update
+    } else {
+	# limit updates to 1 per second.
+	return if (time()-$lastredraw < 1);
+	$lastredraw=time();
+    }
 
 #    ($package,$filename,$line)=caller();
 #    ui_output("* REDRAW called from $package ($filename:$line) *");
@@ -67,7 +73,9 @@ sub redraw_statusline() {
             next unless length($val);
 	    
    	    my $position=$d->{Position};
-	    if ($position eq "PACKLEFT") {
+	    if ($position eq "FORCELEFT") {
+		unshift(@left,$val);
+	    } elsif ($position eq "PACKLEFT") {
 		push (@left,$val);
     	    } elsif ($position eq "PACKRIGHT") {		
 		push (@right,$val);		
@@ -79,7 +87,7 @@ sub redraw_statusline() {
 	
     }
 
-    my $left=join ' | ',reverse @left;
+    my $left=join ' | ',@left;
     my $right=join ' | ',reverse @right;
     my $ll=length($left);
     my $lr=$ui_cols-$ll;
@@ -229,8 +237,7 @@ sub status_time {
 sub status_username {
     my $name = $status_Pseudo;
     $name .= " [$status_Blurb]" if (defined($status_Blurb));
-    $name =~ s/\</\\\</g; $name =~ s/\>/\\\>/g;
-    $name =~ s/\\\\([<>])/\\$1/g;  #what the heck!
+    $name=ui_escape($name);
 
     return $name;    
 }
