@@ -52,7 +52,6 @@ if (! $config{mono}) {
     ui_attr('emote',        'fg:cyan',    'bg:black');
     ui_attr('review',       'fg:magenta', 'bg:black');
     ui_attr('usersend',     'fg:red',     'bg:black');
-    #ui_attr('time',         'fg:magenta', 'bg:black',  'bold');
     ui_attr('whiteblue',    'fg:white',   'bg:blue');
     ui_attr('greenblue',    'fg:green',   'bg:blue',  'bold');
     ui_attr('yellow',       'fg:yellow',  'bg:black',  'bold');
@@ -186,26 +185,6 @@ sub on_connect() {
 sub main() {
     show_banner();
     
-    # %eval handler
-    register_user_command_handler('eval', sub {
-	my($args) = @_;
-	eval($args);
-	ui_output("* Error: $@") if $@;
-    });
-
-    # !command handler
-    register_eventhandler(Type => 'userinput',
-			  Call => sub {
-	my($event) = @_;
-	if ($event->{Text} =~ /^\!(.*)/) {
-	    user_showline($event->{Text});
-	    ui_output(`$1`);
-	    return 1;
-	}
-	return 0;
-    });
-
-
     dotfile_init();
     load_extensions();
 

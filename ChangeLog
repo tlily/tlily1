@@ -1,4 +1,5 @@
 Version 0.3b
+  * Moved !command and %eval into an extension, and fixed a !cmd bug.  [DPN]
   * Fixed the unknown-command-sent-to-server bug.  [DPN]
   * Fixed the slow-more-update bug.  [DPN]
   * Zone extension: fixed the negative-time bug.  [DPN]
