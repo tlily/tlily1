@@ -2,9 +2,9 @@
 # $header$
 package LC::Client;
 
+use LC::Version;
 use LC::Event;
 use LC::Server;
-use LC::Version;
 
 BEGIN {
     if ($LC::UI::ui_loaded) {
