@@ -1,4 +1,5 @@
 Version 1.0-post
+  * [extensions/parse.pl] Possible fix for an obscure parser bug.  [DPN]
   * [extensions/view.pl, extensions/log.pl] IO::File bug fix [MJR]
   * [LC/SubClient.pm] Fixed so it works again. [SMC]
   * [LC/User.pm] Added % command abbreviation capability. [MJR]

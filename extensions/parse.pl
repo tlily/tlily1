@@ -1,5 +1,5 @@
 # -*- Perl -*-
-# $Header: /data/cvs/tlily/extensions/parse.pl,v 2.1 1998/06/12 08:56:44 albert Exp $
+# $Header: /data/cvs/tlily/extensions/parse.pl,v 2.2 1998/06/25 23:40:12 neild Exp $
 =head1 NAME
 
 parse.pl - The lily event parser
@@ -372,6 +372,7 @@ sub parse_line($$) {
 
 	if ($line !~ /:\s*$/) {
 	    $partial = $line;
+	    $partial .= ' ' if ($line !~ /\s$/);
 	    return 0;
 	}
 
