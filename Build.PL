@@ -18,7 +18,7 @@ use LC::Version;
 $PERL = $Config{'startperl'} ||
         $Config{'perlpath'}? "#!".$Config{'perlpath'} : "#/usr/bin/perl";
 
-getopts("ndhfic");
+getopts("ndhficp:");
 if($opt_h) {
     &Usage;
 }
@@ -37,29 +37,10 @@ if($opt_i) {
 if($opt_c) {
     $current = 1;
 }
+if($opt_p) {
+    $prefix = $opt_p;
+}
 $target=shift;
-#while(@ARGV) {
-#    if($ARGV[0] eq "-n") {
-#	$nonono = 1; shift;
-#    }
-#    elsif($ARGV[0] eq "-d") {
-#	$debug = 1; shift;
-#    }
-#    elsif($ARGV[0] eq "-h") {
-#	&Usage;
-#    }
-#    elsif($ARGV[0] eq "-f") {
-#	$yesdamnit = 1; shift;
-#    }
-#    elsif($ARGV[0] eq "-i") {
-#	$ignore = 1; shift;
-#    }
-#    elsif($ARGV[0] eq "-c") {
-#	$current = 1; shift;
-#    } else {
-#	$target=shift;
-#    }
-#}
 
 print "-n: $nonono\n" if $debug;
 print "-d: $debug\n" if $debug;
@@ -73,6 +54,7 @@ exit if $debug;
 $VERSION = $TL_VERSION;
 $CVSTAG = &ver2tag($VERSION);
 $STATE = 'release';
+$cachefile = "build.cache";
 $moddir="LC";
 $extdir="extensions";
 $modext='\.pm';
@@ -82,10 +64,58 @@ $extext='\.pl';
 print join("\n", @modfiles), "\n" if $debug;
 print join("\n", @extfiles), "\n" if $debug;
 
-if(!$target || $target eq 'tlily') {
+if(!$target || $target eq 'tlily' || $target eq 'tigerlily') {
     &make_tlily;
     if(!$DIRS_ARE_LOCAL && !$nonono) {
 	print "To install Tigerlily, do a 'perl Build.PL install'.\n";
+    }
+}
+elsif($target eq 'uninstall' || $target eq 'uninst') {
+    if(! -e "build.cache") {
+	print "You have not configured tigerlily yet.  If you wish to\n",
+              "uninstall, please configure tigerlily first.\n";
+	exit(1);
+    }
+    if($ignore) {
+	print "Cannot ignore build cache when uninstalling.\n";
+	$ignore=0;
+    }
+    print "Reading cache file $cachefile.\n";
+    do "$cachefile";
+    if($DIRS_ARE_LOCAL) {
+	print "\nWARNING: Your installation directories are set for local development\nof tigerlily.\n";
+	if(!$yesdamnit) {
+	    $inp = &ask("Do you really want to uninstall tigerlily?", "no");
+	    if($inp =~ /(n|no)/i) {
+		print "OK, bailing out of uninstall.\n";
+		exit(1);
+	    }
+	    else {
+		print "I hope you know what you're doing..\n";
+	    }
+	}
+	else {
+	    print "I hope you know what you're doing..\n";
+	}
+    }
+
+    if($nonono) {
+	print "Would have removed $BINDIR/tlily.\n";
+	print "Would have attempted to remove $BINDIR.\n";
+	print "Would have recursively removed $LIBDIR.\n";
+	print "Would NOT have removed $ETCDIR/tlily.site.\n";
+	print "Would NOT have removed $ETCDIR.\n";
+    } else {
+	my($rc,$err);
+	print "Uninstalling Tigerlily:\n";
+	print "unlink $BINDIR/tlily\n";
+	$rc = unlink "$BINDIR/tlily";
+	if(!$rc) { print "Warning: file $BINDIR/tlily not removed.  Remove it\n\tmanually if desired.\n"; $err=1; }
+	$rc = rmdir $BINDIR;
+	if(!$rc) { print "Warning: directory $BINDIR not removed.  Remove it\n\tmanually if desired.\n"; $err=1; }
+	rmtree "$LIBDIR", 1, 0;
+	print "Information: Site configuration file $ETCDIR/tlily.site\n\tnot removed.\n";
+	print "Information: Site configuration file directory $ETCDIR\n\tnot removed.\n";
     }
 }
 elsif($target eq 'install') {
@@ -153,6 +183,11 @@ elsif($target eq 'install') {
     }
 }
 elsif($target eq 'release') {
+    if(! -d "CVS") {
+	print "You do not appear to be a developer.  You cannot\n",
+	    "use this function.\n";
+	exit(1);
+    }
     my($cmd);
 
     $VERSION = &next_version($VERSION);
@@ -254,6 +289,17 @@ elsif($target eq 'release') {
 	$rc = system($cmd);
 	if($rc) { die "Command returned error!\n"; }
     }
+
+    &do_announcement($VERSION);
+}
+elsif($target eq 'announce') {
+    if(! -d "CVS") {
+	print "You do not appear to be a developer.  You cannot\n",
+	    "use this function.\n";
+	exit(1);
+    }
+    $VERSION =~ s/-post$//;
+    &do_announcement($VERSION);
 }
 elsif($target eq 'clean') {
     rmtree('buildtmp', 0, 0);
@@ -342,6 +388,37 @@ sub install {
 }
 
 sub make_tlily {
+    if($nonono) {
+	print "Would have checked for the Curses module.\n";
+	print "Would have checked for the Term::Size module.\n";
+    } else {
+	$| = 1;
+	print "Checking for the Curses module...";
+	if(has_module("Curses")) {
+	    print "Yes.\n";
+	}
+	else {
+	    print qq(No.
+Info:  You will not be able to use the LC::CTerminal terminal.  Remember
+Info:  to set \$terminal to another terminal module (such as LC::TTerminal)
+Info:  in your site and/or user configuration files.
+Info:  You can get this module from your nearest CPAN site or
+  http://www.perl.com/CPAN-local/modules/by-module/Curses/Curses-1.01.tar.gz
+);
+	}
+	print "Checking for the Term:Size module...";
+	if(has_module("Term::Size")) {
+	    print "Yes.\n"
+	}
+	else {
+	    print qq(No.
+Info:  Resizing your terminal may not work correctly without this module.
+Info:  You can get this module from your nearest CPAN site or
+  http://www.perl.com/CPAN-local/modules/by-module/Term/Term-Size-0.2.tar.gz
+);
+	}
+    }
+
     &ask_dirs;
     if($nonono) {
 	print "Would have created tlily from tlily.PL with the following\n";
@@ -379,28 +456,32 @@ Library directory:  $LIBDIR
 
 sub Usage {
     print qq(
-Usage: perl Build.PL [-n][-h][-i][tlily|install|release|clean]
+Usage: perl Build.PL [-n][-h][-i][tigerlily|install|uninstall|clean|
+                     release|announce]
 	-n: Show what would have been done without actually doing it.
 	-i: Ignore build.cache file.
 	-c: Use current directories.
 	-f: Force overwrite of previous install.
+	-p <dir>: use build prefix <dir> and derive all other paths
 	-h: Show this help
 	Targets:
-	tlily:   ask for paths and do path substitutions, generating tlily
-	install: generate tlily like above and install it in 1 step
-	clean:   remove the generated tlily and any left-over files and
-	         directories possibly left behind by this script.
-	release: tag the release via CVS and make a .tar.gz for release
-	         (Developers only!)
+	tigerlily: Ask for paths and do path substitutions, generating tlily
+	install:   Generate tlily like above and install it in 1 step
+	uninstall: Uninstall tlily using the paths found in build.cache
+	clean:     Remove the generated tlily and any left-over files and
+	           directories possibly left behind by this script.
+	release:   Tag the release via CVS and make a .tar.gz for release
+	           (Developers only!)
+	announce:  Generate an annoucement mail and send it to
+	           tigerlily-announce\@einstein.to.  (Developers only!)
 
-	With no options or targets, will execute tlily target.
+	With no targets, will execute tigerlily target.
 );
     exit(1);
 }
 
 sub ask_dirs {
     my($inp);
-    my($cachefile) = "build.cache";
 
     if($ignore) {
 	print "Ignoring cache file $cachefile.\n";
@@ -414,6 +495,8 @@ sub ask_dirs {
 	return;
     } elsif($current == 1) {
 	&use_current_dir; return;
+    } elsif($opt_p) {
+	&use_prefix($opt_p); return;
     } else {
 	$PREFIX='/usr/local';
 	print qq(By default, tlily will be installed in $PREFIX/bin, global extensions
@@ -474,8 +557,22 @@ sub use_current_dir {
     &write_buildcache;
 }
 
+sub use_prefix {
+    my($p) = @_;
+    $PREFIX = $p;
+    print "Installation prefix is $PREFIX\n";
+    $BINDIR = "$PREFIX/bin";
+    print "Script location is $BINDIR\n";
+    $LIBDIR = "$PREFIX/lib/tlily";
+    print "Support files location is $LIBDIR\n";
+    $ETCDIR = "$PREFIX/etc";
+    print "Site config file location is $ETCDIR\n";
+    $DIRS_ARE_LOCAL = 0;
+
+    &write_buildcache;
+}
+
 sub write_buildcache {
-    my($cachefile) = 'build.cache';
     if($nonono) {
 	print "Would have written $cachefile with the following\n";
 	print "settings:\n";
@@ -661,4 +758,60 @@ sub make_changelog {
     print $fh @lines;
     undef $fh;
     chmod(0644, "ChangeLog");
+}
+
+sub do_announcement {
+    my($version) = @_;
+    my $inp = &ask("Do you want to send out an announcement?", 'yes');
+    if($inp =~ /(y|yes)/i) {
+	my $ChangeLog;
+	my $cl = new FileHandle("ChangeLog", "r");
+	my $f;
+	while(<$cl>) {
+	    if($f && ! /^Version/) { $ChangeLog .= $_; next; }
+	    elsif($f && /^Version/) { last; }
+	    elsif(/^Version\s+$VERSION/) { $f = 1; $ChangeLog = $_; }
+	}
+	undef $f;
+	undef $cl;
+
+	my $mail = new FileHandle("|/usr/sbin/sendmail -t");
+	die "Couldn't send mail: $!" if !$mail;
+#	my $mail = STDOUT;
+
+	print $mail qq(From: "Tigerlily Developers" <tigerlily\@hitchhiker.org>
+To: "Tigerlily Announcement List" <tigerlily-announce\@einstein.to>
+Subject: Tigerlily $version is now available
+
+Hi All -
+
+Tigerlily version $version is now available.
+
+Changes in this release, from the ChangeLog:
+$ChangeLog
+Once Josh moves it into place, it will be available from:
+http://www.hitchhiker.org/tigerlily/
+
+Until then, you can get it from:
+http://www.acm.rpi.edu/~neild/
+-- 
+Share and Enjoy.
+
+The Tigerlily Developers
+Damien, Albert, Josh, Jon, Steve & Matt.
+----------------------------------------------------------------------------
+To unsubscribe from this list, send email to <majordomo\@einstein.to> with
+the words "unsubscribe tigerlily-announce" in the body.
+);
+    }
+    else {
+	print "Don't forget to send an announcement of the new release\n",
+	    "to tigerlily-announce\@einstein.to.\n";
+    }
+}
+
+sub has_module {
+    my($mod) = @_;
+    eval "use $mod;";
+    if($@) { return 0; } else { return 1; }
 }
