@@ -1,4 +1,5 @@
 Version 0.9a-post
+  * [extensions/look.pl] Fix bug that passed non-alpha chars to look. [MJR]
   * [LC/CTerminal.pm] Added definitions for the home and end keys. [CWS]
   * [LC/UI.pm] Made home and end do something. [CWS]
 

@@ -1,4 +1,4 @@
-# $Header: /data/cvs/tlily/extensions/look.pl,v 1.5 1998/05/29 05:12:30 mjr Exp $
+# $Header: /data/cvs/tlily/extensions/look.pl,v 1.6 1998/06/05 03:22:49 mjr Exp $
 #
 # "look" tlily extension
 #
@@ -6,11 +6,16 @@
 sub spellcheck($$$) {
     my($key, $line, $pos) = @_;
 
+    # First get the portion of the line from the beginning to the
+    # character just before the cursor.
     $a = substr($line, 0, $pos);
-    $a =~ s/.*\s+//;
+    # Just keep the alphabetic characters at the end (if any).
+    $a =~ s/.*?([A-Za-z]*)$/$1/;
 
+    # The rest of the line, from the cursor to the end.
     $b = substr($line, $pos);
-    $b =~ s/\s.*//;
+    # Just keep the alphabetic characters at the beginning (if any).
+    $b =~ s/[^A-Za-z].*//;
 
     $word = $a . $b;
     return if ($word eq '');
