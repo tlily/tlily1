@@ -523,16 +523,25 @@ sub state_init () {
     });
 
     register_user_command_handler('sync', sub {
+	my($args) = @_;
+	if ($args eq '-f') {
+	    $state_sync_count = 0;
+	} elsif ($args) {
+	    ui_output('(Usage: %sync [-f])');
+	    return 0;
+	}
 	ui_output('(Synchronizing state with the server)');
 	state_sync();
 	return 0;
     });
 
     register_help_short('sync', 'synchronize state with server');
-    register_help_long('sync',
-"The %sync command synchronizes the internal user and discussion databases
-with the server.
-usage: %sync");
+    register_help_long('sync', <<END
+Usage: %sync [-f]
+
+The %sync command synchronizes the internal user and discussion databases with the server.  The -f option forces a sync to begin even if a sync is already in progress.  This is useful if tlily freezes in the sync state (which is caused by a network buffer overflow on the server at an unfortunate time).
+END
+		      );
 }
 
 
