@@ -1,5 +1,5 @@
 @@PERL@@
-# $Header: /data/cvs/tlily/lilybot.PL,v 1.5 1998/06/02 21:27:38 josh Exp $
+# $Header: /data/cvs/tlily/lilybot.PL,v 1.6 1998/06/12 01:33:58 albert Exp $
 
 require 5.00307;
 
@@ -24,6 +24,7 @@ print "Password: ";
 chomp($pass=<STDIN>);
 
 config_init(); # should pass in config file name?
+               # Maybe, but right now the list of config files is static.
 cmd_init();
 
 main();
