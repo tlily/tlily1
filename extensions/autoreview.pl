@@ -36,6 +36,7 @@ sub connected_handler {
 sub review_cmd {
 	if (@to_review) {
 		ui_output("(You are currently autoreviewing)");
+		return 0;
 	}
 	review_start();
 	return 0;
