@@ -1,3 +1,4 @@
+# -*- Perl -*-
 # Global defaults for tlily
 # PLEASE DO NOT EDIT EXCEPT FOR DEVELOPMENT!
 # EDIT YOUR SITE CONFIG FILE INSTEAD!
@@ -33,6 +34,7 @@ $port=7777;
 $mono=0;
 $pager=1;
 $options_after_connect=1;
+$editor = $ENV{VISUAL} || $ENV{EDITOR} || 'vi';
 # End defaults
 
 # Examples FOR YOUR SITE AND/OR USER CONFIG FILES!  DO NOT PUT THESE HERE

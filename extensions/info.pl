@@ -6,7 +6,6 @@ sub info_set($;\@) {
     local(*FH);
     
     my $tmpfile = "/tmp/tlily.$$";
-    my $EDITOR = $ENV{VISUAL} || $ENV{EDITOR} || "vi";
 
     unlink($tmpfile);
     if ($lref) {
@@ -16,7 +15,7 @@ sub info_set($;\@) {
     }
 
     ui_end();
-    system("$EDITOR $tmpfile");
+    system("$config{editor} $tmpfile");
     ui_start();
 
     my $rc = open(FH, "<$tmpfile");
