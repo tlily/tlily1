@@ -1,4 +1,4 @@
-Version 1.0.2-post
+Version 1.0.3
   * [Build.PL] Remove lilybot on a 'perl Build.PL clean'
   * [LC/CTerminal.pm] Changed the 'use POSIX' line to only include the one
     function that I know of that we use(iscntrl). [CWS]
