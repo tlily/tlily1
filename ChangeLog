@@ -1,4 +1,5 @@
 Version 0.8b
+  * [LC/State.pm, extensions/expand.pl] Added emote_oops.  [DPN]
   * [extensions/zone.pl, LC/StatusLine.pm] Fix overflows when $zonedelta or
                                            $clockdelta pushes the time over
                                            24 hours. [SMC]

@@ -6,6 +6,7 @@ my %expansions = ('sendgroup' => '',
 
 my @past_sends = ();
 
+my $last_send;
 
 sub exp_set($$) {
     my($a,$b) = @_;
@@ -100,6 +101,7 @@ register_eventhandler(Type => 'usend',
 			  unshift @past_sends, $dlist;
 			  pop @past_sends if (@past_sends > 5);
 			  exp_set('recips', $dlist);
+			  $last_send = $event->{Body};
 			  return 0;
 		      });
 
@@ -122,7 +124,28 @@ register_eventhandler(Type => 'send',
 sub oops_cmd ($) {
 	my($args) = @_;
 	&oops_proc($args);
+	if ($config{emote_oops}) {
+		if (!defined $last_send) {
+			ui_output("(but you haven't said anything)");
+			return;
+		}
+		my $d;
+		foreach $d (split /,/, $past_sends[0]) {
+			my $dt;
+			$d = expand_name($d);
+			next unless (substr($d,0,1) eq '-');
+			get_disc_state(Name => $d, Disctype => \$dt) or next;
+			if ($dt eq 'emote') {
+				server_send($past_sends[0] . ";" .
+					    $config{emote_oops} . "\r\n");
+				server_send($args . ";" . $last_send . "\r\n");
+				return;
+			}
+			last;
+		}
+	}
 	server_send("/oops ".$args."\r\n");
+	return;
 }
 
 sub also_cmd ($) {

@@ -156,6 +156,12 @@ $terminal
 	By default, no slash commands will be allowed to be intercepted.  This
 	can be overridden in the site and/or user CFs using this method.
 
+$emote_oops
+        If set, this specifies an oops string to use for emote discussions.
+        The standard lily /oops will still be used for connect discs.  Note
+        that this only effects %oops -- you will need to add oops to @slash
+        to change /oops.
+
 @prefer
         This variable contains a list of destinations to "prefer" when
         doing autoexpansion.  If a partial destination is a prefix to

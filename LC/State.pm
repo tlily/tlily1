@@ -67,7 +67,7 @@ paramters, with parameter names as the keys, and variable references as the
 values.  The 'Name' parameter is required, and should specify the name
 of the discussion to retrieve information for.
 
-    get_user_state(Name => 'computer',
+    get_disc_state(Name => 'computer',
 		   Parameter => \$parameter);
 
 =item state_sync()
@@ -491,7 +491,8 @@ sub state_init () {
 			  Order => 'before',
 			  Call => sub {
 	my($event,$handler) = @_;
-	set_disc_state(Name => $event->{Disc});
+	set_disc_state(Name => $event->{Disc},
+		       Disctype => $event->{Disctype});
 	return 0;
     });
 
