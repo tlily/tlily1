@@ -1,4 +1,4 @@
-# $Header: /data/cvs/tlily/extensions/vinfo.pl,v 2.1 1998/06/12 08:57:08 albert Exp $
+# $Header: /data/cvs/tlily/extensions/vinfo.pl,v 2.2 1999/01/17 23:13:26 steve Exp $
 #
 # insecure.pl
 #
@@ -27,7 +27,8 @@ sub send_version_info {
 
 sub send_handler {
     my($event, $handler) = @_;
-    return 0 unless ($event->{Body} eq "+++ tlily info +++");
+    return 0 unless (($event->{Body} eq "@@@ tlily info @@@") ||
+		     ($event->{Body} eq "+++ tlily info +++"));
 
     $event->{ToUser} = 0;
 
@@ -51,7 +52,7 @@ sub vinfo_handler {
     if ($cmd eq 'request') {
 	foreach (@args) {
 	    ui_output("(sending version info request to $_)");
-	    command("$_;+++ tlily info +++");
+	    command("$_;@@@ tlily info @@@");
 	}
     } elsif ($cmd eq 'send') {
 	foreach (@args) {
