@@ -1,3 +1,4 @@
+# -*- Perl -*-
 package LC::UI;
 
 use Curses;
@@ -64,120 +65,67 @@ sub defattr ($@) {
 
 
 # Breaks a string into line-sized pieces.
-sub fmtline ($$$) {
-    my($itab,$stab,$text) = @_;
-    my @blocks = split /\r?\n/, $text;
+sub fmtline ($) {
+    my($text) = @_;
+
     my @lines = ();
-    foreach $blk (@blocks) {
-	$blk = $itab . $blk . ' ';
-	my $cpos = 0;
-	my $state = 0;
+    foreach $blk (split /\r?\n/, $text) {
+	push(@lines, ' ') if (length($blk) == 0);
 	my $line = '';
 	my $linelen = 0;
-	my $word = '';
-	my $tag = '';
-	my @tagstack = ();
-	my $addspaces = 1;
-	my $escape = 0;
-	my $newline = 0;
-	while ($cpos < length $blk) {
-	    if ($newline) {
-		$newline = 0;
-		my $i;
-		for ($i = $#tagstack; $i >= 0; $i--) {
-		    $line .= "</$tagstack[$i]>";
+	my $word;
+	$blk =~ s/\\\<//g;
+	$blk =~ tr/</</;
+	$blk =~ s/\\(.)/$1/g;
+	@tagstack = ();
+	while (length $blk) {
+	    if ($blk =~ /^ +/) {
+		$line .= $&;
+		$linelen += length $&;
+		$blk = substr($blk, length $&);
+	    } elsif ($blk =~ /^\/([^\>]*)\>/) {
+		$line .= $&;
+		$blk = substr($blk, length $&);
+		pop @tagstack;
+	    } elsif ($blk =~ /^([^\>]*)\>/) {
+		$line .= $&;
+		$blk = substr($blk, length $&);
+		push @tagstack, $1;
+	    } elsif ($blk =~ /^[^ ]+/) {
+		if ($linelen + length($&) > $COLS) {
+		    if ($linelen < $COLS - 10) {
+			$line .= substr($blk, 0, $COLS - $linelen);
+			$blk = substr($blk, $COLS - $linelen);
+		    }
+		    foreach (reverse @tagstack) {
+			$line .= "/$_>";
+		    }
+		    $line =~ s/([\<\\])/\\$1/g;
+		    $line =~ tr//</;
+		    push @lines, $line;
+		    $line = '';
+		    $linelen = 0;
+		    foreach (@tagstack) {
+			$line .= "$_>";
+		    }
+		} else {
+		    $line .= $&;
+		    $linelen += length $&;
+		    $blk = substr($blk, length $&);
 		}
-		push @lines, $line;
-		$line = $stab;
-		my $foo = $line;
-		$foo =~ s/\<[^\>]*\>//g;
-				$linelen = length $foo;
-		foreach (@tagstack) {
-		    $line .= "<$_>";
-		}
+	    } else {
+		# This should never happen.
+		$blk = substr($blk, 1);
 	    }
-	    my $char = substr($blk,$cpos,1);
-	    #print "char='$char' state=$state word='$word'\n";
-	    # Not in a word.
-	    if ($state == 0) {
-		if (isspace($char)) {
-		    if ($addspaces) {
-			if ($linelen < $COLS) {
-			    $line .= ' ';
-			    $linelen++;
-			} else {
-			    $newline = 1;
-			    $addspaces = 0;
-			}
-		    }
-		} elsif (($char eq '<') && ($escape == 0)) {
-		    $state = 1;
-		} elsif (($char eq '\\') && ($escape == 0)) {
-		    $escape = 1;
-		    $line .= $char;
-		} else {
-		    $addspaces = 1;
-		    $word = $char;
-		    $state = 2;
 		}
-		# Reading a tag.
-	    } elsif ($state == 1) {
-		if ($char eq '>') {
-		    $line .= "<$tag>";
-		    $state = 0;
-		    if ($tag =~ /^\/(.*)$/) {
-			if ($tagstack[$#tagstack] ne "$1") {
-			    die "Tag nesting insanity!\n";
-			}
-			pop @tagstack;
-		    } else {
-			push @tagstack, $tag;
-		    }
-		    $tag = '';
-		    if (length($word)) {
-			$state = 2;
-		    } else {
-			$state = 0;
-		    }
-		} else {
-		    $tag .= $char;
-		}
-		# Reading a word.
-	    } elsif ($state == 2) {
-		if (isspace($char) || (($char eq '<') && ($escape == 0))) {
-		    if ($linelen + length($word) > $COLS) {
-			if ($COLS - $linelen > 10) {
-			    $line .= substr($word,0,$COLS - $linelen);
-			    $word = substr($word, $COLS-$linelen);
-			    $linelen = $COLS;
-			}
-			$newline = 1;
-			redo;
-		    } else {
-			$line .= $word;
-			$linelen += length($word);
-			$word = '';
-			$state = 0;
-			redo;
-		    }
-		} elsif (($char eq '\\') && ($escape == 0)) {
-		    $escape = 1;
-		    $line .= $char;
-		} else {
-		    $word .= $char;
-		}
-	    }
-	    
-	    $cpos++;
+	foreach (reverse @tagstack) {
+	    $line .= "/$_>";
 	}
-	
-	if ($line !~ /^\s$/) {
-	    push @lines, $line;
-	}
+	$line =~ s/([\<\\])/\\$1/g;
+	$line =~ tr//</;
+	push @lines, $line if (length $line);
     }
-    if (@lines == 0) {
-	push @lines, '';
-    }
+    
     return @lines;
 }
  
@@ -195,19 +143,19 @@ sub win_index ($) {
     if (!defined $win_idx_cline_idx) {
 	$win_idx_cline_idx = 0;
 	$win_idx_cline_num = 0;
-	@win_idx_ctext = fmtline('','',$text_lines[$win_idx_cline_idx]);
+	@win_idx_ctext = fmtline($text_lines[$win_idx_cline_idx]);
     }
 
     while ($num < $win_idx_cline_num) {
 	$win_idx_cline_idx--;
-	@win_idx_ctext = fmtline('','',$text_lines[$win_idx_cline_idx]);
+	@win_idx_ctext = fmtline($text_lines[$win_idx_cline_idx]);
 	$win_idx_cline_num -= scalar(@win_idx_ctext);
     }
 
     while ($num >= $win_idx_cline_num + scalar(@win_idx_ctext)) {
 	$win_idx_cline_num += scalar(@win_idx_ctext);
 	$win_idx_cline_idx++;
-	@win_idx_ctext = fmtline('','',$text_lines[$win_idx_cline_idx]);
+	@win_idx_ctext = fmtline($text_lines[$win_idx_cline_idx]);
     }
 
     if (($num >= $win_idx_cline_num) &&
@@ -221,47 +169,37 @@ sub win_index ($) {
 
 # Paints one line in the text window.
 sub win_draw_line ($$) {
-    my($ypos, $line) = @_;
-    my $str = sprintf "%-".$COLS.".".$COLS."s", "";
-    addstr($ypos, 0, $str);
-    my $p = 0;
-    my $xpos = 0;
-    my $tag = "";
-    my $state = 0;
+    my($ypos,$line) = @_;
+
+    $line =~ s/\\\<//g;
+    $line =~ tr/</</;
+    $line =~ s/\\(.)/$1/g;
+
     my @attrstack = ();
-    $str = "";
-    while ($p < length($line)) {
-	my $char = substr($line, $p, 1);
-	if ($state == 0) {
-	    if ($char eq '<') {
-		addstr $ypos, $xpos, $str;
-		$xpos += length $str;
-		$str = '';
-		$state = 1;
-	    } else {
-		$str .= $char;
-	    }
-	} elsif ($state == 1) {
-	    if ($char eq '>') {
-		if (substr($tag, 0, 1) eq '/') {
-		    attrset (pop @attrstack);
-		} else {
-		    push @attrstack, getattrs;
-		    if (defined($attr_list{$tag})) {
-			foreach (@{$attr_list{$tag}}) {
-			    attron $_;
-			}
-		    }
+    my $xpos = 0;
+
+    while ((length $line) && ($xpos < $COLS)) {
+	if ($line =~ /^\/([^\>]*)\>/) {
+	    attrset (pop @attrstack);
+	    $line = substr($line, length $&);
+	} elsif ($line =~ /^([^\>]*)\>/) {
+	    push @attrstack, getattrs;
+	    if (defined($attr_list{$tag})) {
+		foreach (@{$attr_list{$tag}}) {
+		    attron $_;
 		}
-		$tag = '';
-		$state = 0;
-	    } else {
-		$tag .= $char;
 	    }
+	    $line = substr($line, length $&);
+	} elsif ($line =~ /^[^]+/) {
+	    my $len = $COLS - $xpos;
+	    addstr $ypos, $xpos, sprintf "%-${len}.${len}s", $&;
+	    $line = substr($line, length $&);
+	    $xpos += length $&;
+	} else {
+	    # This should never happen.
+	    $line = substr($line, 1);
 	}
-	$p++;
     }
-    addstr($ypos, $xpos, $str);
 }
 
 
@@ -278,14 +216,33 @@ sub win_redraw () {
 }
 
 
+# Scrolls the text window up.
+sub win_scroll ($) {
+    my($n) = @_;
+    copywin stdscr, stdscr, $n, 0, 0, 0, $LINES - 3 - $n, $COLS - 1, 0;
+}
+
+
 # Adds a line of text to the text window.
 sub addline ($) {
     my($line) = @_;
     $line =~ s/[\r\n]//g;
     push @text_lines, $line;
-    $text_lastline += scalar(fmtline('','',$line));
-    $win_endline = $text_lastline;
-    win_redraw;
+    my $atend = ($text_lastline == $win_endline) ? 1 : 0;
+    my @fmt = fmtline($line);
+    $text_lastline += scalar(@fmt);
+    if ($atend) {
+	getyx($y,$x);
+	win_scroll(scalar(@fmt));
+	$win_endline = $text_lastline;
+	my $ypos = $LINES - 3;
+	foreach (@fmt) {
+	    win_draw_line($ypos--, $_);
+	}
+	move($y,$x);
+    } else {
+	win_redraw;
+    }
     sline_redraw();
     refresh;
 }
