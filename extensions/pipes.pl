@@ -1,4 +1,4 @@
-# $Header: /data/cvs/tlily/extensions/pipes.pl,v 1.4 1998/05/29 05:12:31 mjr Exp $
+# $Header: /data/cvs/tlily/extensions/pipes.pl,v 1.5 1998/06/10 00:09:24 neild Exp $
 #
 # Piped command processing.
 #
@@ -90,7 +90,13 @@ sub pipe_handler {
 		close(FD);
 	    }
 	} else {
-	    print $fd $event->{Raw}, "\n";
+	    if ($fd) {
+		my $rc = print $fd $event->{Raw}, "\n";
+		unless ($rc) {
+			close $fd;
+			undef $fd;
+		}
+	    }
 	}
     });
 
