@@ -1,4 +1,7 @@
 Version 0.5d
+  * [LC/parse.pm] Added a "Raw" field to events.  [DPN]
+  * [extensions/keepalive.pl] New extension -- pings the server periodically
+    to verify the connection state.  [DPN]
   * [LC/parse.pm] Discovered a bit of leftover debugging output.  [DPN]
 
 Version 0.5c

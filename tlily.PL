@@ -37,6 +37,14 @@ config_init();
 ui_start();
 cmd_init();
 
+unless (-f $main::TL_LIBDIR."/tlily.global") {
+    ui_output("***");
+    ui_output(Text => "*** Uh-oh!  No global config file found -- there is p
+robably something wrong with your installation.",
+              WrapChars => "*** ");
+    ui_output("***");
+}
+
 ui_set(Hide => [ 'intern' ]);
 
 # Set colors from what the config files read

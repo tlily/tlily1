@@ -69,6 +69,7 @@ my $msg_hdr = undef;
 my $msg_wrapchar;
 my @msg_dest;
 my @msg_tags;
+my $msg_raw;
 
 
 # Take raw server output, and deal with it.
@@ -368,6 +369,9 @@ sub parse_line($$) {
 
 	if ($msg_state ne 'msg') {
 	    $msg_state = 'first';
+	    $msg_raw = $warm;
+	} else {
+	    $msg_raw .= "\n" . $warm;
 	}
 
 	if (defined $partial) {
@@ -432,6 +436,8 @@ sub parse_line($$) {
 
     # message body
     if ($line =~ /^ - /)  { 
+	$msg_raw .= "\n" . $warm;
+
 	if ($msg_state eq 'msg') {
 	    if (defined($partial)) {
 		$partial .= substr($line, 3);
@@ -680,6 +686,20 @@ sub parse_line($$) {
     $event{Signal} = 'default' if ($signal);
     $event{Id} = $cmdid;
     $event{Text} = $line;
+
+    #
+    # The "Raw" field contains the raw server output, except for the
+    # "%command [\d+] " prefix.  For send events, the Raw field contains
+    # all lines of both the header and the body, separated by newlines.
+    # The Raw field is never terminated by a newline.
+    #
+
+    if (defined $msg_raw) {
+	$event{Raw} = $msg_raw;
+	undef $msg_raw;
+    } else {
+	$event{Raw} = $warm;
+    }
 
     if (!defined $event{Tags}) {
 	$event{Tags} = [ 'normal' ];
