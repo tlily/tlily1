@@ -1,4 +1,5 @@
 Version 0.8c-post
+  * [extensions/gag.pl] Made %gag work with the new ui_filter [SMC]
   * [tlily.PL] Better error handling on failed connect to server. [DPN]
   * [extensions/parse.pl] Eliminated spurious quoting of event elements. [DPN]
   * [LC/StatusLine.pm] Fixed bug with UI chars in blurbs. [DPN]

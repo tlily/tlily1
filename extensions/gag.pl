@@ -1,5 +1,5 @@
 # -*- Perl -*-
-# $Header: /data/cvs/tlily/extensions/gag.pl,v 1.6 1998/06/02 17:22:41 steve Exp $
+# $Header: /data/cvs/tlily/extensions/gag.pl,v 1.7 1998/06/02 18:13:25 steve Exp $
 
 #
 # The gag extension adds the ability to `gag' all sends from a given user.
@@ -45,20 +45,24 @@ sub init() {
 			   Call => sub {
 	my ($event, $handler) = @_;
 
-	ui_output("eventhandler called!");
+	return 0 unless ($gagged{$event->{From}});
 
-	return 0 unless ((!$event->{First}) && $gagged{$event->{From}});
 
-	$event->{Text} = "<<gag>>$event->{From}:$event->{Text}<</gag>>";
+	if ($event->{First}) {
+	    $event->{Body} = "<<gag>>$event->{From}~$event->{Body}<</gag>>";
+	} else {
+	    $event->{Text} = "<<gag>>$event->{From}~$event->{Text}<</gag>>";
+	}
 
 	return 0;
     });
 
     ui_filter('gag', sub {
-	my ($from, $text) = /(.*):(.*)/;
+    	my $line = shift;
 
-	ui_output("gag.pl:mangler called.");
-	return $text unless ($from && $gagged{$from} && $text =~ /^\s*\-/);
+	my ($from, $text) = $line =~ /(.*)~(.*)/;
+
+	return $text unless ($from && $gagged{$from});
 
 	my $new = $text;
 
@@ -70,14 +74,15 @@ sub init() {
 	return $new;
     });
 
+    register_user_command_handler('gag', \&gag_command_handler);
+    register_help_short('gag', 'affix a gag to a user');
+    register_help_long('gag',
+    "The %gag command replaces the text of all sends from a user with an
+    amusing string of mrfls.
+    usage: %gag
+	   %gag [user]");
 } 
 
-register_user_command_handler('gag', \&gag_command_handler);
-register_help_short('gag', 'affix a gag to a user');
-register_help_long('gag',
-"The %gag command replaces the text of all sends from a user with an
-amusing string of mrfls.
-usage: %gag
-       %gag [user]");
+init();
 
 1;
