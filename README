@@ -1,0 +1,48 @@
+TigerLily
+=========
+
+Installing
+----------
+TigerLily requires Perl 5 with the Curses module.  Color support requires
+a version of curses which supports color; I recommend ncurses.  Please
+note that curses color handling is atrocious at best, and unspeakable at
+worst -- any color problems you experience are probably the fault of
+your curses.
+
+
+CVS access
+----------
+The TigerLily sources are stored in a CVS repository.  Anyone working on
+TigerLily development can get access by contacting Damien (neild@acm.rpi.edu).
+The repository is currently located on zorg.hitchhiker.org.
+
+To access the repository remotely, you will need to set two environment
+variables:
+  export CVSROOT=:ext:neild@zorg.hitchhiker.org:/usr/src/cvs
+  export CVS_RSH=ssh
+
+Obviously, replace the `neild' with your own userid on zorg.  CVS_RSH need
+not necessarily be ssh, but this is likely to be the simplest method to use.
+
+The important CVS commands are:
+  - cvs checkout tlily
+    This will grab a copy of the current source tree, and place it in a
+    new directory named `tlily'.  No locking is implied by this operation;
+    you may delete the checked out tree without ill effect.
+
+All other CVS commands accept a list of files as an argument; in the absence
+of this list, they operate on the current directory.
+
+  - cvs update
+    Compares a checked out tree to the current sources.
+
+  - cvs new
+    Registers a new file into the repository.
+
+  - cvs delete
+    Removes a file from the repository.
+
+  - cvs update
+    Checks in all changes in the current tree.
+
+Read the CVS manpages for more detailed information.
