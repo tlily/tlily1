@@ -1,3 +1,8 @@
+
+  * modified autoreply to use the status line
+  * [LC/StatusLine.pm] Reworked status line processing to allow extensions
+    to access the status line
+
 Version 0.6e
   * [LC/CTerminal.pm] Relaxed requirement for Term::Size to show warning [JDW]
   * [extensions/info.pl] Added %help. [JDW]
