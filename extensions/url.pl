@@ -1,3 +1,4 @@
+# $Header: /data/cvs/tlily/extensions/url.pl,v 1.9 1998/05/29 05:12:34 mjr Exp $
 #
 # URL handling
 #

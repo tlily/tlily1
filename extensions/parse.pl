@@ -1,4 +1,5 @@
 # -*- Perl -*-
+# $Header: /data/cvs/tlily/extensions/parse.pl,v 1.13 1998/05/29 05:12:31 mjr Exp $
 =head1 NAME
 
 parse.pl - The lily event parser

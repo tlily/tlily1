@@ -1,4 +1,5 @@
 # -*- Perl -*-
+# $Header: /data/cvs/tlily/extensions/view.pl,v 1.5 1998/05/29 05:12:35 mjr Exp $
 #To: tigerlily@hitchhiker.org
 #Subject: My %view extension
 #Date: Wed, 10 Dec 1997 01:09:58 PST

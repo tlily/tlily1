@@ -1,3 +1,4 @@
+# $Header: /data/cvs/tlily/extensions/autologin.pl,v 1.4 1998/05/29 05:12:25 mjr Exp $
 #
 # Handle autologins.
 #

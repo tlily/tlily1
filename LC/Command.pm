@@ -1,4 +1,5 @@
 # -*- Perl -*-
+# $Header: /data/cvs/tlily/LC/Command.pm,v 1.7 1998/05/29 05:12:17 mjr Exp $
 package LC::Command;
 
 use Exporter;

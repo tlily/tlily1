@@ -1,4 +1,5 @@
 # -*- Perl -*-
+# $Header: /data/cvs/tlily/extensions/pager.pl,v 1.4 1998/05/29 05:12:30 mjr Exp $
 
 #
 # The pager extension allows the user the ability to turn on and off paging

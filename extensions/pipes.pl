@@ -1,3 +1,4 @@
+# $Header: /data/cvs/tlily/extensions/pipes.pl,v 1.4 1998/05/29 05:12:31 mjr Exp $
 #
 # Piped command processing.
 #

@@ -1,4 +1,5 @@
 #!/usr/bin/perl
+# $Header: /data/cvs/tlily/Build.PL,v 1.14 1998/05/29 05:12:14 mjr Exp $
 
 use Config;
 use Carp;

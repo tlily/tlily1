@@ -1,4 +1,5 @@
 # -*- Perl -*-
+# $Header: /data/cvs/tlily/extensions/startup.pl,v 1.5 1998/05/29 05:12:34 mjr Exp $
 
 register_eventhandler(Type => 'connected',
 		      Order => 'after',

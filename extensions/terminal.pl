@@ -1,3 +1,4 @@
+# $Header: /data/cvs/tlily/extensions/terminal.pl,v 1.2 1998/05/29 05:12:34 mjr Exp $
 #
 # Terminal extension.
 #

@@ -1,4 +1,4 @@
-
+# $Header: /data/cvs/tlily/extensions/after.pl,v 1.7 1998/05/29 05:12:24 mjr Exp $
 register_user_command_handler('after', \&after_handler);
 register_help_short('after', "Run a lily command after a delay");
 register_help_long('after', qq(Usage:

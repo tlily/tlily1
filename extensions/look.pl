@@ -1,3 +1,4 @@
+# $Header: /data/cvs/tlily/extensions/look.pl,v 1.5 1998/05/29 05:12:30 mjr Exp $
 #
 # "look" tlily extension
 #

@@ -1,4 +1,5 @@
 # -*- Perl -*-
+# $Header: /data/cvs/tlily/LC/NoTerminal.pm,v 1.2 1998/05/29 05:12:19 mjr Exp $
 
 # Provides a Terminal module that does not depend on Curses or TermCap.  It's
 # just simple stdio stuff.

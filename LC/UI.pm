@@ -1,4 +1,5 @@
 # -*- Perl -*-
+# $Header: /data/cvs/tlily/LC/UI.pm,v 1.53 1998/05/29 05:12:22 mjr Exp $
 package LC::UI;
 
 

@@ -1,4 +1,5 @@
 # -*- Perl -*-
+# $Header: /data/cvs/tlily/extensions/run_command.pl,v 1.4 1998/05/29 05:12:32 mjr Exp $
 
 register_eventhandler(Type => "send",
 		      Call => \&run_command_event);

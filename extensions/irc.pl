@@ -1,3 +1,4 @@
+# $Header: /data/cvs/tlily/extensions/irc.pl,v 1.3 1998/05/29 05:12:28 mjr Exp $
 
 register_user_command_handler('irc', \&irc);
 register_help_short('irc', 'run dsirc as a \"sub client\"');

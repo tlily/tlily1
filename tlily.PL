@@ -1,4 +1,5 @@
 @@PERL@@
+# $Header: /data/cvs/tlily/tlily.PL,v 1.37 1998/05/29 05:12:15 mjr Exp $
 
 require 5.00307;
 

@@ -1,3 +1,4 @@
+# $Header: /data/cvs/tlily/extensions/vinfo.pl,v 1.4 1998/05/29 05:12:35 mjr Exp $
 #
 # insecure.pl
 #

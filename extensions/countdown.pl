@@ -1,3 +1,4 @@
+# $Header: /data/cvs/tlily/extensions/countdown.pl,v 1.5 1998/05/29 05:12:25 mjr Exp $
 #
 # Put a countdown timer on your status line.
 #

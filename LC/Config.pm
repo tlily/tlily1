@@ -1,4 +1,5 @@
 # -*- Perl -*-
+# $Header: /data/cvs/tlily/LC/Config.pm,v 1.15 1998/05/29 05:12:17 mjr Exp $
 package LC::Config;
 
 use FileHandle;

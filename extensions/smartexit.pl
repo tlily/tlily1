@@ -1,3 +1,4 @@
+# $Header: /data/cvs/tlily/extensions/smartexit.pl,v 1.5 1998/05/29 05:12:33 mjr Exp $
 #
 # Exit if a /bye or /detach was done.
 #
