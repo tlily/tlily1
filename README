@@ -45,7 +45,7 @@ of this list, they operate on the current directory.
   - cvs delete
     Removes a file from the repository.
 
-  - cvs update
+  - cvs commit
     Checks in all changes in the current tree.
 
 Read the CVS manpages for more detailed information.
