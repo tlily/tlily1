@@ -11,9 +11,24 @@ my $event_id;
 sub set_timer {
     my $r = $end_t - time;
     my $u = int($r / $interval);
+    $u ||= 1;
+
+    if($r <= $interval) {
+	if($interval == 60*60*24) {
+	    $interval_c = 'h';
+	    $interval = 60*60;
+	    $u = int($r / $interval);
+	}
+	elsif($interval == 60*60) {
+	    $interval_c = 'm';
+	    $interval = 60;
+	    $u = int($r / $interval);
+	}
+    }
+
     my $l = $r % $interval;
 
-    if ($u <= 0) {
+    if ($r <= 0) {
 	$timer = '';
 	undef $event_id;
 	redraw_statusline();
@@ -24,6 +39,7 @@ sub set_timer {
 
     $timer = $u . $interval_c;
     redraw_statusline();
+
 
     $event_id = register_timedhandler(Interval => $l || $interval,
 				      Repeat => 0,
@@ -42,7 +58,7 @@ sub countdown_cmd($) {
 	return 0;
     }
 
-    if ($args !~ /^(\d+)([hms]?)$/) {
+    if ($args !~ /^(\d+)([dhms]?)$/) {
 	ui_output("Usage: %countdown [\\<time> | off]");
 	return 0;
     }
@@ -51,7 +67,6 @@ sub countdown_cmd($) {
 	$interval = 60 * 60 * 24;
 	$interval_c = 'h';
     } elsif ($2 eq 'h') {
-	$interval = 60 * 60;
 	$interval = 60 * 60;
 	$interval_c = 'h';
     } elsif ($2 eq 'm') {
