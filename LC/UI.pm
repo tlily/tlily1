@@ -79,7 +79,7 @@ sub ui_start {
     die "Unable to load UI module: $@\n" if $@;
     die "Error instantiating LC::UI::$type\n" unless ($UI);
     
-    $UI->ui_start(); 
+    $UI->ui_start($target); 
     # need to use a tied scalar here, for the time being.  $ui_cols should
     # die..
     tie $ui_cols, 'ui_col_tie';

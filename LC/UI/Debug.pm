@@ -30,7 +30,7 @@ sub new {
     
     my $self=bless {},$class;
     $self->{usable} = 1;
-    $self->{ui_cols} = 80;
+    $self->{ui_cols} = 77;
     
     return $self;
 }

@@ -41,7 +41,8 @@ sub ui_prompt {
 sub ui_bell {
     my $self=shift;
 
-    print "";
+    print STDOUT "";
+    STDOUT->flush;
 }
 
 sub ui_output {

@@ -1,5 +1,5 @@
 # -*- Perl -*-
-# $Header: /data/cvs/tlily/LC/UI/OutputWindow.pm,v 1.1 1998/10/24 20:41:35 josh Exp $
+# $Header: /data/cvs/tlily/LC/UI/OutputWindow.pm,v 1.2 1998/10/25 00:12:21 josh Exp $
 
 =head1 NAME
 
@@ -28,7 +28,7 @@ sub new {
 }
 
 sub ui_start {
-    my ($self)=@_;
+    my ($self,$title)=@_;
 
     # permit file descriptors to be passed on to the child process.
     my $fdmax=$^F;  $^F=255;
@@ -40,6 +40,7 @@ sub ui_start {
     my $slave=$pty->slave;
     my $slave_fd = fileno($slave);
     my $xterm = "xterm -S$ptynum$fd";
+    $xterm .= " -T \"tlily - $title\"" if ($title);
 
     # Turn of input echoing on the xterm.
     my $termios = new POSIX::Termios();
