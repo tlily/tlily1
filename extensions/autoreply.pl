@@ -1,20 +1,21 @@
 # -*- Perl -*-
 
 register_eventhandler(Type => "send",
-		      Call => \&vacation_event);
-register_user_command_handler('vacation', \&vacation_cmd);
-register_help_short('vacation', "send a canned reply to private sends");
-register_help_long('vacation', 
+		      Call => \&autoreply_event);
+register_user_command_handler('autoreply', \&autoreply_cmd);
+register_help_short('autoreply', "send a canned reply to private sends");
+register_help_long('autoreply', 
 "Sends an automated reply when private messages are received.
 
  usage: 
-    %vacation I'm not here right now, feel free to call me at my office, x7777.
-    %vacation off
-    %vacation
+    %autoreply I'm not here right now, feel free to call me at my office, x7777.
+    %autoreply |/usr/games/fortune -o
+    %autoreply off
+    %autoreply
 ");
 
 
-sub vacation_event {
+sub autoreply_event {
     my($event,$handler) = @_;
 
     return 0 unless ($event->{Form} eq "private");
@@ -23,8 +24,15 @@ sub vacation_event {
     if ($reply) {
         if (time()-$last_reply{$from} > 30) {
 	    $last_reply{$from}=time();
-	    ui_output("(sending automated reply to $from)");
-            server_send("$from:[automated reply] $reply\r\n");
+	    if ($reply =~ /[\|\!](.*)/) {
+	       $r=`$1`;
+	       $r=~s/[\n\r\s]/ /g;
+	    } else {
+	       $r=$reply;
+            }
+	    ui_output("(sending automated reply to $from: \"$r\")");
+	    server_send("$from:[automated reply] $r\r\n");
+			   
         } else {
 	    ui_output("(not sending a reply to $from, since one was sent in the last 30 seconds)");
 	}
@@ -33,7 +41,7 @@ sub vacation_event {
     return 0;
 }
 
-sub vacation_cmd {
+sub autoreply_cmd {
     ($cmd)=@_;
     if ($cmd eq "") {
        if ($reply) {
