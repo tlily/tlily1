@@ -67,7 +67,7 @@ sub review_handler {
 	} elsif ($event->{Text} =~ /^\(End of review of.*\)/) {
 		$event->{ToUser} = 0 unless ($rev_interesting);
 	} elsif ($event->{Text} =~ /^\(No events to review for .*\)/) {
-		#$event->{ToUser} = 0;
+		$event->{ToUser} = 0;
 	} elsif ($event->{Text} =~ /^# \*\*\*/) {
 		$event->{ToUser} = 0;
 	} elsif ($event->{Text} =~ /^# ###/ && !$rev_interesting) {
