@@ -166,11 +166,13 @@ Sounds an audible bell.
 
 use Curses;
 use POSIX;
+use Term::Size;
 use IO::Select;
 use LC::Config;
 
 
 my $term_up = 0;
+$size_changed = 0;
 my $resize_cb;
 my %attrs = ('bold' => 0,
 	     'reverse' => 0,
@@ -201,7 +203,9 @@ sub term_init ($) {
     shift;
     return if ($term_up);
     $resize_cb = $_[0];
+    ($ENV{COLUMNS}, $ENV{LINES}) = Term::Size::chars;
     initscr();
+    #($COLS, $LINES) = Term::Size::chars;
     $term_lines = $LINES; 
     $term_cols = $COLS;
     noecho();
@@ -211,7 +215,7 @@ sub term_init ($) {
     #timeout(1000);
     $config{mono} = 1 unless (has_colors());
     start_color() unless ($config{mono});
-    $SIG{WINCH} = \&term_winch;
+    $SIG{WINCH} = sub { $size_changed = 1; };
 
     # If we don't specify this, curses may snarf characters before we ever
     # have a chance to notice them.
@@ -229,14 +233,6 @@ sub term_end () {
     endwin();
     %color_pairs = ('black:white' => 0);
     $term_up = 0;
-}
-
-
-# Handle a window size change.
-sub term_winch {
-    term_end();
-    term_init($resize_cb);
-    &$resize_cb if (defined $resize_cb);
 }
 
 
@@ -415,13 +411,22 @@ sub term_refresh () {
 
 
 sub term_select ($$$$) {
-    shift;
+    my $self = shift;
     my($rr, $wr, $er, $to) = @_;
  
     my $r = IO::Select->new(@$rr);
     my $w = IO::Select->new(@$wr);
     my $e = IO::Select->new(@$er);
-    return IO::Select->select($r, $w, $e, $to);
+    my @ret = IO::Select->select($r, $w, $e, $to);
+
+    if ($size_changed) {
+	$self->term_end();
+	$self->term_init($resize_cb);
+	&$resize_cb if (defined $resize_cb);
+	$size_changed = 0;
+    }
+
+    return @ret;
 }
 
 
