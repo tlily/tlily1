@@ -1,5 +1,5 @@
 @@PERL@@
-# $Header: /data/cvs/tlily/lilybot.PL,v 2.2 1998/06/14 08:50:20 josh Exp $
+# $Header: /data/cvs/tlily/lilybot.PL,v 2.3 1998/06/14 09:02:39 josh Exp $
 
 require 5.00307;
 
@@ -29,14 +29,7 @@ cmd_init();
 
 register_bothandler(Match => "help",
 		    Private => 1,
-		    Respond => sprintf("%-76.76s",
-				       "Hi.. I know the following commands:") .
-		               sprintf("%-76.76s", "cmd register") .
-		               sprintf("%-76.76s", "cmd deregister") .
-		               sprintf("%-76.76s", "cmd list") .
-		               sprintf("%-76.76s", 
-				       "cmd <what you want me to do>")
-		    );
+		    Respond => "Hi.. I know the following commands: cmd register, cmd deregister, cmd list, cmd <what you want me to do>");
 
 register_bothandler(Match => "grope",
 		    Respond => "Me grope good!");		
@@ -118,7 +111,7 @@ sub main() {
 			      }
 
 			      # Try to avoid reviewing :)
-			      if ($event->{Text} =~ /do you wish to review your output now?/) {
+			      if ($event->{Text} =~ /do you wish to review/) {
 				  print "(review prompt, sending 'N')\n";
 				  server_send("N\n");
 				  return 1;
@@ -178,12 +171,12 @@ sub eventhandler {
 		} 
 
 		if ($event->{Raw} =~ /cmd list/) {
-		    my $ret=sprintf("%-76.76s","The following keywords are known:");
+		    my $ret="The following keywords are known: ";
 		    foreach (keys %bot_handlers) {
 			if ($bot_handlers{$_}->{Private}) {
-			    $ret .= sprintf ("%-76.76s","$_) $bot_handlers{$_}->{Match} (private only)");			    
+			    $ret .= "$_) $bot_handlers{$_}->{Match} (private only) | ";
 			} else {
-			    $ret .= sprintf ("%-76.76s","$_) $bot_handlers{$_}->{Match}");			    
+			    $ret .= "$_) $bot_handlers{$_}->{Match} | ";
 			}
 
 		    }
