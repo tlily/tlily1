@@ -164,30 +164,9 @@ Sounds an audible bell.
 =cut
 
 
-use Exporter;
 use Curses;
 use POSIX;
 use LC::Config;
-
-@ISA = qw(Exporter);
-
-@EXPORT = qw($term_lines
-	     $term_cols
-	     &term_init
-	     &term_end
-	     &term_clear
-	     &term_getattr
-	     &term_setattr
-	     &term_addstr
-	     &term_move
-	     &term_delete_to_end
-	     &term_insert_line
-	     &term_delete_line
-	     &term_insert_char
-	     &term_delete_char
-	     &term_get_char
-	     &term_refresh
-	     &term_bell);
 
 
 my $term_up = 0;
@@ -207,8 +186,18 @@ my %colors = ('black'   => COLOR_BLACK,
 my %color_pairs = ('black:white' => 0);
 
 
+sub term_cols { return $term_cols; }
+sub term_lines { return $term_lines; }
+
+
+sub new {
+    bless {};
+}
+
+
 # Initialize the terminal.
 sub term_init ($) {
+    shift;
     return if ($term_up);
     $resize_cb = $_[0];
     initscr();
@@ -233,6 +222,7 @@ sub term_init ($) {
 
 # End use of the terminal.
 sub term_end () {
+    shift;
     return unless ($term_up);
     undef $SIG{WINCH};
     endwin();
@@ -250,7 +240,8 @@ sub term_winch {
 
 
 # Gets the current attributes.
-sub term_getattr () {
+sub term_getattr ($) {
+    shift;
     my @a = ('normal');
     push @a, 'bold' if ($attrs{'bold'});
     push @a, 'reverse' if ($attrs{'reverse'});
@@ -262,6 +253,7 @@ sub term_getattr () {
 
 # Sets some attributes.
 sub term_setattr (@_) {
+    shift;
     my $newcol = 0;
     foreach (@_) {
 	if ($_ eq 'bold') {
@@ -319,18 +311,21 @@ sub term_setattr (@_) {
 
 # Clears the screen.
 sub term_clear () {
+    shift;
     clear;
 }
 
 
 # Writes text using the current style at the current position.
 sub term_addstr ($) {
+    shift;
     addstr($_[0]);
 }
 
 
 # Repositions the cursor.
 sub term_move ($$) {
+    shift;
     my ($y,$x) = @_;
     move($y,$x);
 }
@@ -338,36 +333,42 @@ sub term_move ($$) {
 
 # Deletes all characters to the end of line.
 sub term_delete_to_end () {
+    shift;
     clrtoeol();
 }
 
 
 # Inserts a new line at the current cursor position.
 sub term_insert_line () {
+    shift;
     insertln();
 }
 
 
 # Deletes the line at the current cursor position.
 sub term_delete_line () {
+    shift;
     deleteln();
 }
 
 
 # Inserts a character using the current style at the current cursor position.
 sub term_insert_char () {
+    shift;
     insch(' ');
 }
 
 
 # Deletes the character at the current cursor position.
 sub term_delete_char () {
+    shift;
     delch();
 }
 
 
 # Rings the terminal bell
 sub term_bell () {
+    shift;
     beep();
 }
 
@@ -386,6 +387,7 @@ my %key_map = (&KEY_DOWN      => 'kd',
 
 # Returns a character if one is waiting, or undef otherwise.
 sub term_get_char () {
+    shift;
     my $ch = getch;
     return undef if ($ch eq '-1');    
     my $meta = '';
@@ -406,6 +408,7 @@ sub term_get_char () {
 
 # Redraws the screen.
 sub term_refresh () {
+    shift;
     refresh();
 }
 

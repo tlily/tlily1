@@ -3,16 +3,34 @@ TigerLily
 
 Installing
 ----------
-TigerLily requires Perl 5 with the Curses module.  Color support requires
-a version of curses which supports color; I recommend ncurses.  Please
-note that curses color handling is atrocious at best, and unspeakable at
-worst -- any color problems you experience are probably the fault of
-your curses.
+TigerLily requires Perl 5.  You will also need either Curses.pm or
+Term::Cap.pm -- see the Terminals section for details.
 
 To create a usable tlily executable, run the command:
    perl Build.PL
 To see the full usage for Build.PL, run the command:
    perl Build.PL -h
+
+
+Terminals
+---------
+At this time, tlily has two Terminal implementations: CTerminal and
+TTerminal.  CTerminal requires a working Curses module.  TTerminal
+requires the Term::Cap module.
+
+TTerminal lacks support for color and special keys (notably, the arrow
+keys).  (The keys ^F, ^B, ^P, ^N are equivalent to right/left/up/down.)
+
+CTerminal supports color when used with an appropriate curses and terminal.
+I recommend ncurses and rxvt.  Please note that curses color handling is
+atrocious at best, and unspeakable at worst -- any color problems you
+experience are probably the fault of your curses.
+
+The default terminal module is CTerminal.  You may permanently change
+this by setting the $terminal configuration file option to 'LC::TTerminal'.
+You may temporarily switch between the two from within tlily with
+'%terminal LC::CTerminal' and '%terminal LC::TTerminal'.  (%terminal alone
+will display the currently used terminal.)
 
 
 Configuration (To be expanded)
@@ -48,6 +66,10 @@ Here is a summary of the common configuration file(CF) options:
 	    # and d will be loaded, and extensions c and e will not be loaded.
 	The default extension list is in the global CF, and can be
 	changed using this method in the site and/or user CFs.
+
+$terminal
+        This variable controls the default terminal implementation to use.
+        Valid settings are 'LC::CTerminal' and 'LC::TTerminal'.
 
 %color_attrs
 %mono_attrs

@@ -151,7 +151,6 @@ use Exporter;
 use IO::Handle;
 use POSIX;
 
-use LC::CTerminal;
 use LC::Config;
 
 @ISA = qw(Exporter);
@@ -170,6 +169,7 @@ use LC::Config;
 	     &ui_set
 	     $ui_cols);
 
+my $term;
 
 my $ui_up = 0;
 
@@ -288,22 +288,25 @@ sub min($$) {
 
 # Starts the curses UI.
 sub ui_start() {
-    term_init(sub {
-	$ui_cols = $term_cols;
+    $config{'terminal'} ||= 'LC::CTerminal';
+    eval "use $config{'terminal'};";
+    $term = $config{'terminal'}->new();
+    $term->term_init(sub {
+	$ui_cols = $term->term_cols;
 	@text_heights = ();
 	$text_r = 0;
 	scroll_info();
 	$status_update_time = 0;
 	&redraw;
     });
-    $ui_cols = $term_cols;
+    $ui_cols = $term->term_cols;
     &redraw;
 }
 
 
 # Terminates the UI.
 sub ui_end() {
-    term_end();
+    $term->term_end();
 }
 
 
@@ -318,20 +321,20 @@ sub ui_attr($@) {
 sub attr_use($) {
     my($name) = @_;
 
-    my @curattrs = term_getattr();
+    my @curattrs = $term->term_getattr();
     push @attr_stack, \@curattrs;
 
     return if (!defined $attr_list{$name});
 
     my $attrs = $attr_list{$name};
-    term_setattr(@$attrs);
+    $term->term_setattr(@$attrs);
 }
 
 
 # Pops attribute usage stack.
 sub attr_pop() {
     my $attrs = pop @attr_stack;
-    term_setattr(@$attrs);
+    $term->term_setattr(@$attrs);
 }
 
 
@@ -341,7 +344,7 @@ sub attr_top() {
     while (@attr_stack) {
 	$attrs = pop @attr_stack;
     }
-    term_setattr(@$attrs);
+    $term->term_setattr(@$attrs);
 }
 
 
@@ -356,8 +359,8 @@ sub win_draw_line($$$@) {
     my $wrapchar = '';
 
     attr_use('text_window');
-    term_move($y, 0);
-    term_delete_to_end();
+    $term->term_move($y, 0);
+    $term->term_delete_to_end();
 
     my $i;
     for ($i = 0; $i < scalar(@$fmt); $i++) {
@@ -365,7 +368,7 @@ sub win_draw_line($$$@) {
 	    $wrapchar = $fmt->[++$i];
 	} elsif (($fmt->[$i] == $FOwrap) || ($fmt->[$i] == $FOnewline)) {
 	    if (!defined($start) || ($l >= $start)) {
-		term_addstr(' ' x ($term_cols - $x));
+		$term->term_addstr(' ' x ($term->term_cols - $x));
 	    }
 
 	    $l++;
@@ -373,12 +376,12 @@ sub win_draw_line($$$@) {
 	    next if (defined($start) && ($l < $start));
 
 	    unless (defined($start) && ($l == $start)) {
-		term_move(++$y, 0);
-		term_delete_to_end();
+		$term->term_move(++$y, 0);
+		$term->term_delete_to_end();
 	    }
 
 	    if ($fmt->[$i] == $FOwrap) {
-		term_addstr($wrapchar);
+		$term->term_addstr($wrapchar);
 		$x = length $wrapchar;
 	    } else {
 		$x = 0;
@@ -386,9 +389,9 @@ sub win_draw_line($$$@) {
 	} elsif ($fmt->[$i] == $FOtext) {
 	    $i++;
 	    if ((!defined($start)) || ($l >= $start)) {
-		term_addstr(substr($line, $p,
-				   (($fmt->[$i] < ($term_cols-$x)) ?
-				    $fmt->[$i] : $term_cols - $x)));
+		$term->term_addstr(substr($line, $p,
+				   (($fmt->[$i] < ($term->term_cols-$x)) ?
+				    $fmt->[$i] : $term->term_cols - $x)));
 		$x += $fmt->[$i];
 	    }
 	    $p += $fmt->[$i];
@@ -494,16 +497,16 @@ sub line_wrap($$) {
 	# (if any) we have currently pending.
 
 	if ($len) {
-	    while ($len + $x > $term_cols) {
+	    while ($len + $x > $term->term_cols) {
 		# The current chunk of text is too long!  We need to wrap it.
 
 		# Locate the character at which we may break the line.
-		my $tmp = rindex(substr($line, $idx, $term_cols - $x+1), ' ');
+		my $tmp = rindex(substr($line, $idx, $term->term_cols - $x+1), ' ');
 
-		if (($tmp == -1) || (($term_cols - $x - $tmp) > 10)) {
+		if (($tmp == -1) || (($term->term_cols - $x - $tmp) > 10)) {
 		    # There is no adequate breakpoint: we will just have to
 		    # split a word.
-		    $tmp = $term_cols - $x;
+		    $tmp = $term->term_cols - $x;
 		} else {
 		    $tmp++;
 		}
@@ -598,8 +601,8 @@ sub win_redraw() {
 		      -$y, win_height());
     } else {
 	while (--$y > 0) {
-	    term_move($y, 0);
-	    term_delete_to_end();
+	    $term->term_move($y, 0);
+	    $term->term_delete_to_end();
 	}
     }
 
@@ -624,10 +627,10 @@ sub win_scroll($) {
 		last if ($text_l > $#text_lines);
 	    }
 
-	    term_move(0,0);
-	    term_delete_line();
-	    term_move(win_height(),0);
-	    term_insert_line();
+	    $term->term_move(0,0);
+	    $term->term_delete_line();
+	    $term->term_move(win_height(),0);
+	    $term->term_insert_line();
 
 	    win_draw_line(win_height(),
 			  $text_lines[$text_l], $text_fmts[$text_l],
@@ -668,16 +671,16 @@ sub win_scroll($) {
 		$top_r = ($top_l < 0) ? 0 : line_height($top_l) - 1;
 	    }
 
-	    term_move(win_height(),0);
-	    term_delete_line();
-	    term_move(0,0);
-	    term_insert_line();
+	    $term->term_move(win_height(),0);
+	    $term->term_delete_line();
+	    $term->term_move(0,0);
+	    $term->term_insert_line();
 
 	    if ($top_l >= 0) {
 		win_draw_line(0, $text_lines[$top_l], $text_fmts[$top_l],
 			      $top_r, 1);
 	    } else {
-		term_delete_to_end();
+		$term->term_delete_to_end();
 	    }
 	}
     }
@@ -723,13 +726,13 @@ sub ui_output {
     }
 
     scroll_info();
-    term_refresh();
+    $term->term_refresh();
 }
 
 
 # Returns the size (in lines) of the text window.
 sub win_height() {
-    return $term_lines - 2 - $input_height;
+    return $term->term_lines - 2 - $input_height;
 }
 
 
@@ -744,10 +747,10 @@ sub sline_redraw() {
 	$status_update_time = $t;
 	$s = $status_intern;
     }
-    my $sline = "<status_line>" . $s . (' ' x $term_cols) . "</status_line>";
+    my $sline = "<status_line>" . $s . (' ' x $term->term_cols) . "</status_line>";
     my $sfmt;
     ($sline, $sfmt) = fmtline($sline);
-    win_draw_line($term_lines-1-$input_height, $sline, $sfmt);
+    win_draw_line($term->term_lines-1-$input_height, $sline, $sfmt);
     input_position_cursor();
 }
 
@@ -757,7 +760,7 @@ sub ui_status($) {
     my ($s) = @_;
     $status_line = $s;
     sline_redraw();
-    term_refresh();
+    $term->term_refresh();
 }
 
 
@@ -765,7 +768,7 @@ sub ui_status($) {
 sub input_position_cursor() {
     my $xpos = length($input_prompt);
     $xpos += $input_pos unless ($password);
-    term_move($term_lines - $input_height + floor(($xpos / $ui_cols)) - $input_fline,
+    $term->term_move($term->term_lines - $input_height + floor(($xpos / $ui_cols)) - $input_fline,
 	      $xpos % $ui_cols);
 }
 
@@ -780,15 +783,15 @@ sub input_redraw() {
     my $height = floor((length($l) / $ui_cols)) + 1 - $input_fline;
     $height = 1 if ($height < 1);
 
-    term_move($term_lines - 1, 0);
-    term_delete_to_end();
+    $term->term_move($term->term_lines - 1, 0);
+    $term->term_delete_to_end();
 
     my $i;
     for ($i = 0; $i < length($l) / $ui_cols; $i += 1) {
 	next if ($i < $input_fline);
-	term_move($term_lines - $height + $i, 0);
-	term_delete_to_end();
-	term_addstr(substr($l,$i*$ui_cols,$ui_cols));
+	$term->term_move($term->term_lines - $height + $i, 0);
+	$term->term_delete_to_end();
+	$term->term_addstr(substr($l,$i*$ui_cols,$ui_cols));
     }
 
     if ($input_height != $height) {
@@ -820,21 +823,21 @@ sub input_add($$$) {
     return ($line, $pos + 1, 2) if ($password);
 
     my $l = $input_prompt . $line;
-    if (length($l) % $term_cols == 0) {
+    if (length($l) % $term->term_cols == 0) {
 	return ($line, $pos + 1, 2);
     }
 
     my $ii = $input_height - $input_fline - 1;
     my $i = $ii;
-    while ($i * $term_cols > $pos) {
-	term_move($term_lines - $input_height + $i, 0);
-	term_insert_char();
-	term_addstr(substr($l, $i * $term_cols, 1));
+    while ($i * $term->term_cols > $pos) {
+	$term->term_move($term->term_lines - $input_height + $i, 0);
+	$term->term_insert_char();
+	$term->term_addstr(substr($l, $i * $term->term_cols, 1));
 	$i--;
     }
     input_position_cursor();
-    term_insert_char();
-    term_addstr($key);
+    $term->term_insert_char();
+    $term->term_addstr($key);
     return ($line, $pos + 1, 0);
 }
 
@@ -877,21 +880,21 @@ sub input_bs($$$) {
 
     my $l = $input_prompt . $line;
 
-    if (length($l) % $term_cols == 0) {
+    if (length($l) % $term->term_cols == 0) {
 	return ($line, $pos - 1, 2);
     }
 
     my $ii = $input_height - $input_fline - 1;
     my $i = $ii;
-    while ($i * $term_cols > $pos) {
-	term_move($term_lines - $input_height + $i, 0);
-	term_delete_char();
+    while ($i * $term->term_cols > $pos) {
+	$term->term_move($term->term_lines - $input_height + $i, 0);
+	$term->term_delete_char();
 	$i--;
-	term_move($term_lines - $input_height + $i, $term_cols - 1);
-	term_addstr(substr($l, ($i * $term_cols) + $term_cols - 1, 1));
+	$term->term_move($term->term_lines - $input_height + $i, $term->term_cols - 1);
+	$term->term_addstr(substr($l, ($i * $term->term_cols) + $term->term_cols - 1, 1));
     }
     input_position_cursor();
-    term_delete_char();
+    $term->term_delete_char();
     return ($line, $pos - 1, 2);
 }
 
@@ -1010,7 +1013,7 @@ sub input_pageup($$$) {
     my($key, $line, $pos) = @_;
     &win_scroll(-win_height());
     scroll_info();
-    term_refresh();
+    $term->term_refresh();
     return($line, $pos, 0);
 }
 
@@ -1020,7 +1023,7 @@ sub input_pagedown($$$) {
     my($key, $line, $pos) = @_;
     &win_scroll(win_height());
     scroll_info();
-    term_refresh();
+    $term->term_refresh();
     return($line, $pos, 0);
 }
 
@@ -1032,7 +1035,7 @@ sub input_scrollfirst($$$) {
     $text_r = 0;
 
     my $rows = 1;
-    while (($rows < $term_lines) && ($text_l <= $#text_lines)) {
+    while (($rows < $term->term_lines) && ($text_l <= $#text_lines)) {
 	$rows++;
 	$text_r++;
 	if ($text_r >= line_height($text_l)) {
@@ -1046,7 +1049,7 @@ sub input_scrollfirst($$$) {
     }
 
     win_redraw();
-    term_refresh();
+    $term->term_refresh();
     return($line, $pos, 0);
 }
 
@@ -1057,18 +1060,18 @@ sub input_scrolllast($$$) {
     $text_l = $#text_lines;
     $text_r = line_height($text_l) - 1;
     win_redraw();
-    term_refresh();
+    $term->term_refresh();
     return($line, $pos, 0);
 }
 
 
 # Redraws the UI screen.
 sub redraw() {
-    term_clear();
+    $term->term_clear();
     &win_redraw;
     &sline_redraw();
     &input_redraw;
-    term_refresh();
+    $term->term_refresh();
 }
 
 
@@ -1082,14 +1085,14 @@ sub scroll_info() {
 	}
 	$page_status = 'more';
 	$status_intern = "-- MORE ($lines) --";
-	$status_intern = (' ' x int(($term_cols - length($status_intern)) / 2)) .
+	$status_intern = (' ' x int(($term->term_cols - length($status_intern)) / 2)) .
 	    $status_intern;
 	sline_redraw();
-	term_refresh();
+	$term->term_refresh();
     } else {
 	$page_status = 'normal';
 	sline_redraw();
-	term_refresh();
+	$term->term_refresh();
     }
 }
 
@@ -1113,7 +1116,7 @@ sub ui_process() {
     my $c;
 
     while (1) {
-	$c = term_get_char();
+	$c = $term->term_get_char();
 	last if ((!defined($c)) || ($c eq '-1'));
 
 	$scrolled_rows = 0;
@@ -1138,7 +1141,7 @@ sub ui_process() {
 		input_position_cursor();
 	    } elsif ($update == 2) {
 		input_redraw();
-		term_refresh();
+		$term->term_refresh();
 	    }
 	}
 
@@ -1152,7 +1155,7 @@ sub ui_process() {
 
 # Rings the bell.
 sub ui_bell() {
-    term_bell();
+    $term->term_bell();
 }
 
 
@@ -1166,7 +1169,7 @@ sub ui_password($) {
 sub ui_prompt($) {
     $input_prompt = $_[0];
     input_redraw();
-    term_refresh();
+    $term->term_refresh();
 }
 
 sub ui_set(%) {
@@ -1177,13 +1180,14 @@ sub ui_set(%) {
 	if ($key eq 'Show') {
 	    @text_show_tags = @{$h{$key}};
 	    win_redraw();
-	    term_refresh();
+	    $term->term_refresh();
 	} elsif ($key eq 'Hide') {
 	    @text_hide_tags = @{$h{$key}};
 	    win_redraw();
-	    term_refresh();
+	    $term->term_refresh();
 	}
     }
 }
 
 1;
+
