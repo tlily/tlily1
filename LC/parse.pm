@@ -103,6 +103,7 @@ sub parse_line($$) {
     my($ev, $h) = @_;
 
     $line = $ev->{Text};
+    $ev->{Raw} = $line;
     $line =~ s/[\<\\]/\\$&/g;
     chomp $line;
 
@@ -327,7 +328,7 @@ sub parse_line($$) {
     # sends ##################################################################
 
     # private headers
-    if ($line =~ /^ >>/) { 
+    if (($line =~ /^ >>/) || ($line =~ /^ \\<\\</)) { 
 	my($blurb);
 
 	if ($line =~ s|from ([^\[]*) \[(.*)\], to (.*):|from <sender>$1</sender> \[<blurb>$2</blurb>\], to <dest>$3</dest>:|) {
@@ -361,7 +362,7 @@ sub parse_line($$) {
     }
 
     # public headers
-    if ($line =~ /^ ->/) {
+    if (($line =~ /^ ->/) || ($line =~ /^ \\<-/)) {
 	my($blurb);
 
 	if ($line =~ s|From ([^\[]*) \[(.*)\], to (.*):|From <sender>$1</sender> \[<blurb>$2</blurb>\], to <dest>$3</dest>:|) {
@@ -520,7 +521,7 @@ sub parse_line($$) {
 
 	$tline = $line;
 	$tline =~ s/^\*\*\* //;
-	$tline =~ s/^<time>\(\d\d:\d\d\)<\/time> //;
+	$tline =~ s/^\(\d\d:\d\d\) //;
 
 	if ($tline =~ s/ \[(.*)\]//) {
 	    $blurb = $1;
