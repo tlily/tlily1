@@ -11,7 +11,7 @@ register_help_long('version', "usage: %version\n* Displays the version of Tigerl
 
 
 register_user_command_handler('echo', \&echo_handler);
-register_help_short('help', "Echo text to the screen.");
+register_help_short('echo', "Echo text to the screen.");
 
 
 # %eval handler
@@ -23,6 +23,78 @@ sub eval_handler($) {
 }
 register_user_command_handler('eval', \&eval_handler);
 
+# %set handler
+sub set_handler($) {
+    my($args) = @_;
+    if($args =~ m/^([\w\-_]+)\{?([\w_]+)?\}?\s*=\s*([\w_\-:]+)\s*$/) {
+	my($var,$key,$val) = ($1,$2,$3);
+	if($key) {
+	    if(!defined($config{$var}) || (ref($config{$var}) eq 'HASH' && ref($config{$var}{$key}) eq '')) {
+		$config{$var}{$key} = $val;
+	    } else { ui_output("(Invalid type for variable)"); }
+	}
+	else {
+	    if(ref($config{$var}) eq '') {
+		$config{$var} = $val;
+	    } else { ui_output("(Invalid type for variable)"); }
+	}
+    }
+    elsif($args =~ m/^([\w\-_]+)\{?([\w_]+)?\}?\s*=\s*\(([\w_\-:,]+)\)\s*$/) {
+	my($var,$key,$val) = ($1,$2,$3);
+	my @L = split(/\s*,\s*/, $val);
+	if($key) {
+	    if(!defined($config{$var}) || !defined($config{$var}{$key}) || (ref($config{$var}) eq 'HASH' && ref($config{$var}{$key}) eq 'ARRAY')) {
+		$config{$var}{$key} = \@L;
+	    } else { ui_output("(Invalid type for variable)"); }
+	}
+	else {
+	    if(!defined($config{$var})) {
+		$config{$var} = [ @L ];
+	    } elsif(!defined($config{$var}) || ref($config{$var}) eq 'ARRAY') {
+		$config{$var} = [ @{$config{$var}}, @L ];
+	    } else { ui_output("(Invalid type for variable)"); }
+	}
+    }
+    elsif($args =~ m/^([\w\-_]+)\{?([\w_]+)?\}?\s*$/) {
+	my($var,$key,$val) = ($1,$2,$3);
+	if($key) {
+	    if(ref $config{$var}->{$key} eq 'ARRAY') {
+		ui_output("\$config{$var}{$key} = ".join(', ', @{$config{$var}{$key}}));
+	    } else {
+		ui_output("\$config{$var}{$key} = ".$config{$var}{$key});
+	    }
+	}
+	else {
+	    if(ref $config{$var} eq 'ARRAY') {
+		ui_output("\$config{$var} = ".join(', ', @{$config{$var}}));
+	    } else {
+		ui_output("\$config{$var} = ".$config{$var});
+	    }
+	}
+    }
+    return 0;
+}
+register_user_command_handler('set', \&set_handler);
+register_help_short('set', "Set configuration variables");
+register_help_long('set', qq(usage:
+    %set name=value
+        Sets a scalar config variable to a value.
+    %set name=(value,value,value)
+        Appends the given list to a list config variable.
+    %set name{key}=value
+        Sets the hash hey key in the config variable name to value.
+    %set name{key}=(value,value,value)
+        Sets the hash hey key in the config variable name to the given list.
+  Examples:
+    %set mono=1
+        Turns on monochrome mode.  (Also has the side effect of setting your
+        colors to your monochrome preferences.)
+    %set slash=(also,oops)
+        Appends 'also', and 'oops' onto your list of /-commands that
+        are allowed to be intercepted.
+    %set color_attrs{pubmsg}=(normal,bg:red,fg:green,bold)
+        Sets your color pref. for public messages to black on white & bold.
+));
 
 # !command handler
 sub bang_handler($$) {
