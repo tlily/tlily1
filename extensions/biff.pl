@@ -1,4 +1,4 @@
-# $Header: /data/cvs/tlily/extensions/biff.pl,v 1.3 1998/06/17 04:36:30 mjr Exp $
+# $Header: /data/cvs/tlily/extensions/biff.pl,v 1.4 1998/06/23 02:02:45 mjr Exp $
 #
 # A Biff module
 #
@@ -47,7 +47,7 @@ my $active;               # Is mail notification on?
 # Check functions.  Each function is named check_<type>, and is passed a
 # hashRef of the drop.
 
-sub check_mbox($) {
+sub check_mbox(\%) {
   my $mboxRef = shift;
   my $mtime = -M $mboxRef->{path};
   my $atime = -A _;
@@ -64,7 +64,7 @@ sub check_mbox($) {
   }
 }
 
-sub check_maildir($) {
+sub check_maildir(\%) {
   my $mdirRef = shift;
   my $mtime = undef;
   opendir(DH, "$mdirRef->{path}/new/");
@@ -84,7 +84,7 @@ sub check_maildir($) {
   }
 }
 
-sub check_rpimchk($) {
+sub check_rpimchk(\%) {
   my $mchkRef = shift;
 
   # Send a check request to the server.
@@ -115,6 +115,7 @@ sub handle_rpimchk {
   # Since this happens after check_drops finishes, we have to update the
   # biff outselves.
   update_biff();
+  return 0;
 }
 
 # Passed a hashref, outputs info about a drop to the UI.
@@ -188,9 +189,10 @@ sub biff_cmd($) {
       foreach $drop (@drops) {
         $drop->{status} = 0;
         if ($drop->{type} eq 'rpimchk') {
+          $drop->{port} = $drop->{port} || 1110;
           $drop->{sock} = new IO::Socket::INET(PeerAddr => "$drop->{host}",
-                                               PeerPort => "$drop->{port}",
-                                               Proto => "udp");
+                            PeerPort => "mailchk($drop->{port})",
+                            Proto => "udp");
           $drop->{request} = pack("CCCa*",0x1,0x1,0x1,$drop->{user});
           $drop->{bytes} = 0;
           $drop->{r_eventid} = register_iohandler(Handle => $drop->{sock},

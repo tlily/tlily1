@@ -1,4 +1,8 @@
 Version 1.0-post
+  * [LC/User.pm] Added % command abbreviation capability. [MJR]
+  * [extensions/set.pl] Added a return 0 to end of unset_handler() [MJR]
+  * [LC/UI.pm] Added customizable scroll up/down functions. [MJR]
+  * [extension/biff.pl] Minor tweaks and bug fixes. [MJR]
   * [lilybot.PL] Extensive modifications.  Try the "help" command. [JDW]
   * [extensions/biff.pl] Redesign and rewrite, added RPI lightweight POP
     mail check support. [MJR]

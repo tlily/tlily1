@@ -1,4 +1,4 @@
-# $Header: /data/cvs/tlily/extensions/set.pl,v 2.1 1998/06/12 08:56:48 albert Exp $
+# $Header: /data/cvs/tlily/extensions/set.pl,v 2.2 1998/06/23 02:02:45 mjr Exp $
 sub dumpit {
     my($l,%H) = @_;
     $l = 0 if ! $l;
@@ -32,6 +32,7 @@ sub unset_handler($) {
     my($args) = @_;
     (my $name = $args) =~ /[\w\-_]/;
     delete $config{$name};
+    return 0;
 }
 
 # %set handler

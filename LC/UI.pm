@@ -1,5 +1,5 @@
 # -*- Perl -*-
-# $Header: /data/cvs/tlily/LC/UI.pm,v 2.1 1998/06/12 08:56:20 albert Exp $
+# $Header: /data/cvs/tlily/LC/UI.pm,v 2.2 1998/06/23 02:02:42 mjr Exp $
 package LC::UI;
 
 
@@ -243,6 +243,8 @@ my %key_trans = ('kl'   => [ \&input_left ],
 		 'M-v'  => [ \&input_pageup ],
 		 'pgdn' => [ \&input_pagedown ],
 		 'C-v'  => [ \&input_pagedown ],
+		 'M-[' => [ \&input_scrollup ],
+		 'M-]' => [ \&input_scrolldown ],
 		 'M-<'  => [ \&input_scrollfirst ],
 		 'M->'  => [ \&input_scrolllast ],
 		 'C-t'  => [ \&input_twiddle ],
@@ -1146,6 +1148,28 @@ sub input_pageup($$$) {
 sub input_pagedown($$$) {
     my($key, $line, $pos) = @_;
     &win_scroll(win_height());
+    scroll_info();
+    $term->term_refresh();
+    return($line, $pos, 0);
+}
+
+
+# Scroll up.
+sub input_scrollup($$$) {
+    my($key, $line, $pos) = @_;
+    my $scroll = $config{ui_customscroll} || win_height()/2;
+    &win_scroll(-$scroll);
+    scroll_info();
+    $term->term_refresh();
+    return($line, $pos, 0);
+}
+
+
+# Scroll down.
+sub input_scrolldown($$$) {
+    my($key, $line, $pos) = @_;
+    my $scroll = $config{ui_customscroll} || win_height()/2;
+    &win_scroll($scroll);
     scroll_info();
     $term->term_refresh();
     return($line, $pos, 0);

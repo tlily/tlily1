@@ -1,10 +1,11 @@
 # -*- Perl -*-
-# $Header: /data/cvs/tlily/LC/User.pm,v 2.1 1998/06/12 08:56:22 albert Exp $
+# $Header: /data/cvs/tlily/LC/User.pm,v 2.2 1998/06/23 02:02:44 mjr Exp $
 package LC::User;
 
 use Exporter;
 use LC::UI;
 use LC::Event;
+use Text::Abbrev;
 
 @ISA = qw(Exporter);
 
@@ -25,6 +26,7 @@ use LC::Event;
 
 
 %commands = ();
+%cmdAbbr = ();  # Command abbreviation hash
 my $token = 0;
 my $password = 0;
 my $prompt = '';
@@ -33,6 +35,8 @@ my $prompt = '';
 sub register_user_command_handler($&) {
     my($cmd, $fn) = @_;
     $commands{$cmd} = $fn;
+    # Rebuild command abbreviations hash.
+    %cmdAbbr = abbrev keys %commands;
 }
 
 
@@ -83,6 +87,8 @@ sub deregister_help_long {
 sub deregister_user_command_handler($) {
     my($cmd) = @_;
     delete $commands{$cmd};
+    # Rebuild command abbreviations hash.
+    %cmdAbbr = abbrev keys %commands;
 }
 
 
@@ -174,8 +180,9 @@ sub init() {
 			  Call => sub {
 			      my($event,$handler) = @_;
 			      $event->{ToServer} = 0;
-			      if (defined $commands{$event->{Command}}) {
-				  my $f = $commands{$event->{Command}};
+			      my $command = $cmdAbbr{$event->{Command}};
+			      if (defined $commands{$command}) {
+				  my $f = $commands{$command};
 				  &$f(join(' ', @{$event->{Args}}));
 			      } else {
 				  ui_output("(The '" . $event->{Command} .
