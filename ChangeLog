@@ -1,4 +1,4 @@
-Version 1.0.
+Version 1.0
   * [Build.PL] Change version handling to accomodate new versioning [CWS]
   * [LC/CTerminal.pm] Added definitions for the home and end keys. [CWS]
   * [LC/UI.pm] Made home and end do something. [CWS]
