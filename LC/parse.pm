@@ -46,6 +46,7 @@ The exact server output for the line.
 
 
 use Exporter;
+use Text::ParseWords;
 use LC::UI;
 use LC::Event;
 
@@ -725,9 +726,40 @@ sub parse_line($$) {
 }
 
 
+sub parse_user() {
+    my($event, $handler) = @_;
+    my $line = $event->{Text};
+    my %ev;
+
+    if ($line =~ /^\s*%(\S*)\s*(.*)/) {
+	%ev = ( Type => 'ccommand',
+		Command => $1,
+		Args => [ quotewords("\\s+", 0, $2) ] );
+    } elsif ($line =~ /^\s*\/(\S*)\s*(.*)/) {
+	%ev = ( Type => 'scommand',
+		Command => $1,
+		Args => [ quotewords("\\s+", 0, $2) ] );
+    } elsif ($line =~ /^(\S*)[;:](.*)/) {
+	%ev = ( Type => 'usend',
+		To => [ split /,/, $1 ],
+		Body => $2 );
+    } else {
+	%ev = ( Type => 'uunknown' );
+    }
+
+    $ev{Text} = $line;
+    $ev{ToServer} = 1;
+    dispatch_event(\%ev);
+    return 0;
+}
+
+
 sub init() {
     register_eventhandler(Type => 'serverline',
 			  Call => \&parse_line);
+
+    register_eventhandler(Type => 'userinput',
+			  Call => \&parse_user);
 
     register_eventhandler(Type => 'connected',
 			  Call => \&parse_connected);

@@ -1,4 +1,4 @@
-register_eventhandler(Type => 'userinput',
+register_eventhandler(Type => 'uunknown',
 		      Call => \&bang_handler);
 register_help_short('eval', "run perl code");
 register_help_long('eval', "usage: eval <perl code>");

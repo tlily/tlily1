@@ -88,13 +88,14 @@ sub info_cmd($) {
 register_user_command_handler('info', \&info_cmd);
 
 if (config_ask("info")) {
-    register_eventhandler(Type => 'userinput',
+    register_eventhandler(Type => 'scommand',
 			  Call => sub {
 		my($event,$handler) = @_;
-		if ($event->{Text} =~ m|^\s*/info\s*(.*?)\s*$|) {
-			info_cmd($1);
+		if ($event->{Command} eq '/info') {
+			info_cmd(join(' ', @{$event->{Args}}));
 			$event->{ToServer} = 0;
 		}
+		return 0;
     });
 }
 

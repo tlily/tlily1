@@ -92,15 +92,14 @@ ui_callback(';', \&exp_expand);
 ui_callback('=', \&exp_expand);
 ui_callback('C-i', \&exp_complete);
 
-register_eventhandler(Type => 'userinput',
+register_eventhandler(Type => 'usend',
 		      Call => sub {
 			  my($event,$handler) = @_;
-			  if ($event->{Text} =~ /^([^:;\s]*)[;:]/) {
-			      @past_sends = grep { $_ ne $1 } @past_sends;
-			      unshift @past_sends, $1;
-			      pop @past_sends if (@past_sends > 5);
-			      exp_set('recips', $1);
-			  }
+			  my $dlist = join(',', @{$event->{To}});
+			  @past_sends = grep { $_ ne $dlist } @past_sends;
+			  unshift @past_sends, $dlist;
+			  pop @past_sends if (@past_sends > 5);
+			  exp_set('recips', $dlist);
 			  return 0;
 		      });
 
@@ -134,6 +133,7 @@ sub also_cmd ($) {
 
 sub oops_proc ($) {
 	my($recips) = @_;
+	return if ($recips eq 'text');
 	my(@dests) = split(/,/, $recips);
 	foreach (@dests) {
 	    my $full = expand_name($_);
@@ -157,27 +157,23 @@ sub also_proc ($) {
 }
 
 if (config_ask("oops")) {
-	register_eventhandler(Type => 'userinput',
-		Call => sub {
-			my($event,$handler) = @_;
-			if($event->{Text} =~ m|^\s*/oops\s*(.*?)\s*$|io) {
-				oops_proc($1);
-			}
-			return 0;
-		}
-	);
+    register_eventhandler(Type => 'scommand',
+			  Call => sub {
+			      my($event,$handler) = @_;
+			      return 0 unless ($event->{Command} eq '/oops');
+			      oops_proc($event->{Args}->[0]);
+			      return 0;
+			  });
 }
 
 if (config_ask("also")) {
-	register_eventhandler(Type => 'userinput',
-		Call => sub {
-			my($event,$handler) = @_;
-			if($event->{Text} =~ m|^\s*/also\s*(.*?)\s*$|io) {
-				also_proc($1);
-			}
-			return 0;
-		}
-	);
+    register_eventhandler(Type => 'scommand',
+			  Call => sub {
+			      my($event,$handler) = @_;
+			      return 0 unless ($event->{Command} eq '/also');
+			      also_proc($event->{Args}->[0]);
+			      return 0;
+			  });
 }
 register_user_command_handler('oops', \&oops_cmd);
 register_user_command_handler('also', \&also_cmd);

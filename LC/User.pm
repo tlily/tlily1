@@ -95,18 +95,13 @@ sub user_showline($) {
 
 
 sub user_accept() {
-    my @to_server = ();
-
     while (1) {
 	my $text = ui_process();
 	last unless (defined $text);
-	user_showline($text);
 	dispatch_event({Type => 'userinput',
-			Text => $text . "\r\n",
-			ToServer => 1});
+			Text => $text,
+			ToUser => 1});
     }
-
-    return @to_server;
 }
 
 
@@ -157,6 +152,8 @@ sub init() {
 				      (($event->{Type} eq 'review') &&
 				       ($event->{RevType} eq 'send'))) {
 				      output_send($event);
+				  } elsif ($event->{Type} eq 'userinput') {
+				      user_showline($event->{Text});
 				  } else {
 				      ui_output(Text => $event->{Text},
 						Tags => $event->{Tags},
@@ -170,22 +167,17 @@ sub init() {
 			      return 0;
 			  });
 
-    register_eventhandler(Type => 'userinput',
-			  Order => 'before',
+    register_eventhandler(Type => 'ccommand',
 			  Call => sub {
 			      my($event,$handler) = @_;
-			      if ($event->{Text} =~ /^%(\w*)\s*(.*?)\s*$/) {
-				  my($cmd, $args) = ($1, $2);
-				  $event->{ToServer} = 0;
-				  if (defined $commands{$cmd}) {
-				      my $f = $commands{$cmd};
-				      &$f($args);
-				  } else {
-				      ui_output("(The '$cmd' command is unknown.)");
-				  }
-				  return 1;
+			      $event->{ToServer} = 0;
+			      if (defined $commands{$event->{Command}}) {
+				  my $f = $commands{$event->{Command}};
+				  &$f(join(' ', @{$event->{Args}}));
+			      } else {
+				  ui_output("(The '" . $event->{Command} .
+					    "' command is unknown.)");
 			      }
-			      return 0;
 			  });
 }
 

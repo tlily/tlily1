@@ -68,6 +68,7 @@ sub init() {
 			      my($event,$handler) = @_;
 			      if ($event->{ToServer}) {
 				  server_send($event->{Text});
+				  server_send("\r\n");
 			      }
 			      return 0;
 			  });

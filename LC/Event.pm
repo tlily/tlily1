@@ -147,7 +147,9 @@ it).
 
 use Carp;
 use Exporter;
-use IO::Select;
+
+use LC::UI;
+use LC::Config;
 
 @ISA = qw(Exporter);
 
@@ -157,9 +159,6 @@ use IO::Select;
 	     &deregister_handler
 	     &dispatch_event
 	     &event_loop);
-
-# Set this to enable much logging to stderr.
-my $event_debug = 0;
 
 
 my @before_handlers = ();
@@ -194,7 +193,7 @@ sub register_eventhandler(%) {
     }
 
     print STDERR "EV: registered: id=$h{Id}, o=$h{Order} t=$h{Type}\n"
-	if ($event_debug);
+	if ($config{edebug});
 
     return $h{Id};
 }
@@ -208,7 +207,7 @@ sub deregister_handler($) {
     @io_handlers = grep { $_->{Id} != $id } @io_handlers;
     @time_handlers = grep { $_->{Id} != $id } @time_handlers;
 
-    print STDERR "EV: deregistered: id=$h{Id}\n" if ($event_debug);
+    print STDERR "EV: deregistered: id=$h{Id}\n" if ($config{edebug});
 }
 
 
@@ -219,7 +218,7 @@ sub register_iohandler(%) {
     $h{Mode} ||= "rwe";
     push @io_handlers, \%h;
 
-    print STDERR "EV: reg io: id=$h{Id}\n" if ($event_debug);
+    print STDERR "EV: reg io: id=$h{Id}\n" if ($config{edebug});
 
     return $h{Id};
 }
@@ -234,7 +233,7 @@ sub register_timedhandler(%) {
     push @time_handlers, \%h;
 
     print STDERR "EV: reg time: id=$h{Id} i=$h{Interval}\n"
-	if ($event_debug);
+	if ($config{edebug});
 
     return $h{Id};
 }
@@ -259,7 +258,7 @@ sub dispatch_event($) {
 sub transmit_event($) {
     my($event) = @_;
 
-    if ($event_debug) {
+    if ($config{edebug}) {
 	print STDERR "EV: xmit: $event->{Type}";
 	print STDERR " ", $event->{Text} if (defined $event->{Text});
 	print STDERR "\n";
@@ -270,7 +269,7 @@ sub transmit_event($) {
     foreach $handler (@all_handlers) {
 	if ((!$handler->{Type}) || ($handler->{Type} eq $event->{Type})) {
 	    print STDERR "    to: $handler->{Id} (t=$handler->{Type})\n"
-		if ($event_debug);
+		if ($config{edebug});
 	    my $rc;
 	    eval { $rc = &{$handler->{Call}}($event, $handler); };
 	    if ($@) {
@@ -280,7 +279,7 @@ sub transmit_event($) {
 		warn("Event handler $handler->{Id} ($handler->{Type}) returned $rc.");
 	    }
 	    print STDERR "        handler returned $rc\n"
-		if ($rc && $event_debug);
+		if ($rc && $config{edebug});
 	    return if ($rc);
 	}
     }
@@ -289,15 +288,13 @@ sub transmit_event($) {
 
 sub event_loop {
     while (1) {
-	my $sel_r = IO::Select->new();
-	my $sel_w = IO::Select->new();
-	my $sel_e = IO::Select->new();
+	my(@sel_r, @sel_w, @sel_e);
 
 	my $h;
 	foreach $h (@io_handlers) {
-	    $sel_r->add($h->{Handle}) if (index($h->{Mode}, 'r') != -1);
-	    $sel_w->add($h->{Handle}) if (index($h->{Mode}, 'w') != -1);
-	    $sel_e->add($h->{Handle}) if (index($h->{Mode}, 'e') != -1);
+	    push @sel_r, $h->{Handle} if (index($h->{Mode}, 'r') != -1);
+	    push @sel_w, $h->{Handle} if (index($h->{Mode}, 'w') != -1);
+	    push @sel_e, $h->{Handle} if (index($h->{Mode}, 'e') != -1);
 	}
 
 	my $now = time;
@@ -322,7 +319,7 @@ sub event_loop {
 	@time_handlers = @new_ths;
 
 	#log_info("Going into select: to = $timeout - ");
-	my($r, $w, $e) = &IO::Select::select($sel_r, $sel_w, $sel_e, $timeout);
+	my($r, $w, $e) = ui_select(\@sel_r, \@sel_w, \@sel_e, $timeout);
 	#log_info("Exiting select.");
 	
 	#

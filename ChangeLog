@@ -1,6 +1,9 @@
 Version 0.6c
+  * [*/*] Extended the way user input is handled; the parser now parses
+    userinput events and generates events for different forms of input.
+    The new events are: ccommand, scommand, usend, and uunknown.  [DPN]
   * [LC/parse.pm] Fixed a bug involving the characters --> at the end of
-                  a line.  [DPN]
+    a line.  [DPN]
   * [extensions/after.pl] Extension to run a command after a delay [CWS]
 
 Version 0.6b
