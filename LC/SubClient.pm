@@ -38,6 +38,7 @@ use LC::StatusLine;
 my @subcli=qw(Lily);
 my (%rhandle,%whandle,%ehandle);
 my (%opfx,%ipfx);
+my (%color);
 my $subcli_num;
 $status="";
 
@@ -172,6 +173,7 @@ sub subclient_add {
 
     $ipfx{$subcli}=$ipfx;
     $opfx{$subcli}=$opfx;
+	 $color{$subcli}="subc";
     push @subcli,$subcli;     
     $subcli_num++;
     $pid{$subcli}=$pid;
@@ -225,7 +227,8 @@ sub subcli_input_process {
 	# should have a user-registerable pre-filter here.. for 
 	# extensions that want to define customized behaviors (dsirc 
 	# springs to mind)
-	ui_output(ui_escape("$opfx{$subcli} $line"));
+	ui_output("<$color{$subcli}>$opfx{$subcli}</$color{$subcli}> " .
+				  ui_escape($line));
     }
 }
 

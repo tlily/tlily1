@@ -20,6 +20,7 @@ $terminal = "LC::CTerminal";
 		'emote'       => ['fg:cyan',    'bg:black'],
 		'review'      => ['fg:magenta', 'bg:black'],
 		'usersend'    => ['fg:red',     'bg:black'],
+		'subc'        => ['fg:blue',    'bg:black'],
 		'whiteblue'   => ['fg:white',   'bg:blue'],
 		'greenblue'   => ['fg:green',   'bg:blue',   'bold'],
 		'yellow'      => ['fg:yellow',  'bg:black',  'bold'],
