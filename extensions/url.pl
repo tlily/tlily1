@@ -34,13 +34,13 @@ sub url_cmd {
 	if (! $url) { ui_output("(invalid URL number $num)"); }
 
 	ui_output("(viewing $url)");
-	my $cmd=$config{urlviewer};
+	my $cmd=$config{browser};
 	if ($cmd =~ /%URL%/) {
 	    $cmd=~s/%URL%/$url/g;
 	} else {
 	    $cmd .= " $url";
 	}
-	if ($config{urlviewer_text}) {
+	if ($config{browser_textmode}) {
 	    ui_end();
 	    $ret=`$cmd 2>&1`;	    
 	    ui_start();	    
