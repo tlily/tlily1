@@ -3,7 +3,8 @@ package LC::SubClient;
 
 # bugs:
 # %del_hack needs to be fixed.
-# bug if you del a subclient and make a new one with the same name. (locks up)
+#   Don't think this is necessary any longer, but I left the %del_hack lines
+#   commented out.
 # ftp as a subclient doesnt work right.
 
 =head1 NAME
@@ -120,7 +121,7 @@ sub subclient_del {
 
     if ($dereg) {
 	ui_output("(removed subclient \"$subcli\")");
-	$del_hack{$subcli}=1;
+#	$del_hack{$subcli}=1;
     } else {
 	ui_output("(subclient \"$subcli\" not found)");
     }
@@ -162,7 +163,7 @@ sub subclient_start {
     # fork off the process and hook it into tigerlily..
     eval { $pid = open3($wh, $rh, $eh, $proc); };
     if (! $pid) {
-	ui_output("(Error starting subclient)");
+#	ui_output("(Error starting subclient)");
 	exit;
     }
     
@@ -208,17 +209,17 @@ sub sc_input_process {
     $s->add($hdl);
     if (! ($s->can_read(0))) { return; }
 
-	 return if ($del_hack{$subcli});
+#	 return if ($del_hack{$subcli});
     my $rc = sysread($hdl,$buf,4096);
     if ($rc < 0) {
         if ($errno != EAGAIN) {
             die("sysread: $!"); 
         }
     } elsif ($rc == 0) {
-	if (! $del_hack{$subcli}) {
-	    $del_hack{$subcli}=1;
+#	if (! $del_hack{$subcli}) {
+#	    $del_hack{$subcli}=1;
 	    subclient_del("del",$subcli);
-	}
+#	}
     }
 
     foreach $line (split '[\n\r]',$buf) {
@@ -275,6 +276,8 @@ sub sig_chld_handler {
 	subclient_del("del", $pids{$child});
 	&{$exited{$child}} if $exited{$child};
     }
+
+#	 $SIG{CHLD} = \&sig_chld_handler;
 }
 
 sub subclient_send {
