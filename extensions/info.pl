@@ -124,14 +124,13 @@ if (config_ask("info")) {
     register_eventhandler(Type => 'scommand',
 			  Call => sub {
 		my($event,$handler) = @_;
-		if ($event->{Command} eq '/info') {
+		if ($event->{Command} eq 'info') {
 			info_cmd(join(' ', @{$event->{Args}}));
 			$event->{ToServer} = 0;
 		}
 		return 0;
     });
 }
-
 
 register_help_short("info", "Improved /info functions");
 register_help_long("info", "
