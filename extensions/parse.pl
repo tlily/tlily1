@@ -1,5 +1,5 @@
 # -*- Perl -*-
-# $Header: /data/cvs/tlily/extensions/parse.pl,v 2.6 1999/01/04 18:23:54 neild Exp $
+# $Header: /data/cvs/tlily/extensions/parse.pl,v 2.7 1999/01/04 19:54:51 neild Exp $
 =head1 NAME
 
 parse.pl - The lily event parser
@@ -492,7 +492,7 @@ sub parse_line($$) {
 	$state =~ s/^\s*//;
 
 	my $nameblurb = substr($warm, $whopos{name_s}, $whopos{name_l});
-	if ($nameblurb =~ /^([^\[\s]+)( \[(.*)\])?/) {
+	if ($nameblurb =~ /^([^\[]+[^\[\s])( \[(.*)\])?/) {
 	    ($name, $blurb) = ($1, $3);
 	}
 

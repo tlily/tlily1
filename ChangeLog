@@ -1,3 +1,6 @@
+Version 1.0.4-post
+  * [extensions/parse.pl] Bugfix for /who output and names with spaces.  [DPN]
+
 Version 1.0.4
   * [extensions/parse.pl] Parser fixes to cope with the changed lily output
     format for /who.  This should hopefully work on all servers -- it
