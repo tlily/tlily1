@@ -4,19 +4,20 @@ my %expansions = ('sendgroup' => '',
 		  'sender'    => '',
 		  'recips'    => '');
 
-sub exp_set ($$) {
+sub exp_set($$) {
     my($a,$b) = @_;
     $expansions{$a} = $b;
 }
 
 
-sub exp_expand ($$$) {
+sub exp_expand($$$) {
     my($key, $line, $pos) = @_;
 
     if ($pos == 0) {
 	my $exp;
 	if ($key eq '=') {
 	    $exp = $expansions{'sendgroup'};
+	    return unless ($exp);
 	    $key = ';';
 	} elsif ($key eq ':') {
 	    $exp = $expansions{'sender'};
@@ -50,7 +51,7 @@ sub exp_expand ($$$) {
 }
 
 
-sub exp_complete ($$$) {
+sub exp_complete($$$) {
     my($key, $line, $pos) = @_;
 
     return if ($pos == 0);
@@ -90,4 +91,13 @@ register_eventhandler(Type => 'privhdr',
 		      Call => sub {
 			  my($event,$handler) = @_;
 			  exp_set('sender', $event->{From});
+			  my $me = user_name();
+			  my @group = @{$event->{To}};
+			  ui_output("@group");
+			  if (@group > 1) {
+			      push @group, $event->{From};
+			      @group = grep { $_ ne $me } @group;
+			      exp_set('sendgroup', join(',',@group));
+			  }
+			  return 0;
 		      });
