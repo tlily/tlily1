@@ -7,7 +7,7 @@ my @files = ("$ENV{HOME}/.lily/tlily/autologin",
 	     "$ENV{HOME}/.lily/lclient/autologin");
 unshift @files, $config{'autologin_file'} if ($config{'autologin_file'});
 
-init();
+init() unless $config{noauto};
 
 register_help_short("autologin", "Module for automating the login process.");
 register_help_long("autologin", 

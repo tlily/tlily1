@@ -119,6 +119,9 @@ sub parse_command_line {
 	if($ARGV[0] =~ /^-(m|mono)$/) {
 	    shift @ARGV; $config{mono} = 1; next;
 	}
+	if($ARGV[0] eq '-noauto') {
+	    shift @ARGV; $config{noauto} = 1; next;
+	}
 	if($ARGV[0] eq '-snrub') {
 	    shift @ARGV; $snrub = 1; next;
 	}
