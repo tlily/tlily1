@@ -8,7 +8,7 @@ register_help_long('help',
 sub help_cmd {
     my($args)=@_;
 
-    my @topics=&help_get_list();
+    my @topics=sort mysort &help_get_list();
     my $w=0;
     foreach $topic (@topics) { 
 	$t=$topic; $t=~s/^\%//g;
@@ -21,8 +21,11 @@ sub help_cmd {
 	ui_output("? Help is available on the following topics:");
 
 	foreach $topic (@topics) {	    
-	    my $s=sprintf("?  <yellow>%-$w.$w" . "s</yellow>",$topic);
-	    my $t=help_get_short($topic);
+	    my $t=$topic;
+	    if (length($topic) > 1 && !($topic =~ /\%/)) { $t=" $topic"; }
+
+	    my $s=sprintf("?  <yellow>%-$w.$w" . "s</yellow>",$t);
+	    $t=help_get_short($topic);
 	    if ($t) { $s .= " - $t";}
 	    ui_output($s);
 	}	
@@ -56,6 +59,14 @@ sub help_cmd {
 }
 
 
+sub mysort {
+    
+    my ($c,$d)=($a,$b);
+    $c=~s/^%//g;
+    $d=~s/^%//g;
+
+    return $c cmp $d;
+}
 
 
 1;
