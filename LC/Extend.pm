@@ -194,10 +194,21 @@ sub extension_cmd($) {
 	}
 	$s .= ")";
 	ui_output($s);
+    } else {
+	ui_output("(unknown %extension command.  see %help extension)");
     }
 }
 
 LC::User::register_user_command_handler('extension', \&extension_cmd);
+LC::User::register_help_short('extension', "manage tlily extensions");
+LC::User::register_help_long('extension', "
+usage: %extension list
+       %extension load <extension>
+       %extension unload <extension>
+       %extension reload <extension>
+");
+
+
 
 
 ####################################################################
