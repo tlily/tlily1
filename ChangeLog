@@ -1,4 +1,8 @@
-Version 0.7b
+Version 0.7b-post
+  * [LC/SubClient.pm] Added support for subclients and the %irc command to
+    support dsirc as a subclient.
+
+Version 0.7b  
   * [extensions/parse.pl] Fixed the stalls during /reviews (could be faster
                                                             still, though) [SMC]
   * [extensions/set.pl] Make space the default separation character [CWS]
