@@ -1,3 +1,7 @@
+Version 0.6c-post
+  * [LC/CTerminal.pm, LC/TTerminal.pm] Better handling of terminal resizes.
+    We now require the Term::Size module.  [DPN]
+
 Version 0.6c
   * [LC/State.pm] Bugfix: handle renames properly.  [DPN]
   * [LC/StatusLine.pm] Bugfix for blurbs containing a < or \.  [DPN]

@@ -4,7 +4,8 @@ TigerLily
 Installing
 ----------
 TigerLily requires Perl 5.  You will also need either Curses.pm or
-Term::Cap.pm -- see the Terminals section for details.
+Term::Cap.pm, as well as Term::Size.pm -- see the Terminals section for
+details.
 
 To create a usable tlily executable, run the command:
    perl Build.PL
@@ -15,8 +16,8 @@ To see the full usage for Build.PL, run the command:
 Terminals
 ---------
 At this time, tlily has two Terminal implementations: CTerminal and
-TTerminal.  CTerminal requires a working Curses module.  TTerminal
-requires the Term::Cap module.
+TTerminal.  CTerminal requires a working Curses module, and Term::Size.
+TTerminal requires the Term::Cap module.
 
 TTerminal lacks support for color and special keys (notably, the arrow
 keys).  (The keys ^F, ^B, ^P, ^N are equivalent to right/left/up/down.)
