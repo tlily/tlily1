@@ -126,7 +126,6 @@ use LC::Event;
 use LC::StatusLine;
 use LC::User;
 use LC::Config;
-use POSIX;
 
 @ISA = qw(Exporter);
 
@@ -150,7 +149,7 @@ sub expand_name ($) {
     my($name) = @_;
     my $disc;
 
-    $name = tolower($name);
+    $name = lc($name);
     $name =~ tr/ /_/;
     $disc = 1 if ($name =~ s/^-//);
 
@@ -205,7 +204,7 @@ sub expand_name ($) {
 sub set_user_state (%) {
     my(%params) = @_;
 
-    my $name = tolower($params{Name});
+    my $name = lc($params{Name});
     $name =~ tr/ /_/;
 
     my $href = $Users{$name};
@@ -227,7 +226,7 @@ sub set_user_state (%) {
 sub get_user_state (%) {
     my(%params) = @_;
 
-    my $name = tolower($params{Name});
+    my $name = lc($params{Name});
     $name =~ tr/ /_/;
     delete $params{Name};
 
@@ -247,10 +246,10 @@ sub get_user_state (%) {
 sub rename_user ($$) {
     my($old,$new) = @_;
 
-    $old = tolower($old);
+    $old = lc($old);
     $old =~ tr/ /_/;
 
-    $new = tolower($old);
+    $new = lc($new);
     $new =~ tr/ /_/;
 
     $Users{$new} = $Users{$old};
@@ -262,7 +261,7 @@ sub rename_user ($$) {
 sub destroy_user ($) {
     my($user) = @_;
 
-    $user = tolower($user);
+    $user = lc($user);
     $user =~ tr/ /_/;
     delete $Users{$user};
 }
@@ -284,7 +283,7 @@ sub user_name () {
 sub set_disc_state (%) {
     my(%params) = @_;
 
-    my $name = tolower($params{Name});
+    my $name = lc($params{Name});
     $name =~ tr/ /_/;
     $name =~ s/^-//;
 
@@ -307,7 +306,7 @@ sub set_disc_state (%) {
 sub get_disc_state (%) {
     my(%params) = @_;
 
-    my $name = tolower($params{Name});
+    my $name = lc($params{Name});
     $name =~ tr/ /_/;
     $name =~ s/^-//;
     delete $params{Name};
@@ -328,7 +327,7 @@ sub get_disc_state (%) {
 sub destroy_disc ($) {
     my($disc) = @_;
 
-    $disc = tolower($disc);
+    $disc = lc($disc);
     $disc =~ tr/ /_/;
     $name =~ s/^-//;
     delete $Discs{$disc};
