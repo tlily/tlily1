@@ -46,6 +46,7 @@ sub zonewriter($$) {
 	    my $ampm = '';
 	    $t += $config{zonedelta};
 	    $t += (60 * 24) if ($t < 0);
+		 $t -= (60 * 24) if ($t > (60 * 24));
 	    $h = int($t / 60);
 	    $m = $t % 60;
 	    if(defined $config{zonetype}) {
