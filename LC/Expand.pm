@@ -37,7 +37,8 @@ sub exp_expand ($$$) {
 	} else {
 	    return LC::UI::input_add($key, $line, $pos);
 	}
-	
+
+	$exp =~ tr/ /_/;
 	return ($exp . $key . $line, length($exp) + 1, 2);
     } elsif (($key eq ':') || ($key eq ';')) {
 	my $fore = substr($line, 0, $pos);
