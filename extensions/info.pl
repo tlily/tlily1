@@ -77,7 +77,7 @@ sub info_cmd($) {
     } elsif ($cmd eq 'edit') {
 	info_edit(shift @argv);
     } else {
-	server_send("/info $1");
+	server_send("/info $args\r\n");
     }
 }
 
