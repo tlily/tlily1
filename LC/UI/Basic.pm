@@ -5,69 +5,43 @@
 LC::UI:Basic - tlily's dumbest user interface.
 
 This is the simplest UI module possible.  
-It is not really designed to be used by end users, but should be very
-useful for testing.  In addition, all UI modules should inherit from this 
-one, and should overload ALL of these functions, and should provide the
-$self->{ui_cols} variable (for the time being at least, I think that should
-definitely be replaced with an accessor function or something more
-intelligent..
 
-Also configure the $usable flag however you want it.
-  1 means to strip a lot of the tags and generally try to make the client
-    somewhat usable in a pinch.  Good for testing.
-  0 means to show everything, don't try to make it too pretty.  Good for other
-    kinds of testing :)
-
-Note that for whatever reason, you have to log in with your username
-and password on the same line.
+This module provides a simple text based UI functions, but you can't instantiate
+it directly.
 
 =cut
 
 package LC::UI::Basic;
 
-use vars qw(@ISA);
-
+sub ui_attr         { }
+sub ui_filter       { }
+sub ui_resetfilter  { }
+sub ui_status       { }
+sub ui_callback($$) { }
+sub ui_remove_callback($$) { }
+sub ui_password($)  { }
 
 sub new {
-    my ($class)=@_;
-    
-    my $self=bless {},$class;
-    $self->{usable} = 1;
-    $self->{ui_cols} = 80;
-    
-    return $self;
+    die "You can not use LC::UI::Basic as a UI.  Try LC::UI::Debug.\n";
 }
 
-sub ui_start {
-    my ($self)=@_;
-
-    print "ui_start\n";
+sub ui_start        {
     system("stty cbreak");
 }
 
-sub ui_end {
-    my ($self)=@_;
-
-    print "ui_end\n";
+sub ui_end          {
     system("stty sane");    
 }
 
-sub ui_attr {
-    my ($self)=shift;
-
-    print "ui_attr @_\n";
+sub ui_prompt { 
+    my $self=shift;
+    print "\r@_";
 }
 
-sub ui_filter {
-    my ($self)=shift;
-
-    print "ui_filter @_\n";
-}
-
-sub ui_resetfilter {
+sub ui_bell {
     my $self=shift;
 
-    print "ui_resetfilter @_\n";
+    print "";
 }
 
 sub ui_output {
@@ -102,13 +76,6 @@ sub ui_output {
     }
 }
 
-sub ui_status {
-    my $self=shift;
-
-    print "ui_status @_\n" unless $self->{usable};
-    return undef;
-}
-
 sub ui_process {
     my $self=shift;
 
@@ -136,36 +103,6 @@ sub ui_process {
     } else {
        return undef;
     }
-}
-
-sub ui_callback($$) {
-    my $self=shift;
-
-    print "ui_callback @_\n";
-}
-
-sub ui_remove_callback($$) {
-    my $self=shift;
-
-    print "ui_remove_callback @_\n";
-}
-
-sub ui_bell {
-    my $self=shift;
-
-    print "ui_bell\n";
-}
-
-sub ui_password($) {
-    my $self=shift;
-
-    print "ui_password\n";
-}
-
-sub ui_prompt {
-    my $self=shift;
-
-    print "ui_prompt @_\n";
 }
 
 sub ui_select($$$$) {
