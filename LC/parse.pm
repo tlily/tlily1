@@ -627,8 +627,8 @@ sub init() {
     register_eventhandler(Type => 'serverline',
 			  Call => \&parse_line);
 
-    register_eventhandler(Type => 'connected',
-			  Call => sub { push @prompts, '\* $'; 0; }); # '})
+#    register_eventhandler(Type => 'connected',
+#			  Call => sub { push @prompts, '\* $'; 0; }); # '})
 }
 
 init();
