@@ -477,7 +477,7 @@ sub state_init () {
 			  Order => 'before',
 			  Call => sub {
 	my($event,$handler) = @_;
-	$event->{IsUser} = 1 if ($event->{User} eq $Me);
+	$event->{IsUser} = 1 if ($Me && $event->{User} eq $Me);
 	set_user_state(Name => $event->{User});
 	return 0;
     });
@@ -496,9 +496,9 @@ sub state_init () {
 	my($event,$handler) = @_;
 	$event->{User} = $Me unless ($event->{User});
 	$event->{IsUser} = 1 if ($event->{User} eq $Me);
-	if ($event->{To} eq 'gone') {
+	if (($event->{To} || '') eq 'gone') {
 	    destroy_user($event->{User});
-	} elsif ($event->{From} eq 'gone') {
+	} elsif (($event->{From} || '') eq 'gone') {
 	    set_user_state(Name => $event->{User});
 	}
 	return 0;

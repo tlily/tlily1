@@ -43,7 +43,7 @@ sub zonewriter($$) {
 	$init =~ s/^%command \[\d+\] //;
 	if ($time_prefixes{$init}) {
 	    my($h,$m);
-	    my($ampm);
+	    my $ampm = '';
 	    $t += $config{zonedelta};
 	    $t += (60 * 24) if ($t < 0);
 	    $h = int($t / 60);

@@ -33,6 +33,7 @@ sub cmd_init () {
 
     register_eventhandler(Call => sub {
 	my($e) = @_;
+	return 0 unless ($e->{Id});
 	my $f = $active_commands{$e->{Id}};
 	&$f($e) if (defined $f);
 	return 0;

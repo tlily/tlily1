@@ -62,7 +62,7 @@ use LC::Event;
 
 my $partial;
 
-my $msg_state = undef;
+my $msg_state = '';
 my $msg_type = undef;
 my $msg_sender;
 my $msg_hdr = undef;
@@ -179,7 +179,7 @@ sub parse_line($$) {
 		  WrapChar => $msg_wrapchar,
 		  First => 1);
 	undef $partial;
-	undef $msg_state;
+	$msg_state = '';
 	goto found;
     }
 
@@ -474,7 +474,7 @@ sub parse_line($$) {
 	    $event{First} = 1;
 	    $line = $msg_hdr;
 	    undef $partial;
-	    undef $msg_state;
+	    $msg_state = '';
 	} else {
 	    $line = '';
 	}
@@ -538,8 +538,9 @@ sub parse_line($$) {
     }
 
     # /what information
-    if (($line =~ /^[\*\# ][ \+]\w/) && ((substr($warm, 23, 1) eq 'c') ||
-					 (substr($warm, 23, 1) eq 'e'))) {
+    if (($line =~ /^[\*\# ][ \+]\w/) &&
+	(length($warm) > 23) &&
+	((substr($warm, 23, 1) eq 'c') || (substr($warm, 23, 1) eq 'e'))) {
 	my $name = substr($warm, 2, 10);
 	$name =~ s/\s*$//;
 	my $type = (substr($warm, 23, 1) eq 'c') ? 'connect' : 'emote';
