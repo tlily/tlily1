@@ -165,6 +165,7 @@ sub statusline_init() {
 	my($event, $handler) = @_;
 	if ($event->{IsUser}) {
 	    $status_Blurb = $event->{Blurb};
+	    $status_Blurb =~ s/</\</g; $status_Blurb =~ s/>/\\>/g;
 	    redraw_statusline();	
 	}
 	return 0;
