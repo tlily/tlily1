@@ -1,4 +1,6 @@
 Version 0.8b
+  * [extensions/parse.pl] Refixed parser to display the lily banner,
+                          /infos, and /info sets properly.  Oy.  [DPN]
   * [extensions/parse.pl] Fixed parser to display the lily banner
                           correctly [SMC]
   * [extensions/misc.pl] Added support for !! to execute last !command [SMC]

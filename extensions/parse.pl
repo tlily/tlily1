@@ -31,14 +31,14 @@ The exact server output for the line.
 
 =cut
 
-@login_prompts   = ('\(Y\/n\)\s*$',
-                    '^-->\s*$',
-                    '^login:',
-                    '^password:');
+@login_prompts   = ('.*\(Y\/n\)\s*$',
+                    '^--> ',
+                    '^login: ',
+                    '^password: ');
 
-@connect_prompts = ('^\&password:',
-                    '^-->\s*$',
-	            '^\* $');
+@connect_prompts = ('^\&password: ',
+                    '^--> ',
+	            '^\* ');
 
 $logged_in = 0;
 
@@ -81,9 +81,9 @@ sub parse_server_data($$) {
     # we haven't completely read yet).
     my $prompt;
     foreach $prompt ($logged_in ? @connect_prompts : @login_prompts) {
-	if ($crumb =~ /$prompt/) {
-	    push @lines, $crumb;
-	    $crumb = '';
+	if ($crumb =~ /($prompt)/) {
+	    push @lines, $1;
+	    $crumb = substr($crumb, length($1));
 	}
     }
 
@@ -116,7 +116,7 @@ sub parse_line($$) {
     # prompts ################################################################
 
     my $p;
-    foreach $p (@prompts) {
+    foreach $p ($logged_in ? @connect_prompts : @login_prompts) {
 	if ($line =~ /$p/) {
 	    ui_prompt("$line");
 	    %event = (Type => 'prompt');
