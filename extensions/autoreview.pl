@@ -49,9 +49,8 @@ sub review_start {
 
 sub review {
 	return unless (@to_review);
-	my $disc = shift @to_review;
-	$disc =~ s/ /_/g;
-	cmd_process("/review -" . $disc . " detach", \&review_handler);
+	my $target = shift @to_review;
+	cmd_process("/review " . $target . " detach", \&review_handler);
 }
 
 sub review_handler {
@@ -75,7 +74,7 @@ sub review_handler {
 		$rev_start .= "\n" . $event->{Text};
 	} elsif (!$rev_interesting) {
 		$rev_interesting = 1;
-		ui_output($rev_start);
+		ui_output($rev_start) if (defined $rev_start);
 	}
 	return 0;
 }
