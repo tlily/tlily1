@@ -193,6 +193,24 @@ sub register_eventhandler(%) {
     push @{$Extensions{/current/}->{EventHandlers}}, $id;
 }
 
+sub register_iohandler(%) {
+    my(%h) = @_;
+    my $id = &LC::Event::register_iohandler(%h);
+    push @{$Extensions{/current/}->{EventHandlers}}, $id;
+}
+
+sub register_timedhandler(%) {
+    my(%h) = @_;
+    my $id = &LC::Event::register_timedhandler(%h);
+    push @{$Extensions{/current/}->{EventHandlers}}, $id;
+}
+
+sub deregister_handler($) {
+    my($id) = @_;
+    &LC::Event::deregister_handler($id);
+    list_remove @{$Extensions{/current/}->{EventHandlers}}, $id;
+}
+
 sub deregister_eventhandler($) {
     my($id) = @_;
     &LC::Event::deregister_eventhandler($id);

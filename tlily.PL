@@ -194,8 +194,17 @@ sub main() {
 
     init_connection_handling();
 
+    register_iohandler(Handle => $server_sock,
+		       Mode => 'r',
+		       Name => 'a',
+		       Call => sub { parse(server_read()); });
+    register_iohandler(Handle => \*STDIN,
+		       Mode => 'r',
+		       Name => 'b',
+		       Call => sub { user_accept(); });
+
     while (1) {
-	eval { eventloop(); };
+	eval { event_loop(); };
 
 	# Normal exit.
 	if ($@ eq '') {

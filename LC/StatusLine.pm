@@ -32,6 +32,9 @@ sub render() {
     push @right, $status{Server} if (defined($status{Server}));
     push @right, $status{State} if (defined($status{State}));
 
+    my @a = localtime;
+    push @right, sprintf("%02d:%02d", $a[2], $a[1]);
+
     my $left=join ' | ',@left;
     my $right=join ' | ',@right;
     my $ll=length($left);
@@ -113,6 +116,10 @@ sub statusline_init() {
 	$status{Pseudo} = $event->{User} if ($event->{IsUser});
 	$status{Blurb} = $event->{Blurb} if ($event->{IsUser});
     });
+
+    register_timedhandler(Interval => 15,
+			  Repeat => 1,
+			  Call => \&render);
 
     render();
 }

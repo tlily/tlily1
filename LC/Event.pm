@@ -81,12 +81,7 @@ as its parameter.  Example:
 
 =item deregister_eventhandler()
 
-Deregisters an event handler.  Takes the id of a registered event handler.
-While it is possible to deregister an event handler while in the middle of
-event processing, the handler will still execute for the current event.
-Example:
-
-    deregister_eventhandler($id);
+Identical to deregister_handler().  Depricated.
 
 =item dispatch_event()
 
@@ -98,6 +93,53 @@ Example:
     dispatch_event(Type => 'serverline',
 		   Text => $s);
 
+=item register_iohandler()
+
+Registers an I/O event handler.  Takes a hash as its paramter.  The hash
+should contain "Handle", "Mode", and "Code" keys: Handle is a file handle
+to monitor, Mode is any combination of the letters 'r', 'w', and 'x',
+indicating that the handler should be invoked when the handle is readable,
+writable, or has an exception flag, and Code is a reference to the code
+to call when the event occurs.  (This code will be called with the
+eventhandler as its argument.)
+Example:
+
+    register_iohandler(Handle => \*STDIN,
+		       Mode => 'r',
+		       Code => \&ui_process);
+
+=item register_timedhandler()
+
+Registers a timed event handler.  The event handler will be triggered
+after a given number of seconds.  Takes a hash as its parameter.  The hash
+should contain "Interval" and "Code" keys: Interval is the number of
+seconds until the handler is invoked, and Code is a reference to the
+code to call when the event occurs.  (This code will be called with the
+eventhandler as its argument.)  If the "Repeat" key is set to a true
+value, the handler will be invoked every Interval seconds until it is
+deregistered; otherwise, it will be automatically deregistered after
+its first invocation.
+Example:
+
+    register_timedhandler(Interval => 60,
+			  Repeat => 1,
+			  Code => \&update_clock);
+
+=item deregister_handler()
+
+Deregisters a handler.  Takes the id of a registered event handler.
+While it is possible to deregister an event handler while in the middle of
+event processing, the handler will still execute for the current event.
+Example:
+
+    deregister_handler($id);
+
+=item event_loop()
+
+Enters an event loop from which I/O and timed events are served.  This
+function will never return (although exceptions may be thrown from within
+it).
+
 =back
 
 =cut
@@ -105,18 +147,27 @@ Example:
 
 use LC::log;
 use LC::UI;
+use Carp;
 use Exporter;
+use IO::Select;
 
 @ISA = qw(Exporter);
 
 @EXPORT = qw(&register_eventhandler
+	     &register_iohandler
+	     &register_timedhandler
 	     &deregister_eventhandler
-	     &dispatch_event);
+	     &deregister_handler
+	     &deregister_eventhandler
+	     &dispatch_event
+	     &event_loop);
 
 
 my @before_handlers = ();
 my @during_handlers = ();
 my @after_handlers = ();
+
+my @io_handlers = ();
 
 my $processing = 0;
 my @event_queue = ();
@@ -147,11 +198,36 @@ sub register_eventhandler(%) {
 }
 
 
-sub deregister_eventhandler($) {
+sub deregister_handler($) {
     my($id) = @_;
     @before_handlers = grep { $_->{Id} != $id } @before_handlers;
     @during_handlers = grep { $_->{Id} != $id } @during_handlers;
     @after_handlers = grep { $_->{Id} != $id } @after_handlers;
+    @io_handlers = grep { $_->{Id} != $id } @io_handlers;
+    @time_handlers = grep { $_->{Id} != $id } @time_handlers;
+}
+
+
+sub register_iohandler(%) {
+    my(%h) = @_;
+
+    $h{Id} = $token++;
+    $h{Mode} ||= "rwe";
+    push @io_handlers, \%h;
+
+    return $h{Id};
+}
+
+
+sub register_timedhandler(%) {
+    my(%h) = @_;
+
+    $h{Id} = $token++;
+    croak "Negative or zero interval.\n" if ($h{Interval} <= 0);
+    $h{Time} = time + $h{Interval};
+    push @time_handlers, \%h;
+
+    return $h{Id};
 }
 
 
@@ -183,6 +259,85 @@ sub transmit_event($) {
 		warn("Event error: $@");
 	    }
 	    last if ($rc);
+	}
+    }
+}
+
+
+sub event_loop {
+    while (1) {
+	my $sel_r = IO::Select->new();
+	my $sel_w = IO::Select->new();
+	my $sel_e = IO::Select->new();
+
+	my $h;
+	foreach $h (@io_handlers) {
+	    $sel_r->add($h->{Handle}) if (index($h->{Mode}, 'r') != -1);
+	    $sel_w->add($h->{Handle}) if (index($h->{Mode}, 'w') != -1);
+	    $sel_e->add($h->{Handle}) if (index($h->{Mode}, 'e') != -1);
+	}
+
+	my $now = time;
+	my $timeout;
+
+	my @new_ths;
+	foreach $h (@time_handlers) {
+	    if ($h->{Time} <= $now) {
+		eval { my $rc = &{$h->{Call}}($h); };
+		warn("Event error: $@") if ($@);
+		if ($h->{Repeat}) {
+		    $h->{Time} += $h->{Interval};
+		    redo;
+		}
+	    } else {
+		push @new_ths, $h;
+		if ((!defined $timeout) || ($h->{Time} - $now < $timeout)) {
+		    $timeout = $h->{Time} - $now;
+		}
+	    }
+	}
+	@time_handlers = @new_ths;
+
+	#log_info("Going into select: to = $timeout - ");
+	my($r, $w, $e) = &IO::Select::select($sel_r, $sel_w, $sel_e, $timeout);
+	#log_info("Exiting select.");
+	
+	#
+	# What follows is really nasty.  Fix this, please.
+	#
+
+	my $fh;
+	foreach $fh (@$r) {
+	    foreach $h (@io_handlers) {
+		if (fileno($fh) == fileno($h->{Handle})) {
+		    if (index($h->{Mode}, 'r') != -1) {
+			eval { my $rc = &{$h->{Call}}($h); };
+			warn("Event error: $@") if ($@);
+		    }
+		}
+	    }
+	}
+	
+	foreach $fh (@$w) {
+	    foreach $h (@io_handlers) {
+		if (fileno($fh) == fileno($h->{Handle})) {
+		    if (index($h->{Mode}, 'w') != -1) {
+			eval { my $rc = &{$h->{Call}}($h); };
+			warn("Event error: $@") if ($@);
+		    }
+		}
+	    }
+	}
+	
+	foreach $fh (@$e) {
+	    foreach $h (@io_handlers) {
+		if (fileno($fh) == fileno($h->{Handle})) {
+		    if (index($h->{Mode}, 'e') != -1) {
+			eval { my $rc = &{$h->{Call}}($h); };
+			warn("Event error: $@") if ($@);
+		    }
+		}
+	    }
 	}
     }
 }
