@@ -216,7 +216,7 @@ sub deregister_statusline {
 
 sub status_time {
     my @a = localtime;
-    if(defined $config{clockdelta}) {
+    if($config{clockdelta}) {
 	my($t) = ($a[2] * 60) + $a[1] + $config{clockdelta};
 	$t += (60 * 24) if ($t < 0);
 	$t -= (60 * 24) if ($t >= (60 * 24));
