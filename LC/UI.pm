@@ -1,5 +1,5 @@
 # -*- Perl -*-
-# $Header: /data/cvs/tlily/LC/UI.pm,v 1.55 1998/06/05 04:47:18 neild Exp $
+# $Header: /data/cvs/tlily/LC/UI.pm,v 1.56 1998/06/09 23:51:50 neild Exp $
 package LC::UI;
 
 
@@ -933,7 +933,7 @@ sub input_add($$$) {
 
     my $ii = $input_height - $input_fline - 1;
     my $i = $ii;
-    while ($i * $term->term_cols > $pos) {
+    while ($i * $term->term_cols > $pos + length($input_prompt)) {
 	$term->term_move($term->term_lines - $input_height + $i, 0);
 	$term->term_insert_char();
 	$term->term_addstr(substr($l, $i * $term->term_cols, 1));

@@ -1,4 +1,6 @@
 Version 0.9b-post
+  * [LC/UI.pm] Fixed a bug when typing more than one line of input while a
+    prompt is visible.  (The "paste bug".)  [DPN]
   * [extensions/helper.pl] Added a %helper extension for editing help text
     with ?gethelp and ?sethelp [SMC]
   * [extensions/source.pl] Added a %source extension to interpret a file as
