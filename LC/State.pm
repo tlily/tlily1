@@ -137,9 +137,12 @@ use POSIX;
 	     &user_name);
 
 
-my %Users = ();
-my %Discs = ();
-my %Groups = ();
+# Do not my these, as they can be useful for debugging.
+%Users = ();
+%Discs = ();
+%Groups = ();
+
+my $state_sync_count = 0;
 
 
 # Map a user-entered name to a canonical lily name.
@@ -360,8 +363,22 @@ sub state_sync () {
     %Discs = ();
     %Groups = ();
 
+    my $decr_sync = sub {
+	$state_sync_count--;
+	$status{SyncState} = '' if ($state_sync_count == 0);
+    };
+
+    if ($state_sync_count > 0) {
+	ui_output("(sync already in progress)");
+	return;
+    }
+
+    $status{SyncState} = 'sync' if ($state_sync_count == 0);
+    $state_sync_count = 4;
+
     cmd_process('/who me', sub {
 	my($event) = @_;
+	&$decr_sync if ($event->{Type} eq 'endcmd');
 	$event->{ToUser} = 0;
 	if ($event->{Type} eq 'who') {
 	    $Me = $event->{User};
@@ -372,18 +389,21 @@ sub state_sync () {
 
     cmd_process('/who everyone', sub {
 	my($event) = @_;
+	&$decr_sync if ($event->{Type} eq 'endcmd');
 	$event->{ToUser} = 0;
 	return 0;
     });
 
     cmd_process('/what all', sub {
 	my($event) = @_;
+	&$decr_sync if ($event->{Type} eq 'endcmd');
 	$event->{ToUser} = 0;
 	return 0;
     });
 
     cmd_process('/group', sub {
 	my($event) = @_;
+	&$decr_sync if ($event->{Type} eq 'endcmd');
 	$event->{ToUser} = 0;
 	return 0 unless ($event->{Type} eq 'unparsed');
 	return 0 if ($event->{Text} =~ /^Group      Members/);
@@ -393,6 +413,7 @@ sub state_sync () {
 	my @members = split /, /, substr($event->{Text}, 11);
 	$Groups{lc($group)}->{Name} = $group;
 	$Groups{lc($group)}->{Members} = \@members;
+	return 0;
     });
 }
 

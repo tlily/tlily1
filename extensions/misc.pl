@@ -10,7 +10,7 @@ register_help_long('!', "usage: ! <command>");
 sub eval_handler($) {
     my($args) = @_;
     my $rc = eval($args);
-    ui_output("* Error: $@") if $@;
+    ui_output("* Error: $@") if ($@);
     ui_output("-> $rc") if (defined $rc);
 }
 register_user_command_handler('eval', \&eval_handler);

@@ -84,7 +84,7 @@ sub extension($) {
     push @share,qw($TL_VERSION);
     
     $safe->share (@share);
-    $safe->share_from('main', [ qw(%ENV @INC %INC) ]);
+    $safe->share_from('main', [ qw(%ENV @INC %INC $@) ]);
         
     my $old = $Extensions{/current/};
     $Extensions{$name} = { File => $filename,

@@ -18,7 +18,8 @@ use LC::Event;
 %status = (Server => $config{server},
 	   Pseudo => '',
 	   Blurb => '',
-	   State => '');
+	   State => '',
+	   SyncState => '');
 
 
 sub render() {
@@ -29,7 +30,11 @@ sub render() {
     push @left, $name if (length($name));
 
     push @right, $status{Server} if (defined($status{Server}));
-    push @right, $status{State} if (defined($status{State}));
+    if ($status{SyncState}) {
+	push @right, $status{SyncState};
+    } else {
+	push @right, $status{State} if (defined($status{State}));
+    }
 
     my @a = localtime;
     if(defined $config{clockdelta}) {

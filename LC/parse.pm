@@ -105,9 +105,11 @@ sub parse($) {
 sub parse_line($$) {
     my($ev, $h) = @_;
 
-    $line = $ev->{Text};
-    $ev->{Raw} = $line;
-    $line =~ s/[\<\\]/\\$&/g;
+    my $raw  = $ev->{Text};
+    my $warm = $ev->{Text};
+    $warm =~ s/^%command \[\d+\] //;
+    my $line = $ev->{Text};
+    $line =~ s/([\<\\])/\\$1/g;
     chomp $line;
 
     my $signal = undef;
@@ -475,17 +477,18 @@ sub parse_line($$) {
 
     # /who information
     if (($line =~ /^[\>\<\| ][ \-\=\+][^\(]/) &&
-	((substr($line, 57, 6) eq '  here') ||
-	 (substr($line, 57, 6) eq '  away') ||
-	 (substr($line, 57, 6) eq 'detach'))) {
+	(length($warm) > 63) &&
+	((substr($warm, 57, 6) eq '  here') ||
+	 (substr($warm, 57, 6) eq '  away') ||
+	 (substr($warm, 57, 6) eq 'detach'))) {
 	my($name, $blurb) = (undef, undef);
-	my $state = substr($line, 57, 6);
+	my $state = substr($warm, 57, 6);
 	$state =~ s/^\s*//;
 
-	if (substr($line, 2, 39) =~ /^([^\[]+) \[(.*)\]/) {
+	if (substr($warm, 2, 39) =~ /^([^\[]+) \[(.*)\]/) {
 	    ($name, $blurb) = ($1, $2);
 	} else {
-	    $name = substr($line, 2, 39);
+	    $name = substr($warm, 2, 39);
 	    $name =~ s/^\s*//;
 	    $name =~ s/\s*$//;
 	    undef $name if (length($name) == 0);
@@ -515,12 +518,12 @@ sub parse_line($$) {
     }
 
     # /what information
-    if (($line =~ /^[\*\# ][ \+]\w/) && ((substr($line, 23, 1) eq 'c') ||
-					 (substr($line, 23, 1) eq 'e'))) {
-	my $name = substr($line, 2, 10);
+    if (($line =~ /^[\*\# ][ \+]\w/) && ((substr($warm, 23, 1) eq 'c') ||
+					 (substr($warm, 23, 1) eq 'e'))) {
+	my $name = substr($warm, 2, 10);
 	$name =~ s/\s*$//;
-	my $type = (substr($line, 23, 1) eq 'c') ? 'connect' : 'emote';
-	my $title = substr($line, 28);
+	my $type = (substr($warm, 23, 1) eq 'c') ? 'connect' : 'emote';
+	my $title = substr($warm, 28);
 
 	%event = (Type => 'what',
 		  Tags => [ 'what' ],

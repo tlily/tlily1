@@ -1,5 +1,9 @@
+Version 0.5c
+  * [LC/Extend.pm] Permit extensions access to $@.  This makes life better
+    for the %eval command.  [DPN]
+
 Version 0.5b
-  * [LC/State.pm, LC/StatusLine.pm]  Synchronization state appears on status
+  * [LC/State.pm, LC/StatusLine.pm] Synchronization state appears on status
     line.  [DPN]
   * [LC/parse.pm] Fixed a parser bug involving < or \ in blurbs.  [DPN]
   * [extensions/misc.pl] %eval prints the result of the eval'd expr.  [DPN]
