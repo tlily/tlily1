@@ -1,6 +1,135 @@
 # -*- Perl -*-
 package LC::UI;
 
+
+=head1 NAME
+
+LC::UI - User input/output layer.
+
+=head1 SYNOPSIS
+
+    ui_start();
+    ui_output('foo');
+    ui_end();
+
+=head1 DESCRIPTION
+
+The UI module provides an interface to the user.  It is intended to be
+modular -- it should be possible to replace this module with one implementing
+a different style of interface.  (Such as an X-based interface.)
+
+This implementation of the UI module is targeted at simple text screens.
+It uses an abstraction layer to access the screen, as defined by the
+CTerminal module.  (Curses based, currently the only functioning implementation
+of the terminal layer.)
+
+=head2 Functions
+
+=over 10
+
+=item ui_start()
+
+This function must be called prior to any other UI functions.  Once it has
+been called, the terminal should be considered inaccessible (i.e., do not
+use any print statements afterwards).
+
+=item ui_end()
+
+Must be called prior to exiting the program.  The terminal is again
+accessible after this function is called.
+
+=item ui_attr()
+
+Defines an attribute tag.  Takes the name of the tag and a list of attributes
+to associate with this name.  (See the CTerminal documentation for a list
+of attributes.)
+
+    ui_attr('b', 'bold');
+
+=item ui_output()
+
+Sends a line of output to the user.  The passed line may contain HTML-style
+attribute tags, such as <b>.  All tags used must be first defined with the
+ui_attr() function.  Text sent with this function is drawn with the
+'text_window' tag by default.
+
+Backslashes may be used to quote '<' characters that do not begin
+attribute tags.  Backslashes must themselves be quoted.
+
+The text may contain embedded newlines.
+
+    ui_output(' -> From <user>damien</user>');
+
+=item ui_status()
+
+Sets the status line.  This text may contain attribute tags.  The status
+line is drawn with the 'status_line' tag by default.
+
+    ui_status('<suser>damien</suser>');
+
+=item ui_process()
+
+Handles user input.  Returns a single line of user input, if one is available,
+or undef otherwise.
+
+=item ui_callback()
+
+Registers a user key callback handler.  Takes two arguments: a key, and
+a code reference to call when that key is pressed.  The callback will
+be called with three arguments: the key pressed, the current input line,
+and the current position in the input line (as an index).  A callback
+may return a list of three elements: the new input line, the new position,
+and a flag.  If this flag is 0, no further action is taken.  If it is 1,
+the input cursor is repositioned.  If it is 2, the input line is redrawn
+and the cursor is repositioned.  A callback may return null, in which case
+the input line remains unchanged.
+
+Callbacks are called in the reverse order of definition.  A successful
+return from a callback prevents all subsequent callbacks from running.
+
+    # Turn |s into pipes.
+    sub pipe_conv($$$) {
+	my($key, $line, $pos) = @_;
+	$line = substr($line, 0, $pos) . 'pipe' .
+	    substr($line, $pos);
+	return ($line, $pos + 4, 2);
+    }
+    ui_callback('|', \&pipe_conv);
+
+=item ui_remove_callback()
+
+Removes a currently registered user key callback handler.  Takes the
+same arguments as ui_callback().
+
+=item ui_bell()
+
+Rings the terminal bell.
+
+=item ui_password()
+
+Turns password mode on and off.  When password mode is active, input does
+not display on the input line, and lines are not saved in the input history.
+Takes a boolean argument to specify if password mode should be turned on
+or off.
+
+    ui_password(1);  # Enable password mode.
+
+=back
+
+=head2 Variables
+
+=over 10
+
+=item $ui_cols
+
+The width of the display in characters.  (The height is intentionally not
+provided.)
+
+=back
+
+=cut
+
+
 use Exporter;
 
 use IO::Handle;
@@ -8,8 +137,6 @@ use POSIX;
 
 use LC::config;
 use LC::CTerminal;
-
-use LC::log;
 
 @ISA = qw(Exporter);
 
@@ -23,7 +150,6 @@ use LC::log;
 	     &ui_remove_callback
 	     &ui_bell
 	     &ui_password
-	     $ui_lines
 	     $ui_cols);
 
 
@@ -628,6 +754,8 @@ sub input_nexthistory ($$$) {
 # Handles entry of a new line.
 sub input_accept ($$$) {
     my($key, $line, $pos) = @_;
+
+    $input_curhistory = $#input_history;
 
     if (($line eq '') && ($text_lastline != $win_endline)) {
 	input_pagedown();
