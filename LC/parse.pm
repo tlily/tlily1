@@ -306,10 +306,10 @@ sub parse_line {
 	    $oldstate = 'gone';
 	    $newstate = 'here';
 	} elsif (/^(.*) has reattached/) {
-	    $oldstate = 'gone';
+	    $oldstate = 'detach';
 	    $newstate = 'here';
 	} elsif (/^(.*) is now \"here\"/) {
-	    $oldstate = 'gone';
+	    $oldstate = 'away';
 	    $newstate = 'here';
 	}
 	if ($newstate) {
