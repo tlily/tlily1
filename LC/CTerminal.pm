@@ -212,7 +212,7 @@ sub term_init ($) {
     $resize_cb = $_[0];
 
     if ($termsize_installed) {
-       ($ENV{COLUMNS}, $ENV{LINES}) = Term::Size::chars();
+       ($ENV{COLUMNS}, $ENV{"LINES"}) = Term::Size::chars();
     }
     initscr();
     if ($termsize_installed) {
