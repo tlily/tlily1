@@ -1,5 +1,5 @@
 @@PERL@@
-# $Header: /data/cvs/tlily/lilybot.PL,v 2.8 1999/02/05 22:35:55 josh Exp $
+# $Header: /data/cvs/tlily/lilybot.PL,v 2.9 1999/02/05 22:41:17 josh Exp $
 
 # This is the source to the bot running as "MechaJosh" on RPI-Lily.
 
@@ -89,12 +89,17 @@ sub getsearch {
 
     for (1..5) {
       print "getting url\n";    
-      open (E,"lynx -dump http://www.webcrawler.com/cgi-bin/SearchTicker|");      
+      open (E,"lynx -dump http://www.webcrawler.com/cgi-bin/SearchTicker|");
       $ret = <E>;
       $ret = <E>;
       $ret = <E>;
-      print "got $ret\n";
-      chomp $ret;
+      $ret .= "... " . <E>;
+      $ret .= "... " . <E>;
+      $ret .= "... " . <E>;
+      $ret .= "... " . <E>;
+      $ret .= "... " . <E>;
+      $ret .= "... " . <E>;      
+      $ret =~ s/[\r\n]//g;
       close(E);
       last unless ($ret =~ /Choose a Channel/);
       sleep 1;      
