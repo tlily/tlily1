@@ -65,7 +65,7 @@ sub countdown_cmd($) {
 
     if ($2 eq 'd') {
 	$interval = 60 * 60 * 24;
-	$interval_c = 'h';
+	$interval_c = 'd';
     } elsif ($2 eq 'h') {
 	$interval = 60 * 60;
 	$interval_c = 'h';
