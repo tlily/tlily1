@@ -145,8 +145,6 @@ it).
 =cut
 
 
-use LC::log;
-use LC::UI;
 use Carp;
 use Exporter;
 use IO::Select;
@@ -159,6 +157,9 @@ use IO::Select;
 	     &deregister_handler
 	     &dispatch_event
 	     &event_loop);
+
+# Set this to enable much logging to stderr.
+my $event_debug = 0;
 
 
 my @before_handlers = ();
@@ -192,6 +193,9 @@ sub register_eventhandler(%) {
 	warn "Unknown priority for event handler: $h{Order}";
     }
 
+    print STDERR "EV: registered: id=$h{Id}, o=$h{Order} t=$h{Type}\n"
+	if ($event_debug);
+
     return $h{Id};
 }
 
@@ -203,6 +207,8 @@ sub deregister_handler($) {
     @after_handlers = grep { $_->{Id} != $id } @after_handlers;
     @io_handlers = grep { $_->{Id} != $id } @io_handlers;
     @time_handlers = grep { $_->{Id} != $id } @time_handlers;
+
+    print STDERR "EV: deregistered: id=$h{Id}\n" if ($event_debug);
 }
 
 
@@ -212,6 +218,8 @@ sub register_iohandler(%) {
     $h{Id} = $token++;
     $h{Mode} ||= "rwe";
     push @io_handlers, \%h;
+
+    print STDERR "EV: reg io: id=$h{Id}\n" if ($event_debug);
 
     return $h{Id};
 }
@@ -224,6 +232,9 @@ sub register_timedhandler(%) {
     croak "Negative or zero interval.\n" if ($h{Interval} <= 0);
     $h{Time} = time + $h{Interval};
     push @time_handlers, \%h;
+
+    print STDERR "EV: reg time: id=$h{Id} i=$h{Interval}\n"
+	if ($event_debug);
 
     return $h{Id};
 }
@@ -248,15 +259,22 @@ sub dispatch_event($) {
 sub transmit_event($) {
     my($event) = @_;
 
+    print STDERR "EV: xmit: $event->{Type}\n" if ($event_debug);
+
     my @all_handlers = (@before_handlers, @during_handlers, @after_handlers);
     my $handler;
     foreach $handler (@all_handlers) {
 	if ((!$handler->{Type}) || ($handler->{Type} eq $event->{Type})) {
-	    eval { my $rc = &{$handler->{Call}}($event, $handler); };
+	    print STDERR "    to: $handler->{Id} (t=$handler->{Type})\n"
+		if ($event_debug);
+	    my $rc;
+	    eval { $rc = &{$handler->{Call}}($event, $handler); };
 	    if ($@) {
 		warn("Event error: $@");
 	    }
-	    last if ($rc);
+	    print STDERR "        handler returned $rc\n"
+		if ($rc && $event_debug);
+	    return if ($rc);
 	}
     }
 }

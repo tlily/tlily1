@@ -26,6 +26,7 @@ use LC::Event;
 %commands = ();
 my $token = 0;
 my $password = 0;
+my $prompt = '';
 
 
 sub register_user_command_handler($&) {
@@ -87,7 +88,9 @@ sub deregister_user_command_handler($) {
 sub user_showline($) {
     my($line) = @_;
     $line =~ s/[\<\\]/\\$&/g;
-    ui_output("<usersend>" . $line . "</usersend>");
+    $prompt .= '<usersend>' . $line . '</usersend>' unless ($password);
+    ui_output($prompt);
+    $prompt = '';
 }
 
 
@@ -97,7 +100,7 @@ sub user_accept() {
     while (1) {
 	my $text = ui_process();
 	last unless (defined $text);
-	user_showline($text) unless ($password);
+	user_showline($text);
 	dispatch_event({Type => 'userinput',
 			Text => $text . "\r\n",
 			ToServer => 1});
@@ -114,6 +117,13 @@ sub user_password($) {
 
 
 sub init() {
+    register_eventhandler(Type => 'prompt',
+			  Call => sub {
+			      my($event,$handler) = @_;
+			      $prompt = $event->{Text};
+			      return 0;
+			  });
+
     register_eventhandler(Order => 'after',
 			  Call => sub {
 			      my($event,$handler) = @_;

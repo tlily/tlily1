@@ -1,5 +1,4 @@
 # -*- Perl -*-
-ui_output("%%% Loading %run_command extension");
 
 register_eventhandler(Type => "send",
 		      Call => \&run_command_event);

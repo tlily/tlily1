@@ -3,6 +3,7 @@ package LC::Extend;
 
 use Exporter;
 use Safe;
+use File::Basename;
 use LC::UI;
 use LC::Server;
 use LC::parse;
@@ -29,17 +30,31 @@ my @loading_exts = ();
 
 
 sub extension($) {
-    my ($filename)=@_;
+    my ($name)=@_;
+    my $filename;
     my @share=();
 
-    my $safe=new Safe;
-
-    my $name = $filename;
-    $name =~ s|^.*/||; $name =~ s|\.pl$||;
+    if (-f $name) {
+	$filename = $name;
+	$name = basename($name, ".pl", ".PL");
+    }
 
     return if (defined $Extensions{$name});
 
-    ui_output("*** loading \'$name\' extension");
+    my @ext_dirs = ("$ENV{HOME}/.lily/tlily/extensions", $main::TL_EXTDIR);
+    my $dir;
+    foreach $dir (@ext_dirs) {
+	if (-f "${dir}/${name}.pl") {
+	    $filename = "${dir}/${name}.pl";
+	    last;
+	}
+    }
+    if (!defined $filename) {
+	ui_output("(Cannot locate extension \"$name\")");
+	return;
+    }
+    
+    my $safe=new Safe;
 
     # Since security isnt a primary concern, I allow all perl operators to be
     # used.
@@ -142,6 +157,8 @@ sub load_extensions() {
     foreach (grep /[^~]$/, glob $main::TL_EXTDIR."/*.pl") {
 	extension($_);
     }   
+
+    extension_cmd("list");
 }
 
 
@@ -193,18 +210,21 @@ sub register_eventhandler(%) {
     my(%h) = @_;
     my $id = &LC::Event::register_eventhandler(%h);
     push @{$Extensions{/current/}->{EventHandlers}}, $id;
+    return $id;
 }
 
 sub register_iohandler(%) {
     my(%h) = @_;
     my $id = &LC::Event::register_iohandler(%h);
     push @{$Extensions{/current/}->{EventHandlers}}, $id;
+    return $id;
 }
 
 sub register_timedhandler(%) {
     my(%h) = @_;
     my $id = &LC::Event::register_timedhandler(%h);
     push @{$Extensions{/current/}->{EventHandlers}}, $id;
+    return $id;
 }
 
 sub deregister_handler($) {

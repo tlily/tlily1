@@ -23,17 +23,6 @@ use Curses;
 use POSIX;
 $|=1;
 
-# globals
-#$have_pseudo=0;
-#$last_alarm=0;
-#$next_alarm=0;
-#$wakeup=10;     # how often to exit the select loop to do status processing,
-                # etc.
-#$password_mode=0;
-
-## main ##
-
-
 LC::config::init();
 ui_start();
 cmd_init();

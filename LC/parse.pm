@@ -62,7 +62,6 @@ use POSIX;
             '^login:',
 	    '^password:');
 
-
 my $msg_state = undef;
 my $msg_sender;
 my @msg_dest;
@@ -202,7 +201,9 @@ sub parse_line($$) {
     my $p;
     foreach $p (@prompts) {
 	if ($line =~ /$p/) {
+	    ui_prompt("$line");
 	    %event = (Type => 'prompt');
+	    $hidden = 1;
 	    goto found;
 	}
     }
@@ -625,6 +626,9 @@ sub parse_line($$) {
 sub init() {
     register_eventhandler(Type => 'serverline',
 			  Call => \&parse_line);
+
+    register_eventhandler(Type => 'connected',
+			  Call => sub { push @prompts, '\* $'; }); # '})
 }
 
 init();

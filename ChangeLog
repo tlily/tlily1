@@ -1,3 +1,13 @@
+Version 0.3d
+  * Bugfix: The handler registering functions were not returning the correct
+    ID to extensions.  [DPN]
+  * Added prompt handing on the input line.  [DPN]
+  * Complete rewrite of the text window code.  It should now be significantly
+    faster.  [DPN]
+  * Extensions to load may now be specified by either a filename, or just
+    an extension name.  If just an extension name is used, then the
+    extension search path will be used.  [DPN]
+
 Version 0.3c
   * Changed page up/down to M-v/C-v. [DPN]
   * Meta keys now function.  [DPN]

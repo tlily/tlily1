@@ -114,6 +114,13 @@ or off.
 
     ui_password(1);  # Enable password mode.
 
+=item ui_prompt()
+
+Sets the input prompt.  The prompt is displayed as a prefix on the input
+line.  The prompt is cleared after each line accepted from the user.
+
+    ui_prompt("login: ");
+
 =back
 
 =head2 Variables
@@ -135,7 +142,6 @@ use Exporter;
 use IO::Handle;
 use POSIX;
 
-use LC::config;
 use LC::CTerminal;
 
 @ISA = qw(Exporter);
@@ -150,6 +156,7 @@ use LC::CTerminal;
 	     &ui_remove_callback
 	     &ui_bell
 	     &ui_password
+	     &ui_prompt
 	     $ui_cols);
 
 
@@ -157,16 +164,10 @@ my $ui_up = 0;
 
 my $password = 0;
 
-my @text_lines = ();
-my @text_sizes = ();
-my $text_lastline = -1;
-
-my $win_endline = -1;
-my $win_lastseen = -1;
-
 my $win_moremode = 0;
 
-my $input_line = "";
+my $input_line = '';
+my $input_prompt = '';
 my $input_height = 1;
 my $input_fline = 0;
 my $input_pos = 0;
@@ -199,6 +200,8 @@ my %key_trans = ('kl'   => [ \&input_left ],
 		 'M-v'  => [ \&input_pageup ],
 		 'pgdn' => [ \&input_pagedown ],
 		 'C-v'  => [ \&input_pagedown ],
+		 'M-<'  => [ \&input_scrollfirst ],
+		 'M->'  => [ \&input_scrolllast ],
 		 'C-t'  => [ \&input_twiddle ],
 		 'nl'   => [ \&input_accept ],
 		 'C-y'  => [ \&input_yank ],
@@ -216,30 +219,34 @@ my $attr_cur_bg = COLOR_BLACK;
 my $attr_cur_fg = COLOR_WHITE;
 
 
+sub min($$) {
+    return ($_[0] > $_[1]) ? $_[1] : $_[0];
+}
+
+
 # Starts the curses UI.
-sub ui_start () {
+sub ui_start() {
     term_init();
-    $ui_lines = $term_lines;
     $ui_cols = $term_cols;
     &redraw;
 }
 
 
 # Terminates the UI.
-sub ui_end () {
+sub ui_end() {
     term_end();
 }
 
 
 # Define a new attribute.
-sub ui_attr ($@) {
+sub ui_attr($@) {
     my ($name,@attrs) = @_;
     $attr_list{$name} = \@attrs;
 }
 
 
 # Selects an attribute for use.
-sub attr_use ($) {
+sub attr_use($) {
     my($name) = @_;
 
     my @curattrs = term_getattr();
@@ -253,14 +260,14 @@ sub attr_use ($) {
 
 
 # Pops attribute usage stack.
-sub attr_pop () {
+sub attr_pop() {
     my $attrs = pop @attr_stack;
     term_setattr(@$attrs);
 }
 
 
 # Rolls out the attribute stack.
-sub attr_top () {
+sub attr_top() {
     my $attrs;
     while (@attr_stack) {
 	$attrs = pop @attr_stack;
@@ -269,221 +276,356 @@ sub attr_top () {
 }
 
 
-# Breaks a string into line-sized pieces.
-sub fmtline ($) {
-    my($text) = @_;
-
-    my @lines = ();
-    foreach $blk (split /\r?\n/, $text) {
-	my $line = '';
-	my $linelen = 0;
-	my $word;
-	$blk =~ s/\\\\//g;
-	$blk =~ s/\\\<//g;
-	$blk =~ tr/</</;
-	$blk =~ s/\\(.)/$1/g;
-	@tagstack = ();
-	while (length $blk) {
-	    if ($blk =~ /^ +/) {
-		$line .= $&;
-		$linelen += length $&;
-		$blk = substr($blk, length $&);
-	    } elsif ($blk =~ /^\/([^\>]*)\>/) {
-		$line .= $&;
-		$blk = substr($blk, length $&);
-		pop @tagstack;
-	    } elsif ($blk =~ /^([^\>]*)\>/) {
-		$line .= $&;
-		$blk = substr($blk, length $&);
-		push @tagstack, $1;
-	    } elsif ($blk =~ /^[^ ]+/) {
-		if ($linelen + length($&) > $term_cols) {
-		    if ($linelen < $term_cols - 10) {
-			$line .= substr($blk, 0, $term_cols - $linelen);
-			$blk = substr($blk, $term_cols - $linelen);
-		    }
-		    foreach (reverse @tagstack) {
-			$line .= "/$_>";
-		    }
-		    $line =~ s/([\<\\])/\\$1/g;
-		    $line =~ tr//</;
-		    push @lines, $line;
-		    $line = '';
-		    $linelen = 0;
-		    foreach (@tagstack) {
-			$line .= "$_>";
-		    }
-		} else {
-		    $line .= $&;
-		    $linelen += length $&;
-		    $blk = substr($blk, length $&);
-		}
-	    } else {
-		# This should never happen.
-		$blk = substr($blk, 1);
-	    }
-		}
-	foreach (reverse @tagstack) {
-	    $line .= "/$_>";
-	}
-	$line =~ tr//\\/;
-	$line =~ s/([\<\\])/\\$1/g;
-	$line =~ tr//</;
-	push @lines, $line if (length $line);
-    }
-    
-    return @lines;
-}
- 
-
-my $win_idx_cline_idx;
-my $win_idx_cline_num;
-my @win_idx_ctext;
 
 
-# Returns the number of lines in a block of text.
-sub linelen ($) {
-    my ($idx) = @_;
-
-    $text_sizes[$idx] = fmtline($text_lines[$idx])
-	unless (defined $text_sizes[$idx]);
-    return $text_sizes[$idx];
-}
+#
+# The new text window code.  May it never need to be rewritten again.
+#
 
 
-# Returns the size (in lines) of the text window.
-sub win_height () {
-    return $term_lines - 2 - $input_height;
-}
+#
+# What is a line?  A line is a text string, with attached formatting
+# information.  A single line may span multiple rows on the screen; if
+# so, it must be word-wrapped.  The internal representation of a line
+# separates the text and formatting information.  The formatting information
+# is contained in a list.  This list is a sequence of formatting commands;
+# any command may be followed by a set of arguments.  Possible commands are:
+#   FOwrapchar <wrapchar>
+#   FOwrap
+#   FOnewline
+#   FOattr <attr>
+#   FOpopattr <attr>
+#   FOtext <length>
 
 
-# Returns a given line (counting from the end) of text.
-sub win_index ($) {
-    my($num) = @_;
-
-    return undef if (($num < 0) || ($num > $text_lastline));
-
-    my $old_idx = $win_idx_cline_idx;
-
-    if (!defined $win_idx_cline_idx) {
-	$win_idx_cline_idx = 0;
-	$win_idx_cline_num = 0;
-    }
-
-    while ($num < $win_idx_cline_num) {
-	$win_idx_cline_idx--;
-	$win_idx_cline_num -= linelen($win_idx_cline_idx);
-    }
-
-    while ($num >= $win_idx_cline_num + linelen($win_idx_cline_idx)) {
-	$win_idx_cline_num += linelen($win_idx_cline_idx);
-	$win_idx_cline_idx++;
-    }
-
-    if (!defined($old_idx) || ($old_idx != $win_idx_cline_idx)) {
-	@win_idx_ctext = fmtline($text_lines[$win_idx_cline_idx]);
-    }
-
-    if (($num >= $win_idx_cline_num) &&
-	($num < $win_idx_cline_num + scalar(@win_idx_ctext))) {
-	return $win_idx_ctext[$num - $win_idx_cline_num];
-    }
-
-    return undef;
-}
+my $FOnull     = 0;
+my $FOwrapchar = 1;
+my $FOwrap     = 2;
+my $FOnewline  = 3;
+my $FOattr     = 4;
+my $FOpopattr  = 5;
+my $FOtext     = 6;
 
 
-# Paints one line in the text window.
-sub win_draw_line ($$) {
-    my($ypos,$line) = @_;
+# A list of lines in the text window.  These lines are stored unformatted.
+my @text_lines = (" ");
 
-    $line = ' ' if ($line eq '');
+# A list of formatting information for the text window.
+my @text_fmts = ( [] );
 
-    $line =~ s/\\\\//g;
-    $line =~ s/\\\<//g;
-    $line =~ s/\\(.)/$1/g;
-    $line =~ tr/</<\\/;
+# A list of line heights.  This is a cache; any line's height as stored
+# in here may be undef.
+my @text_heights = ();
 
-    my $xpos = 0;
+# The line and row in said line which are anchored to the bottom of the
+# text window.
+my $text_l = 0;
+my $text_r = 0;
+
+# The number of rows which have been scrolled up since the user last
+# examined the screen.
+my $scrolled_rows = 0;
+
+
+# Draws one line (or a subset of the rows in a line) at a given position.
+sub win_draw_line($$$@) {
+    my($ypos, $line, $fmt, $start, $count) = @_;
+
+    my $p = 0;
+    my $l = 0;
+    my $x = 0;
+    my $y = $ypos;
+    my $wrapchar = '';
 
     attr_use('text_window');
-
-    term_move($ypos, 0);
+    term_move($y, 0);
     term_delete_to_end();
 
-    while ((length $line) && ($xpos < $term_cols)) {
-	if ($line =~ /^\/([^\>]*)\>/) {
+    my $i;
+    for ($i = 0; $i < scalar(@$fmt); $i++) {
+	if ($fmt->[$i] == $FOwrapchar) {
+	    $wrapchar = $fmt->[++$i];
+	} elsif (($fmt->[$i] == $FOwrap) || ($fmt->[$i] == $FOnewline)) {
+	    if (!defined($start) || ($l >= $start)) {
+		term_addstr(' ' x ($term_cols - $x));
+	    }
+
+	    $l++;
+	    last if ((defined $count) && ($l >= $start + $count));
+	    next if (defined($start) && ($l < $start));
+
+	    unless (defined($start) && ($l == $start)) {
+		term_move(++$y, 0);
+		term_delete_to_end();
+	    }
+
+	    if ($fmt->[$i] == $FOwrap) {
+		term_addstr($wrapchar);
+		$x = length $wrapchar;
+	    } else {
+		$x = 0;
+	    }
+	} elsif ($fmt->[$i] == $FOtext) {
+	    $i++;
+	    if ((!defined($start)) || ($l >= $start)) {
+		term_addstr(substr($line, $p,
+				   (($fmt->[$i] < ($term_cols-$x)) ?
+				    $fmt->[$i] : $term_cols - $x)));
+		$x += $fmt->[$i];
+	    }
+	    $p += $fmt->[$i];
+	} elsif ($fmt->[$i] == $FOattr) {
+	    attr_use($fmt->[++$i]);
+	} elsif ($fmt->[$i] == $FOpopattr) {
 	    attr_pop();
-	    $line = substr($line, length $&);
-	} elsif ($line =~ /^([^\>]*)\>/) {
-	    attr_use($1);
-	    $line = substr($line, length $&);
-	} elsif ($line =~ /^[^]+/) {
-	    my $len = $term_cols - $xpos;
-	    term_addstr(substr($&,0,$len));
-	    $line = substr($line, length $&);
-	    $xpos += length $&;
-	} else {
-	    # This should never happen.
-	    $line = substr($line, 1);
 	}
     }
 
     attr_top();
 }
 
+# fmtline is called with a line of <tag>formatted</tag> text.  It returns
+# ($line, $fmt).
+sub fmtline($) {
+    my($text) = @_;
+
+    $text =~ s/\\\\//g;
+    $text =~ s/\\\<//g;
+    $text =~ tr/</</;
+    $text =~ s/\\(.)/$1/g;
+    $text =~ tr//\\/;
+
+    my $line = '';
+    my @fmt = ();
+
+    while (length $text) {
+	if ($text =~ /^\/([^\>]*)\>/) {
+	    # </tag>
+	    $text = substr($text, length $&);
+	    push @fmt, $FOpopattr;
+	} elsif ($text =~ /^([^\>]*)\>/) {
+	    # <tag>
+	    $text = substr($text, length $&);
+	    push @fmt, $FOattr, $1;
+	} elsif ($text =~ /^\r?\n/) {
+	    $text = substr($text, length $&);
+	    push @fmt, $FOnewline;
+	} elsif ($text =~ /^[^]+/) {
+	    # text
+	    $text = substr($text, length $&);
+	    $line .= $&;
+	    push @fmt, $FOtext, length $&;
+	}
+    }
+
+    return ($line, \@fmt);
+}
+
+
+# This function performs line wrapping.  It takes an line and format pair,
+# and returns the number of rows spanned by the line.  The format information
+# is modified to break the line across rows.
+sub line_wrap($$) {
+    my($line, $fmt) = @_;
+
+    # Tack a trailing element onto the format array.  This permits the loop
+    # below to execute one more time, simplifying some of the logic.
+    push @$fmt, $FOnull;
+
+    # @fmt contains the NEW format information that we construct.  Perhaps
+    # I should not have given it the same name as $fmt (the OLD format
+    # information), but what is done is done.
+    my @fmt = ();
+
+    # $idx is an index into the string.  It marks the beginning of the text
+    # that has not yet been packed into the new format string.
+    my $idx = 0;
+
+    # $x is the current column of the output cursor.
+    my $x = 0;
+
+    # $len is the length of the string that is currently being constructed.
+    my $len = 0;
+
+    # $rows is the number of rows to be occupied by the line.  This is always
+    # at least one: a null line still occupies a row.
+    my $rows = 1;
+
+    # Keep an eye on the wrapchars (the prefix string to be output before
+    # each wrapped line of text.)
+    my $wrapchar = '';
+
+    # Walk down the old format, processing each code in turn.
+    while (@$fmt) {
+	my $t = shift @$fmt;
+
+	if ($t == $FOwrapchar) {
+	    $wrapchar = shift @$fmt;
+	    push @fmt, $t, $wrapchar;
+	    next;
+	} elsif ($t == $FOwrap) {
+	    # We just ignore these -- they are the results of previous
+	    # line_wrap operations.
+	    next;
+	} elsif ($t == $FOtext) {
+	    $len += shift @$fmt;
+	    next;
+	}
+
+	# If we have reached this point, we shall want to commit the text
+	# (if any) we have currently pending.
+
+	if ($len) {
+	    while ($len + $x > $term_cols) {
+		# The current chunk of text is too long!  We need to wrap it.
+
+		# Locate the character at which we may break the line.
+		my $tmp = rindex(substr($line, $idx, $term_cols - $x+1), ' ');
+
+		if (($tmp == -1) || (($term_cols - $x - $tmp) > 10)) {
+		    # There is no adequate breakpoint: we will just have to
+		    # split a word.
+		    $tmp = $term_cols - $x;
+		} else {
+		    $tmp++;
+		}
+
+		push @fmt, $FOtext, $tmp, $FOwrap;
+		$x = length $wrapchar;
+		$idx += $tmp;
+		$len -= $tmp;
+		$rows++;
+	    }
+
+	    # Whatever text remains will fit on the current row; commit it.
+	    push @fmt, $FOtext, $len;
+	    $idx += $len;
+	    $x += $len;
+	    $len = 0;
+	}
+
+	if ($t == $FOnewline) {
+	    push @fmt, $FOnewline;
+	    $x = 0;
+	    $rows++;
+	} elsif ($t == $FOattr) {
+	    push @fmt, $FOattr, shift @$fmt;
+	} elsif ($t == $FOpopattr) {
+	    push @fmt, $FOpopattr;
+	}
+    }
+
+    @$fmt = @fmt;
+    return $rows;
+}
+
+
+# Returns the height of a line, in rows.  If necessary, line_wrap() is called
+# on the line, and the result is stored in the @text_heights cache.
+sub line_height($) {
+    my($idx) = @_;
+    if (!defined $text_heights[$idx]) {
+	$text_heights[$idx] = line_wrap($text_lines[$idx], $text_fmts[$idx]);
+    }
+    return ($text_heights[$idx]);
+}
+
 
 # Redraws the text window.
-sub win_redraw () {
-    my $cline = win_height();
-    my $idx = $win_endline;
-    while ($cline >= 0) {
-	my $s = win_index($idx--);
-	win_draw_line($cline--, ($s ? $s : ""));
+sub win_redraw() {
+    my $y = win_height() - $text_r;
+    my $l = $text_l;
+
+    while (($y > 0) && ($l > 0)) {
+	win_draw_line($y, $text_lines[$l], $text_fmts[$l],
+		      0, win_height() - $y + 1);
+	$l--;
+	$y -= line_height($l) if ($l > 0);
     }
+
+    if (($l > 0) && (line_height($l) > -$y)) {
+	win_draw_line(0, $text_lines[$l], $text_fmts[$l], 
+		      -$y, win_height());
+    } else {
+	while (--$y > 0) {
+	    term_move($y, 0);
+	    term_delete_to_end();
+	}
+    }
+
     input_position_cursor();
 }
 
 
 # Scrolls the text window.
-sub win_scroll ($) {
+sub win_scroll($) {
     my($n) = @_;
 
-    my $new_end = $win_endline + $n;
-    $new_end = 0 if ($new_end < 0);
-    $new_end = $text_lastline if ($new_end > $text_lastline);
-    $n = $new_end - $win_endline;
-    $win_endline = $new_end;
-
-    my $up = ($n > 0) ? 1 : 0;
-    $n = -$n if ($n < 0);
-
-    if ($n > win_height()) {
-	win_redraw();
-	return;
-    }
-
-    if ($up) {
-	my $i;
-	for ($i = $n - 1; $i >= 0; $i--) {
-	    term_move(0,0);
-	    term_delete_line();
-	    term_move(win_height(),0);
-	    term_insert_line();
-	    my $s = win_index($win_endline - $i);
-	    win_draw_line(win_height(), ($s ? $s : ''));
-	}
-    } else {
+    if ($n > 0) {
 	my $i;
 	for ($i = 0; $i < $n; $i++) {
+	    $text_r++;
+	    if ($text_r >= line_height($text_l)) {
+		$text_r = 0;
+		$text_l++;
+		last if ($text_l > $#text_lines);
+	    }
+
+	    term_move(0,0);
+	    term_delete_line();
+	    term_move(win_height(),0);
+	    term_insert_line();
+
+	    win_draw_line(win_height(),
+			  $text_lines[$text_l], $text_fmts[$text_l],
+			  $text_r, 1);
+	}
+    } elsif ($n < 0) {
+	my $i;
+
+	my($top_r, $top_l) = ($text_r, $text_l);
+	for ($i = 0; $i > $n; $i--) {
+	    $top_r--;
+	    if ($top_r < 0) {
+		$top_l--;
+		$top_r = ($top_l < 0) ? 0 : line_height($top_l) - 1;
+	    }
+	}
+
+	for ($i = 0; $i > $n; $i--) {
+	    $text_r--;
+	    if ($text_r < 0) {
+		$text_l--;
+		last if ($text_l < 0);
+		$text_r = line_height($text_l) - 1;
+	    }
+
+	    $top_r--;
+	    if ($top_r < 0) {
+		$top_l--;
+		$top_r = ($top_l < 0) ? 0 : line_height($top_l) - 1;
+	    }
+
 	    term_move(win_height(),0);
 	    term_delete_line();
 	    term_move(0,0);
 	    term_insert_line();
 
-	    my $s = win_index($win_endline - $i - 1);
-	    win_draw_line(0, ($s ? $s : ''));
+	    if ($top_l >= 0) {
+		win_draw_line(0, $text_lines[$top_l], $text_fmts[$top_l],
+			      $top_r, 1);
+	    } else {
+		term_delete_to_end();
+	    }
 	}
+    }
+
+    if ($text_l < 0) {
+	$text_l = 0;
+	$text_r = 0;
+    } elsif ($text_l > $#text_lines) {
+	$text_l = $#text_lines;
+	$text_r = line_height($text_l) - 1;
     }
 
     input_position_cursor();
@@ -491,31 +633,38 @@ sub win_scroll ($) {
 
 
 # Adds a line of text to the text window.
-sub ui_output ($) {
-    my($line) = @_;
-    $line =~ s/[\r]//g;
-    $line = ' ' if ($line eq '');
+sub ui_output($) {
+    my($text) = @_;
+
+    my($line, $fmt);
+    ($line, $fmt) = fmtline($text);
     push @text_lines, $line;
-    my $atend = ($text_lastline == $win_endline) ? 1 : 0;
-    my @fmt = fmtline($line);
-    $text_lastline += scalar(@fmt);
-    if ($atend) {
-        if ($config{pager} == 0) {
-            $win_lastseen = $text_lastline;
-        }
-	my $max_scroll = win_height() - ($win_endline - $win_lastseen);
-	if ($max_scroll > 0) {
-	    win_scroll($max_scroll > scalar(@fmt) ?
-		       scalar(@fmt) : $max_scroll);
-	}
+    push @text_fmts, $fmt;
+
+    my $h = line_height($#text_lines);
+
+    if ($scrolled_rows + $h >= win_height()) {
+	$h = win_height() - $scrolled_rows - 1;
     }
+    if (($h > 0) && ($text_l == $#text_lines - 1) &&
+	($text_r == line_height($text_l) - 1)) {
+	$scrolled_rows += $h;
+	win_scroll($h);
+    }
+
     scroll_info();
     term_refresh();
 }
 
 
+# Returns the size (in lines) of the text window.
+sub win_height() {
+    return $term_lines - 2 - $input_height;
+}
+
+
 # Redraws the status line.
-sub sline_redraw () {
+sub sline_redraw() {
     my $s;
     if ($page_status eq 'normal') {
 	$s = $status_line;
@@ -525,15 +674,16 @@ sub sline_redraw () {
 	$status_update_time = $t;
 	$s = $status_intern;
     }
-    my $sline = "<status_line>" . $s . (' ' x $term_cols) .
-	"</status_line>";
-    win_draw_line($term_lines-1-$input_height, $sline);
+    my $sline = "<status_line>" . $s . (' ' x $term_cols) . "</status_line>";
+    my $sfmt;
+    ($sline, $sfmt) = fmtline($sline);
+    win_draw_line($term_lines-1-$input_height, $sline, $sfmt);
     input_position_cursor();
 }
 
 
 # Sets the status line.
-sub ui_status ($) {
+sub ui_status($) {
     my ($s) = @_;
     $status_line = $s;
     sline_redraw();
@@ -542,35 +692,33 @@ sub ui_status ($) {
 
 
 # Positions the input cursor.
-sub input_position_cursor () {
-    if ($password) {
-	term_move($term_lines - $input_height, 0);
-	return;
-    }
-
-    term_move($term_lines - $input_height + floor(($input_pos / 80)) - $input_fline,
-	      $input_pos % 80);
+sub input_position_cursor() {
+    my $xpos = length($input_prompt);
+    $xpos += $input_pos unless ($password);
+    term_move($term_lines - $input_height + floor(($xpos / 80)) - $input_fline,
+	      $xpos % 80);
 }
 
 
 # Redraws the input line.
-sub input_redraw () {
+sub input_redraw() {
     attr_use('input_line');
 
-    my $height = floor((length($input_line) / 80)) + 1 - $input_fline;
+    my $l = $input_prompt;
+    $l .= $input_line unless ($password);
+
+    my $height = floor((length($l) / 80)) + 1 - $input_fline;
     $height = 1 if ($height < 1);
 
     term_move($term_lines - 1, 0);
     term_delete_to_end();
 
-    return if ($password);
-
-    my($i, $line);
-    for ($i = 0; $i < length($input_line) / 80; $i += 1) {
+    my $i;
+    for ($i = 0; $i < length($l) / 80; $i += 1) {
 	next if ($i < $input_fline);
 	term_move($term_lines - $height + $i, 0);
 	term_delete_to_end();
-	term_addstr(substr($input_line,$i*80,80));
+	term_addstr(substr($l,$i*80,80));
     }
 
     if ($input_height != $height) {
@@ -585,7 +733,7 @@ sub input_redraw () {
 
 
 # Restores sanity to the input cursor.
-sub input_normalize_cursor () {
+sub input_normalize_cursor() {
     if ($input_pos > length $input_line) {
 	$input_pos = length $input_line;
     } elsif ($input_pos < 0) {
@@ -595,13 +743,14 @@ sub input_normalize_cursor () {
 
 
 # Inserts a character into the input line.
-sub input_add ($$$) {
+sub input_add($$$) {
     my($key, $line, $pos) = @_;
     $line = substr($line, 0, $pos) . $key . substr($line, $pos);
 
     return ($line, $pos + 1, 2) if ($password);
 
-    if (length($line) % $term_cols == 0) {
+    my $l = $input_prompt . $line;
+    if (length($l) % $term_cols == 0) {
 	return ($line, $pos + 1, 2);
     }
 
@@ -610,7 +759,7 @@ sub input_add ($$$) {
     while ($i * $term_cols > $pos) {
 	term_move($term_lines - $input_height + $i, 0);
 	term_insert_char();
-	term_addstr(substr($line, $i * $term_cols, 1));
+	term_addstr(substr($l, $i * $term_cols, 1));
 	$i--;
     }
     input_position_cursor();
@@ -621,42 +770,44 @@ sub input_add ($$$) {
 
 
 # Moves the input cursor left.
-sub input_left ($$$) {
+sub input_left($$$) {
     my($key, $line, $pos) = @_;
     return ($line, $pos - 1, 1);
 }
 
 
 # Moves the input cursor right.
-sub input_right ($$$) {
+sub input_right($$$) {
     my($key, $line, $pos) = @_;
     return ($line, $pos + 1, 1);
 }
 
 
 # Moves the input cursor to the beginning of the line.
-sub input_home ($$$) {
+sub input_home($$$) {
     my($key, $line, $pos) = @_;
     return ($line, 0, 1);
 }
 
 
 # Moves the input cursor to the end of the line.
-sub input_end ($$$) {
+sub input_end($$$) {
     my($key, $line, $pos) = @_;
     return ($line, length $line, 1);
 }
 
 
 # Deletes the character before the input cursor.
-sub input_bs ($$$) {
+sub input_bs($$$) {
     my($key, $line, $pos) = @_;
     return if ($pos == 0);
     $line = substr($line, 0, $pos - 1) . substr($line, $pos);
 
     return ($line, $pos + 1, 2) if ($password);
 
-    if (length($line) % $term_cols == 0) {
+    my $l = $input_prompt . $line;
+
+    if (length($l) % $term_cols == 0) {
 	return ($line, $pos - 1, 2);
     }
 
@@ -667,7 +818,7 @@ sub input_bs ($$$) {
 	term_delete_char();
 	$i--;
 	term_move($term_lines - $input_height + $i, $term_cols - 1);
-	term_addstr(substr($line, ($i * $term_cols) + $term_cols - 1, 1));
+	term_addstr(substr($l, ($i * $term_cols) + $term_cols - 1, 1));
     }
     input_position_cursor();
     term_delete_char();
@@ -676,7 +827,7 @@ sub input_bs ($$$) {
 
 
 # Deletes the character after the input cursor.
-sub input_del ($$$) {
+sub input_del($$$) {
     my ($key, $line, $pos) = @_;
     return if ($pos >= length($line));
     return input_bs('', $line, $pos + 1);
@@ -684,7 +835,7 @@ sub input_del ($$$) {
 
 
 # Yanks the kill bufffer back.
-sub input_yank ($$$) {
+sub input_yank($$$) {
     my ($key, $line, $pos) = @_;
     $line = substr($line, 0, $pos) . $input_killbuf . substr($line, $pos);
     return ($line, $pos + length($input_killbuf), 2);
@@ -692,7 +843,7 @@ sub input_yank ($$$) {
 
 
 # Deletes the word preceding the input cursor.
-sub input_killword ($$$) {
+sub input_killword($$$) {
     my ($key, $line, $pos) = @_;
     my $oldlen = length $line;
     substr($line, 0, $pos) =~ s/(\S+\s*)$//;
@@ -702,7 +853,7 @@ sub input_killword ($$$) {
 
 
 # Deletes all characters to the end of the line.
-sub input_killtoend ($$$) {
+sub input_killtoend($$$) {
     my($key, $line, $pos) = @_;
     $input_killbuf = substr($line, $pos);
     return (substr($line, 0, $pos), $pos, 2);
@@ -710,7 +861,7 @@ sub input_killtoend ($$$) {
 
 
 # Deletes all characters to the beginning of the line.
-sub input_killtohome ($$$) {
+sub input_killtohome($$$) {
     my($key, $line, $pos) = @_;
     $input_killbuf = substr($line, 0, $pos);
     return (substr($line, $pos), 0, 2);
@@ -718,7 +869,7 @@ sub input_killtohome ($$$) {
 
 
 # Rotates the position of the previous two characters.
-sub input_twiddle ($$$) {
+sub input_twiddle($$$) {
     my($key, $line, $pos) = @_;
     return if ($pos == 0);
     $pos++ if ($pos < length($line));
@@ -730,7 +881,7 @@ sub input_twiddle ($$$) {
 
 
 # Moves back one entry in the history.
-sub input_prevhistory ($$$) {
+sub input_prevhistory($$$) {
     my($key, $line, $pos) = @_;
     return if ($input_curhistory <= 0);
     $input_history[$input_curhistory] = $line;
@@ -741,7 +892,7 @@ sub input_prevhistory ($$$) {
 
 
 # Moves forward one entry in the history.
-sub input_nexthistory ($$$) {
+sub input_nexthistory($$$) {
     my($key, $line, $pos) = @_;
     return if ($input_curhistory >= $#input_history);
     $input_history[$input_curhistory] = $line;
@@ -752,12 +903,14 @@ sub input_nexthistory ($$$) {
 
 
 # Handles entry of a new line.
-sub input_accept ($$$) {
+sub input_accept($$$) {
     my($key, $line, $pos) = @_;
 
+    $input_prompt = '';
     $input_curhistory = $#input_history;
 
-    if (($line eq '') && ($text_lastline != $win_endline)) {
+    if (($line eq '') && (($text_l != $#text_lines) ||
+			  ($text_r != line_height($text_l) - 1))) {
 	input_pagedown();
 	return ($line, $pos, 0);
     }
@@ -775,7 +928,7 @@ sub input_accept ($$$) {
 
 
 # Redraw the UI screen.
-sub input_refresh ($$$) {
+sub input_refresh($$$) {
     my($key, $line, $pos) = @_;
     redraw();
     return($line, $pos, 0);
@@ -783,9 +936,8 @@ sub input_refresh ($$$) {
 
 
 # Page up.
-sub input_pageup ($$$) {
+sub input_pageup($$$) {
     my($key, $line, $pos) = @_;
-    $win_lastseen = $win_endline if ($win_endline > $win_lastseen);
     &win_scroll(-win_height());
     scroll_info();
     term_refresh();
@@ -794,9 +946,8 @@ sub input_pageup ($$$) {
 
 
 # Page down.
-sub input_pagedown ($$$) {
+sub input_pagedown($$$) {
     my($key, $line, $pos) = @_;
-    $win_lastseen = $win_endline if ($win_endline > $win_lastseen);
     &win_scroll(win_height());
     scroll_info();
     term_refresh();
@@ -804,8 +955,44 @@ sub input_pagedown ($$$) {
 }
 
 
+# To first line
+sub input_scrollfirst($$$) {
+    my($key, $line, $pos) = @_;
+    $text_l = 0;
+    $text_r = 0;
+
+    my $rows = 0;
+    while (($rows < $term_lines) && ($text_l <= $#text_lines)) {
+	$text_r++;
+	if ($text_r > line_height($text_l)) {
+	    $text_l++;
+	    $text_r = 0;
+	}
+    }
+    if ($text_l > $#text_lines) {
+	$text_l = $#text_lines;
+	$text_r = line_height($text_l);
+    }
+
+    win_redraw();
+    term_refresh();
+    return($line, $pos, 0);
+}
+
+
+# To last line
+sub input_scrolllast($$$) {
+    my($key, $line, $pos) = @_;
+    $text_l = $#text_lines;
+    $text_r = line_height($text_l) - 1;
+    win_redraw();
+    term_refresh();
+    return($line, $pos, 0);
+}
+
+
 # Redraws the UI screen.
-sub redraw () {
+sub redraw() {
     term_clear();
     &win_redraw;
     &sline_redraw();
@@ -815,9 +1002,13 @@ sub redraw () {
 
 
 # Returns scrollback information.
-sub scroll_info () {
-    if ($win_endline < $text_lastline) {
-	my $lines = $text_lastline - $win_endline + 1;
+sub scroll_info() {
+    if (($text_l != $#text_lines) || ($text_r != line_height($text_l) - 1)) {
+	my $lines = line_height($text_l) - $text_r - 1;
+	my $i;
+	for ($i = $text_l + 1; $i <= $#text_lines; $i++) {
+	    $lines += line_height($i);
+	}
 	$page_status = 'more';
 	$status_intern = "-- MORE ($lines) --";
 	$status_intern = (' ' x int(($term_cols - length($status_intern)) / 2)) .
@@ -833,29 +1024,29 @@ sub scroll_info () {
 
 
 # Registers an input callback function.
-sub ui_callback ($$) {
+sub ui_callback($$) {
     my($key, $cb) = @_;
     push @{$key_trans{$key}}, $cb;
 }
 
 
 # Deregisters an input callback function.
-sub ui_remove_callback ($$) {
+sub ui_remove_callback($$) {
     my($key, $cb) = @_;
     @{$key_trans{$key}} = grep { $_ ne $cb } @{$key_trans{$key}};
 }
 
 
 # Accepts input from the terminal.
-sub ui_process () {
+sub ui_process() {
     my $c;
 
     while (1) {
 	$c = term_get_char();
 	last if ((!defined($c)) || ($c eq '-1'));
 
+	$scrolled_rows = 0;
 	$status_update_time = 0;
-	$win_lastseen = $win_endline if ($win_endline > $win_lastseen);
 
 	attr_use('input_line');
 
@@ -889,14 +1080,22 @@ sub ui_process () {
 
 
 # Rings the bell.
-sub ui_bell () {
+sub ui_bell() {
     term_bell();
 }
 
 
 # Sets password (noecho) mode.
-sub ui_password ($) {
+sub ui_password($) {
     $password = $_[0];
+}
+
+
+# Sets the prompt.
+sub ui_prompt($) {
+    $input_prompt = $_[0];
+    input_redraw();
+    term_refresh();
 }
 
 1;
