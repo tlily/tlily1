@@ -1,5 +1,5 @@
 # -*- Perl -*-
-# $Header: /data/cvs/tlily/extensions/info.pl,v 1.17 1998/05/31 00:28:37 steve Exp $
+# $Header: /data/cvs/tlily/extensions/info.pl,v 1.18 1998/06/03 09:40:22 steve Exp $
 
 sub info_set(%) {
     my %args=@_;
@@ -11,13 +11,13 @@ sub info_set(%) {
     if ($edit) {
 	local(*FH);
         my $tmpfile = "/tmp/tlily.$$";
-		  my $mtime = 0;
+	my $mtime = 0;
 	
 	unlink($tmpfile);
 	if (@data) {
 	    open(FH, ">$tmpfile") or die "$tmpfile: $!";
 	    foreach (@data) { chomp; print FH "$_\n"; }
-		 $mtime = (stat FH)[10];
+	    $mtime = (stat FH)[10];
 	    close FH;
 	}
 
@@ -32,10 +32,10 @@ sub info_set(%) {
 	}
 
 	if ((stat FH)[10] == $mtime) {
-		ui_output("(info not changed)");
-		close FH;
-		unlink($tmpfile);
-		return;
+	    ui_output("(info not changed)");
+	    close FH;
+	    unlink($tmpfile);
+	    return;
 	}
 
 	@data = <FH>;
