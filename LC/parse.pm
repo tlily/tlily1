@@ -289,9 +289,6 @@ sub parse_line {
 	    &main::set_status( here => "incr" );
 	    &main::set_status( away => "decr" );
 	}
-	if (/^(.*) has entered lily/) {
-	    &main::set_status( here => "incr" );
-	}
     }
 
     # default ################################################################
