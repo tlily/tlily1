@@ -1,4 +1,5 @@
 Version 0.5d
+  * [extensions/misc.pl] Added %version command
   * [extensions/expand.pl] Added a tab-ring (try starting at a blank line
     and pressing tab a few times).  Added expansion after commas.  [DPN]
   * [LC/parse.pm] Added a "Raw" field to events.  [DPN]
