@@ -1,3 +1,7 @@
+Version 0.4b
+  * Fixed the bug that caused tlily to complain about a sysread() error.  [DPN]
+  * Auto-detect mono terminals.  [DPN]
+
 Version 0.4a
   * Bugfix: The handler registering functions were not returning the correct
     ID to extensions.  [DPN]
