@@ -374,6 +374,9 @@ sub ui_output ($) {
     my @fmt = fmtline($line);
     $text_lastline += scalar(@fmt);
     if ($atend) {
+        if ($config{pager} == 0) {
+            $win_lastseen = $text_lastline;
+        }
 	my $max_scroll = win_height() - ($win_endline - $win_lastseen);
 	if ($max_scroll > 0) {
 	    win_scroll($max_scroll > scalar(@fmt) ?
