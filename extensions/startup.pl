@@ -1,5 +1,13 @@
 # -*- Perl -*-
 
+if($config{startup}) {
+    register_eventhandler(Type => 'connected',
+			  Order => 'after',
+			  Call => \&startup_handler
+			  );
+}
+
+
 sub startup_handler ($$) {
     my($event,$handler) = @_;
     if(-f $HOME."/.lily/tlily/Startup") {
@@ -11,13 +19,6 @@ sub startup_handler ($$) {
     }
     deregister_handler($handler->{Id});
     return 0;
-}
-
-if($config{startup}) {
-    register_eventhandler(Type => 'connected',
-			  Order => 'after',
-			  Call => \&startup_handler
-			  );
 }
 
 1;
