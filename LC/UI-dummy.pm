@@ -6,6 +6,10 @@
 # and ln -s UI-dummy.pm UI.pm.
 
 # Also configure the $usable flag however you want it.
+# 1 means to strip a lot of the tags and generally try to make the client
+#   somewhat usable in a pinch.  Good for testing.
+# 0 means to show everything, don't try to make it too pretty.  Good for other
+#   kinds of testing :)
 
 package LC::UI;
 
