@@ -1,4 +1,5 @@
 Version 0.3b
+  * Bugfix for the zone extension: it could result in negative times before.
   * Minor UI bugfix involving the input line's attributes.  [DPN]
 
 Version 0.3a
