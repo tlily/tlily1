@@ -29,7 +29,7 @@ sub bang_handler($$) {
     if ($event->{Text} =~ /^\!(.*?)\s*$/) {
 	$event->{ToServer} = 0;
 	ui_output("[beginning of command output]");
-	open(FD, "$1 |");
+	open(FD, "$1 2>&1 |");
 	my @r = <FD>;
 	close(FD);
 	foreach (@r) {
