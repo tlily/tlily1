@@ -84,6 +84,7 @@ sub parse_server_data($$) {
 
     # Spin off an event for each line.
     foreach (@lines) {
+	user_accept();
 	dispatch_event({Type => 'serverline',
 			Text => $_});
     }

@@ -1,4 +1,6 @@
 Version 0.7b
+  * [extensions/parse.pl] Fixed the stalls during /reviews (could be faster
+								  still, though) [SMC]
   * [extensions/set.pl] Make space the default separation character [CWS]
   * [extensions/expand.pl, extensions/info.pl] Make changes to @slash effective
     immediately  [CWS]
