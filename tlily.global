@@ -4,7 +4,7 @@
 # EDIT YOUR SITE CONFIG FILE INSTEAD!
 # Begin defaults
 @load = qw(after autologin autoreply expand gag help info log look misc pager
-           run_command startup terminal url view vinfo zone);
+           pipes run_command startup terminal url view vinfo zone);
 @slash = ();
 $terminal = "LC::CTerminal";
 %color_attrs = ( 'sender' => ['bold'],
