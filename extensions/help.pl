@@ -45,7 +45,7 @@ sub help_cmd {
 	    $f=1;
 	}
 	my $longtxt= "? " . help_get_long($args);	
-	$longtxt=~s/\n/\n\* /g;
+	$longtxt=~s/\n/\n\? /g;
 	if ($longtxt) {
 	    ui_output("?");
 	    ui_output(Text => $longtxt, WrapChar => '? '); $f=1;
