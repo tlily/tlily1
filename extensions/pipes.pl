@@ -1,4 +1,4 @@
-# $Header: /data/cvs/tlily/extensions/pipes.pl,v 2.1 1998/06/12 08:56:45 albert Exp $
+# $Header: /data/cvs/tlily/extensions/pipes.pl,v 2.2 1998/08/17 18:32:42 neild Exp $
 #
 # Piped command processing.
 #
@@ -63,6 +63,9 @@ sub pipe_handler {
 
     if ($mode != 3) {
 	$run .= "> $tmpfile";
+	local(*FD);
+	sysopen(FD, $tmpfile, O_RDWR|O_CREAT, 0600);
+	close(FD);
     }
 
     my $fd = "pipes--fd--" . $counter;
@@ -88,6 +91,7 @@ sub pipe_handler {
 		    ui_output($_);
 		}
 		close(FD);
+		unlink($tmpfile);
 	    }
 	} else {
 	    if ($fd) {

@@ -1,3 +1,7 @@
+Version 1.0.1-post
+  * [extensions/pipes.pl] Create temp files with mode 0600, and delete them
+    when finished with them.  [DPN]
+
 Version 1.0.1
   * [extensions/parse.pl] Possible fix for an obscure parser bug.  [DPN]
   * [extensions/view.pl, extensions/log.pl] IO::File bug fix [MJR]
