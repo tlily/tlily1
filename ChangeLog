@@ -1,4 +1,32 @@
-Version 0.6e-post
+Version 0.7a
+  * [LC/Config.pm] Added some pod docs [CWS]
+  * [LC/UI.pm] Changed Paste mode keymapping to M-p to match documentation
+  * [README] Describe %color_attrs, %mono_attrs, and @slash better to prevent
+             faq's about how to make /info do what %info does and how to
+             set colors [CWS]
+  * [LC/Config.pm] callbacks on %config, $config{mono_attrs}, and
+                   $config{color_attrs} are now supported via
+                   register_config_callback() [CWS]
+  * [LC/Config.pm] %config, $config{mono_attrs}, and $config{color_attrs} are
+                   now tied hashes [CWS]
+  * [LC/UI.pm] When $config{mono} is toggled, change colors as
+               appropriate [CWS]
+  * [LC/UI.pm] When $config{color_attrs} or $config{mono_attrs} is changed,
+               do a ui_set() to change the color [CWS]
+  * [LC/Config.pm] When $config{load} or $config{slash} are updated, process
+                   them for '-' removals [CWS]
+  * [extensions/misc.pl] Added %set command to help set %config vars [CWS]
+  * [Build.PL] Check to see if the user has the Curses and Term::Size
+               modules [CWS]
+  * [Build.PL] New option: -p <dir> specifies a prefix to use.  All other
+               related paths are derived from it. [CWS]
+  * [Build.PL] New target: uninstall: uninstalls tlily using the paths
+               in build.cache.  Does not uninstall site config file. [CWS]
+  * [Build.PL] At the end of release, prompt the developer to send an
+               announcement message to tigerlily-announce@einstein.to [CWS]
+  * [Build.PL] New target: announce: Allows developer to send a release
+               announcement asynchronously from the release [CWS]
+  * [Build.PL] Don't let non-developers try to release or announce [CWS]
   * %url viewing code. [JDW]
   * Lots of little changes to make tlily work better under -w.  [DPN]
   * [LC/parse.pm] Fix to make emotes parse properly during a /review [SMC]
@@ -34,6 +62,8 @@ Version 0.6d
     We now require the Term::Size module.  [DPN]
 
 Version 0.6c
+  * [extensions/expand.pl] Added help for oops and also.
+  * [extensions/after.pl] Extension to run a command after a delay [CWS]
   * [LC/State.pm] Bugfix: handle renames properly.  [DPN]
   * [LC/StatusLine.pm] Bugfix for blurbs containing a < or \.  [DPN]
   * [extensions/misc.pl] Added an %echo command.  [DPN]
@@ -44,10 +74,16 @@ Version 0.6c
     userinput events and generates events for different forms of input.
     The new events are: ccommand, scommand, usend, and uunknown.  [DPN]
   * [LC/parse.pm] Fixed a bug involving the characters --> at the end of
-    a line.  [DPN]
+                  a line.  [DPN]
   * [extensions/after.pl] Extension to run a command after a delay [CWS]
 
 Version 0.6b
+  * [README] The repository is now on einstein.to. [CWS]
+  * [tlily.PL] removed a couple extraneous use stmts. [CWS]
+  * Removed use of the POSIX module where possible and necessary.  LC/UI.pm
+      still needs a replacement for isprint() before removing its use of the
+      POSIX module.  LC/CTerminal.pm and LC/TTerminal.pm may keep their use
+      of the POSIX module. (This change is for Win32) [CWS]
   * [extensions/misc.pl] Fixed !command handling.  [DPN]
   * [tlily.PL] Require perl 5.003_07.  [DPN]
   * [LC/smartexit.pl] Extension to exit on disconnect iff the user did a
@@ -65,7 +101,7 @@ Version 0.6a
   * [README] Documented the terminal features.  [DPN]
   * [LC/UI.pm, LC/CTerminal.pm, LC/TTerminal.pm, tlily.PL,
     extensions/terminal.pl] Added support for multiple terminals.  [DPN]
-  * [extensions/misc.pl] Added %version command
+  * [extensions/misc.pl] Added %version command [CWS]
   * [extensions/expand.pl] Added a tab-ring (try starting at a blank line
     and pressing tab a few times).  Added expansion after commas.  [DPN]
   * [LC/parse.pm] Added a "Raw" field to events.  [DPN]
