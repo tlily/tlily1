@@ -1,4 +1,4 @@
-Version 0.8b-post
+Version 0.8c
   * [extensions/parse.pl] Quick parser hack to survive the addition of
                           %beginmsg/%endmsg to emotes.  [DPN]
   * [LC/NoTerminal.pm] Added NoTerminal terminal module for debugging and
