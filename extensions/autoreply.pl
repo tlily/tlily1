@@ -21,6 +21,7 @@ sub autoreply_event {
     return 0 unless ($event->{Form} eq "private");
     
     $from=$event->{From};
+    $from=~s/\s/_/g;
     if ($reply) {
         if (time()-$last_reply{$from} > 30) {
 	    $last_reply{$from}=time();
