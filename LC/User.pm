@@ -1,5 +1,5 @@
 # -*- Perl -*-
-# $Header: /data/cvs/tlily/LC/User.pm,v 2.3 1998/10/25 00:12:20 josh Exp $
+# $Header: /data/cvs/tlily/LC/User.pm,v 2.4 1998/12/07 22:37:56 neild Exp $
 package LC::User;
 
 use Exporter;
@@ -122,6 +122,13 @@ sub user_password($) {
 # Sends are wonky.
 sub output_send($) {
     my($event) = @_;
+
+    if ($event->{Emote}) {
+	ui_output(Text => $event->{Body},
+	          Target => $event->{Target},
+	          WrapChar => $event->{WrapChar});
+	return;
+    }
 
     if ($event->{First}) {
 	ui_output(Text => $event->{Text},

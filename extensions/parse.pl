@@ -1,5 +1,5 @@
 # -*- Perl -*-
-# $Header: /data/cvs/tlily/extensions/parse.pl,v 2.3 1998/12/07 07:39:29 josh Exp $
+# $Header: /data/cvs/tlily/extensions/parse.pl,v 2.4 1998/12/07 22:37:58 neild Exp $
 =head1 NAME
 
 parse.pl - The lily event parser
@@ -52,7 +52,6 @@ my $msg_hdr = undef;
 my $msg_wrapchar;
 my @msg_dest;
 my $msg_raw;
-my $msg_signal = 0;
 
 
 # Take raw server output, and deal with it.
@@ -159,17 +158,14 @@ sub parse_line($$) {
     }
 
     # %beginmsg
-    if ($line =~ /^%beginmsg/) {
+    if ($line =~ /^%beginmsg (.*)/) {
 	$msg_state = 'msg';
+	@msg_dest = split /,/,$1;
 	return 0;
     }
 
     # %endmsg
     if ($line =~ /^%endmsg/) {
-	if ($msg_state eq 'emote') {
-	    $msg_state = '';
-	    return 0;
-	}
 	$line = $msg_hdr;
 	%event = (Type => 'send',
 		  From => $msg_sender,
@@ -178,6 +174,7 @@ sub parse_line($$) {
 		  Body => $partial,
 		  WrapChar => $msg_wrapchar,
 		  First => 1);
+	$event{Emote} = 1 if ($msg_state eq 'emote');
 	undef $partial;
 	$msg_state = '';
 	goto found;
@@ -559,10 +556,24 @@ sub parse_line($$) {
     # are fine -- the extra parentheses make things parsable.
 
     if ($line =~ /^> /) { 
-	%event = (Type => 'emote');
-	$line = '<emote>' . $line . '</emote>';
-	$msg_state = 'emote' if ($msg_state eq 'msg');
-	goto found;
+	if ($msg_state eq 'msg') {
+	    $msg_state = 'emote';
+	    $msg_type = 'public';  # Emotes are all public.
+	    $msg_sender = undef;   # Can we determine this for emotes?
+	    $msg_hdr = "";         # Not applicable.
+	    $msg_wrapchar = '> ';
+	    $msg_raw = $warm;
+	    $partial = $warm;
+	    return 0;
+	} elsif ($msg_state eq 'emote') {
+	    $msg_raw .= "\n" . $warm;
+	    $partial .= substr($warm, 2);
+	    return 0;
+	} else {
+	    %event = (Type => 'emote');
+	    $line = '<emote>' . $line . '</emote>';
+	    goto found;
+	}
     }
 
 
