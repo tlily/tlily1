@@ -1,17 +1,4 @@
 # -*- Perl -*-
-package LC::Expand;
-
-use Exporter;
-
-use LC::State;
-use LC::User;
-use LC::parse;
-use LC::Event;
-use LC::UI;
-
-@ISA = qw(Exporter);
-
-@EXPORT = qw(&exp_set &exp_expand &exp_init);
 
 my %expansions = ('sendgroup' => '',
 		  'sender'    => '',
@@ -85,24 +72,22 @@ sub exp_complete ($$$) {
 }
 
 
-sub exp_init () {
-    ui_callback(':', \&exp_expand);
-    ui_callback(';', \&exp_expand);
-    ui_callback('=', \&exp_expand);
-    ui_callback('C-i', \&exp_complete);
+ui_callback(':', \&exp_expand);
+ui_callback(';', \&exp_expand);
+ui_callback('=', \&exp_expand);
+ui_callback('C-i', \&exp_complete);
 
-    register_eventhandler(Type => 'userinput',
-			  Call => sub {
-	my($event,$handler) = @_;
-	if ($event->{Text} =~ /^([^:;\s]*)[;:]/) {
-	    exp_set('recips', $1);
-	}
-	return 0;
-    });
+register_eventhandler(Type => 'userinput',
+		      Call => sub {
+			  my($event,$handler) = @_;
+			  if ($event->{Text} =~ /^([^:;\s]*)[;:]/) {
+			      exp_set('recips', $1);
+			  }
+			  return 0;
+		      });
 
-    register_eventhandler(Type => 'privhdr',
-			  Call => sub {
-	my($event,$handler) = @_;
-	exp_set('sender', $event->{From});
-    });
-}
+register_eventhandler(Type => 'privhdr',
+		      Call => sub {
+			  my($event,$handler) = @_;
+			  exp_set('sender', $event->{From});
+		      });

@@ -10,7 +10,6 @@ use LC::config;
 use LC::UI;
 use LC::Server;
 use LC::parse;
-use LC::Expand;
 use LC::Command;
 use LC::User;
 use LC::State;
@@ -37,7 +36,6 @@ $password_mode=0;
 
 LC::config::init();
 ui_start();
-exp_init();
 cmd_init();
 
 ui_attr('sender','bold');

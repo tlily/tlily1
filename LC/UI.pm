@@ -13,8 +13,18 @@ use LC::log;
 
 @ISA = qw(Exporter);
 
-@EXPORT = qw(&ui_start &ui_end &ui_attr &ui_output &ui_status &ui_process
-	     &ui_callback &ui_bell &ui_password $ui_lines $ui_cols);
+@EXPORT = qw(&ui_start
+	     &ui_end
+	     &ui_attr
+	     &ui_output
+	     &ui_status
+	     &ui_process
+	     &ui_callback
+	     &ui_remove_callback
+	     &ui_bell
+	     &ui_password
+	     $ui_lines
+	     $ui_cols);
 
 
 my $ui_up = 0;
@@ -692,9 +702,16 @@ sub scroll_info () {
 
 
 # Registers an input callback function.
-sub ui_callback ($&) {
+sub ui_callback ($$) {
     my($key, $cb) = @_;
     push @{$key_trans{$key}}, $cb;
+}
+
+
+# Deregisters an input callback function.
+sub ui_remove_callback ($$) {
+    my($key, $cb) = @_;
+    @{$key_trans{$key}} = grep { $_ ne $cb } @{$key_trans{$key}};
 }
 
 

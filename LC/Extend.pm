@@ -73,6 +73,7 @@ sub extension($) {
 			   ShortHelp => [],
 			   LongHelp => [],
 			   EventHandlers => [],
+			   UICallbacks => [],
 			   Safe => $safe };
     $Extensions{/current/} = $Extensions{$name};
 
@@ -118,6 +119,11 @@ sub extension_unload($) {
 	deregister_eventhandler($x);
     }
 
+    @a = (@{$ext->{UICallbacks}});
+    foreach $x (@a) {
+	ui_remove_callback($x->[0], $x->[1]);
+    }
+
     $Extensions{/current/} = $old;
     delete $Extensions{$name};
 }
@@ -143,35 +149,7 @@ sub extension_cmd($) {
 
     my $cmd = shift @argv;
 
-    if ($cmd eq 'info') {
-	my $ext;
-	foreach $ext (@argv) {
-	    if (!defined $Extensions{$ext}) {
-		ui_output("(No such extension: \"$ext\")");
-		next;
-	    }
-
-	    my $s;
-	    ui_output("Extension: $ext");
-
-	    $s = "Commands: ";
-	    foreach (@{$Extensions{$ext}->{Commands}}) { $s .= ' '.$_; }
-	    ui_output($s);
-
-	    $s = "ShortHelp:";
-	    foreach (@{$Extensions{$ext}->{ShortHelp}}) { $s .= ' '.$_; }
-	    ui_output($s);
-
-	    $s = "LongHelp: ";
-	    foreach (@{$Extensions{$ext}->{LongHelp}}) { $s .= ' '.$_; }
-	    ui_output($s);
-
-	    $s = "Handlers: ";
-	    foreach (@{$Extensions{$ext}->{EventHandlers}}) { $s .= ' '.$_; }
-	    ui_output($s);
-	}
-	return 0;
-    } elsif ($cmd eq 'load') {
+    if ($cmd eq 'load') {
 	my $ext;
 	foreach $ext (@argv) {
 	    extension($ext);
@@ -255,5 +233,18 @@ sub deregister_help_long {
     my($cmd) = @_;
     &LC::User::deregister_help_long($cmd);
     list_remove @{$Extensions{/current/}->{LongHelp}}, $cmd;
+}
+
+sub ui_callback($$) {
+    my($key, $cmd) = @_;
+    &LC::UI::ui_callback($key, $cmd);
+    push @{$Extensions{/current/}->{UICallbacks}}, [ $key, $cmd ];
+}
+
+sub ui_remove_callback($$) {
+    my($key, $cmd) = @_;
+    &LC::UI::ui_remove_callback($key, $cmd);
+    my $l = $Extensions{/current/}->{UICallbacks};
+    @$l = grep { ($_->[0] ne $key) || ($_->[1] ne $cmd) } @$l;
 }
 
