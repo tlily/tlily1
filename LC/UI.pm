@@ -56,6 +56,9 @@ my %key_trans = (
 
 my %attr_list = ();
 my %attr_cmap = ();
+my @attr_stack = ();
+my $attr_cur_bg = COLOR_BLACK;
+my $attr_cur_fg = COLOR_WHITE;
 
 
 
@@ -65,9 +68,9 @@ sub init () {
     start_color;
     cbreak; noecho; nodelay 1; keypad 1;
     $ui_up = 1;
-    defattr('status_line', COLOR_YELLOW, COLOR_BLUE, A_BOLD);
-    defattr('input_line', COLOR_WHITE, COLOR_BLACK, A_BOLD);
-    defattr('text_window', COLOR_WHITE, COLOR_BLACK, A_NORMAL);
+    attr_define('status_line', COLOR_YELLOW, COLOR_BLUE, A_BOLD);
+    attr_define('input_line', COLOR_WHITE, COLOR_BLACK, A_BOLD);
+    attr_define('text_window', COLOR_WHITE, COLOR_BLACK, A_NORMAL);
     &redraw;
 }
 
@@ -96,22 +99,58 @@ sub color_alloc ($$) {
 }
 
 
-# Define a new attribute.
-sub defattr ($$$$) {
-    my ($name,$fg,$bg,$attrs) = @_;
-    if (defined($fg) && defined($bg)) {
-	my $n = color_alloc($fg,$bg);
-	$attrs |= COLOR_PAIR($n);
-    }
-    $attr_list{$name} = $attrs;
+# Use a given color pair.
+sub attr_colors ($$$) {
+    my($fg,$bg,$attr) = @_;
+
+    attrset $attr;
+
+    $fg = $attr_cur_fg if (!defined $fg);
+    $bg = $attr_cur_bg if (!defined $bg);
+
+    my $n = color_alloc($fg,$bg);
+
+    $attr_cur_fg = $fg;
+    $attr_cur_bg = $bg;
+
+    attrset $attr | COLOR_PAIR($n);
 }
 
 
-# Returns a attribute.
-sub getattr ($) {
+# Define a new attribute.
+sub attr_define ($$$$) {
+    my ($name,$fg,$bg,$attrs) = @_;
+    $attr_list{$name} = [$fg,$bg,$attrs];
+}
+
+
+# Selects an attribute for use.
+sub attr_use ($) {
     my($name) = @_;
-    return $attr_list{$name} if (defined $attr_list{$name});
-    return A_NORMAL;
+
+    push @attr_stack, [$attr_cur_fg, $attr_cur_bg, getattrs];
+
+    return if (!defined $attr_list{$name});
+
+    my $attrs = $attr_list{$name};
+    attr_colors($$attrs[0], $$attrs[1], $$attrs[2]);
+}
+
+
+# Pops attribute usage stack.
+sub attr_pop () {
+    my $attrs = pop @attr_stack;
+    attr_colors($$attrs[0], $$attrs[1], $$attrs[2]);
+}
+
+
+# Rolls out the attribute stack.
+sub attr_top () {
+    my $attrs;
+    while (@attr_stack) {
+	$attrs = pop @attr_stack;
+    }
+    attr_colors($$attrs[0], $$attrs[1], $$attrs[2]);
 }
 
 
@@ -226,7 +265,7 @@ sub win_index ($) {
     }
 
     if (!defined($old_idx) || ($old_idx != $win_idx_cline_idx)) {
-	foreach (@win_idx_ctext) { print STDERR "->$_<-\n"; }
+	@win_idx_ctext = fmtline($text_lines[$win_idx_cline_idx]);
     }
 
     if (($num >= $win_idx_cline_num) &&
@@ -242,27 +281,22 @@ sub win_index ($) {
 sub win_draw_line ($$) {
     my($ypos,$line) = @_;
 
-    autoflush STDERR 1;
-
     $line = ' ' if ($line eq '');
 
     $line =~ s/\\\<//g;
     $line =~ tr/</</;
     $line =~ s/\\(.)/$1/g;
 
-    my @attrstack = ();
     my $xpos = 0;
 
-    my $oldattr = getattrs;
-    attrset getattr('text_window');
+    attr_use('text_window');
 
     while ((length $line) && ($xpos < $COLS)) {
 	if ($line =~ /^\/([^\>]*)\>/) {
-	    attrset (pop @attrstack);
+	    attr_pop();
 	    $line = substr($line, length $&);
 	} elsif ($line =~ /^([^\>]*)\>/) {
-	    push @attrstack, getattrs;
-	    attron getattr($1);
+	    attr_use($1);
 	    $line = substr($line, length $&);
 	} elsif ($line =~ /^[^]+/) {
 	    my $len = $COLS - $xpos;
@@ -275,7 +309,7 @@ sub win_draw_line ($$) {
 	}
     }
 
-    attrset $oldattr;
+    attr_top();
 }
 
 
@@ -343,7 +377,7 @@ sub win_scroll ($) {
 # Adds a line of text to the text window.
 sub addline ($) {
     my($line) = @_;
-    $line =~ s/[\r\n]//g;
+    $line =~ s/[\r]//g;
     $line = ' ' if ($line eq '');
     push @text_lines, $line;
     my $atend = ($text_lastline == $win_endline) ? 1 : 0;
@@ -381,12 +415,10 @@ sub sline_set ($) {
 
 # Redraws the input line.
 sub input_redraw () {
-    my $oldattr = getattrs;
-    attrset getattr('input_line');
+    attr_use('input_line');
 
     my $height = floor((length($input_line) / 80)) + 1 - $input_fline;
     $height = 1 if ($height < 1);
-    #addstr 10,10,$height;refresh;sleep 1;
 
     addstr $LINES - 1, 0, sprintf "%-".$COLS."s", '';
 
@@ -406,7 +438,7 @@ sub input_redraw () {
     move($LINES - $height + floor(($input_pos / 80)) - $input_fline,
 	 $input_pos % 80);
 
-    attrset $oldattr;
+    attr_top();
 }
 
 
