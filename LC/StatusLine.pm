@@ -219,6 +219,7 @@ sub status_time {
     if(defined $config{clockdelta}) {
 	my($t) = ($a[2] * 60) + $a[1] + $config{clockdelta};
 	$t += (60 * 24) if ($t < 0);
+	$t -= (60 * 24) if ($t >= (60 * 24));
 	$a[2] = int($t / 60);
 	$a[1] = $t % 60;
     }
