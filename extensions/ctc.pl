@@ -1,5 +1,5 @@
 # -*- Perl -*-
-# $Header: /data/cvs/tlily/extensions/ctc.pl,v 1.1 1999/01/11 21:33:12 steve Exp $
+# $Header: /data/cvs/tlily/extensions/ctc.pl,v 2.1 1999/01/11 21:34:42 steve Exp $
 
 # A client to client transfer user interface.  This uses Httpd.pm to serve
 # the files.
