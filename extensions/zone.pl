@@ -27,6 +27,7 @@ sub zonewriter($$) {
 	$init =~ s/^%command \[\d+\] //;
 	if ($time_prefixes{$init}) {
 	    $t += $config{zonedelta};
+	    $t += (60 * 24) if ($t < 0);
 	    $event->{Text} = sprintf("%s(%02d:%02d)%s",
 				     $prefix, int($t / 60), $t % 60, $suffix);
 	}
@@ -44,6 +45,7 @@ sub whowriter($$) {
 
     my $t = ($1 * 60) + $2;
     $t += $config{zonedelta};
+    $t += (60 * 24) if ($t < 0);
     $tstr = sprintf("%02d:%02d:%02d", int($t / 60), $t % 60, $3);
     substr($event->{Text}, 41, 8) = $tstr;
 
