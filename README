@@ -47,6 +47,7 @@ green on black, add the following to your config file:
 
     %color_attrs = ('pubhdr' => [ 'fg:red', 'bg:white' ]);
 
+
 /-command Overrides
 -------------------
 
@@ -94,7 +95,7 @@ TigerLily now has 4 levels of customization:
     -----    ---------------------
     Global   /usr/local/lib/tlily/tlily.cf
              Default settings for all features; please no not edit except
-             when developing.
+             when developing to add defaults for new settings.
     Site     /usr/local/etc/tlily.cf
              Site-specific settings to augment or override the global
              settings.  System Administrators wishing to change the
