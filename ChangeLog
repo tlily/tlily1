@@ -1,4 +1,6 @@
 Version 0.6b
+  * [LC/smartexit.pl] Extension to exit on disconnect iff the user did a
+    /det or /bye.  [DPN]
   * [tlily.PL] Added $exit_on_disconnect variable. [DPN]
   * [LC/parse.pm] Untested patch to make consulting sends work.  [DPN]
   * [extensions/info.pl] Removed dependancy on IO::File.
