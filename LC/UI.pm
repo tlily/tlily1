@@ -917,7 +917,7 @@ sub input_killword($$$) {
     my $oldlen = length $line;
     substr($line, 0, $pos) =~ s/(\S+\s*)$//;
     $input_killbuf = $1;
-    return ($line, $pos - (length($line) - $oldlen), 2);
+    return ($line, $pos - ($oldlen - length($line)), 2);
 }
 
 
