@@ -1,5 +1,5 @@
 # -*- Perl -*-
-# $Header: /data/cvs/tlily/LC/State.pm,v 1.21 1998/05/29 05:12:20 mjr Exp $
+# $Header: /data/cvs/tlily/LC/State.pm,v 1.22 1998/06/10 16:47:54 neild Exp $
 package LC::State;
 
 =head1 NAME
@@ -203,7 +203,7 @@ sub expand_name ($) {
 	return $Users{$m[0]}->{Name} if (@m == 1);
 	return undef if (@m > 1);
     }
-    @m = grep { index($_, $name) != -1 } @names;
+    @m = grep { index($_, $name) != -1 } @dnames;
     return '-' . $Discs{$m[0]}->{Name} if (@m == 1);
     return undef if (@m > 1);
 

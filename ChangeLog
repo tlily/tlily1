@@ -1,4 +1,5 @@
 Version 0.9b-post
+  * [LC/State.pm] Fixed discussion substring expansion.  [DPN]
   * [extensions/pipes.pl] Stop repeatedly writing to a closed handle.  [DPN]
   * [LC/UI.pm] Fixed a bug when typing more than one line of input while a
     prompt is visible.  (The "paste bug".)  [DPN]
