@@ -33,7 +33,7 @@ use Carp qw(cluck);
 	     &ui_escape
 	    );
 	    
-$usable=0;	    
+$usable=1;	    
 
 sub ui_start {
     print "ui_start\n";
@@ -66,10 +66,22 @@ sub ui_output {
     }
     
     if ($usable) {
-       # if I felt nice, i'd try to strip out the tags at this point too, but
-       # that's non-trivial, and for performance testing, I want to keep this
-       # as raw as I can.
-       print "$h{Text}\n";
+       # if I felt nice, i'd try to properly strip out the tags at this point,
+       # but that's non-trivial, and for performance testing, I want to keep 
+       # this as raw as I can.
+       my $text=$h{Text};
+       $text=~s/\<\/?sender\>//g;
+       $text=~s/\<\/?dest\>//g;
+       $text=~s/\<\/?emote\>//g;       
+       $text=~s/\<\/?pubhdr\>//g;                     
+       $text=~s/\<\/?pubmsg\>//g;              
+       $text=~s/\<\/?privhdr\>//g;                            
+       $text=~s/\<\/?privmsg\>//g;                     
+       $text=~s/\<\/?pubmsg\>//g;              
+       $text=~s/\<\/?usersend\>//g;
+       $text=~s/\<\/?blurb\>//g;                            
+       
+       print "$text\n";
     } else {
        print "ui_output: $h{Text}\n";
     }       
@@ -92,7 +104,13 @@ sub ui_process {
     return undef unless $r->can_read(0);
     
     sysread(STDIN,$buf,1);
+    if ($buf =~ /[]/) {
+       $input=~s/.$//;
+       print "\r$input";
+       return undef;
+    }
     $input .= $buf;
+    
     if ($buf eq "\n") {
        my $ret=$input;
        $input="";
