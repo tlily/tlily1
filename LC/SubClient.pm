@@ -202,6 +202,8 @@ sub sc_input_process {
     $s->add($hdl);
     if (! ($s->can_read(0))) { return; }
 
+	 return if ($del_hack{$subcli});
+
     my $rc = sysread($hdl,$buf,4096);
     if ($rc < 0) {
         if ($errno != EAGAIN) {
