@@ -93,7 +93,6 @@ register_eventhandler(Type => 'privhdr',
 			  exp_set('sender', $event->{From});
 			  my $me = user_name();
 			  my @group = @{$event->{To}};
-			  ui_output("@group");
 			  if (@group > 1) {
 			      push @group, $event->{From};
 			      @group = grep { $_ ne $me } @group;

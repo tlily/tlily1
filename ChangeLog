@@ -1,4 +1,8 @@
 Version 0.2d
+  * Build script now asks what paths you want to use and caches them,
+    rather than making you edit Build.PL to set them.
+  * Build script makes all generated files read-only to discourage editing.
+  * perl Build.PL release now works.
   * Sendgroup expansion (=) now works.
   * Extensions may be loaded and unloaded during a lily session.
   * Timezone rewriting works again, through the 'zone' extension.

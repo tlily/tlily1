@@ -1,22 +1,17 @@
 Installation of TigerLily:
 
-1.  Edit the top of Build.PL and set the install paths you want
-    Defaults are :  install tlily in /usr/local/bin,
-     install the internal modules in /usr/local/lib/tlily/LC, and
-    install the global extensions in /usr/local/lib/tlily/extensions
-
-2.  perl Build.PL install
+1.  perl Build.PL install
+	You will be asked what directories to install into.
 
 You're Done!
 
 For hacking within the source directory:
 
-1.  Edit the top of Build.PL, commenting out the first block and
-    uncommenting the bottom block, as indicated in the comments.
-
-2.  perl Build.PL
-    this generates a tlily that can be run using the extensions
-    and libraries in the current directory.
+1.  perl Build.PL
+	Use an installation prefix of 'Current', as indicated in the
+	info message.  This generates a tlily that can be run using
+	the extensions and libraries in the current directory.
 
 3.  Make all changes to tlily.PL, not tlily.  perl Build.PL will
-    regenerate tlily from tlily.PL
+    regenerate tlily from tlily.PL.  tlily is made read-only to
+	discourage you from editing it.

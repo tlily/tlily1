@@ -1,10 +1,10 @@
 @@PERL@@
 
-$TL_VERSION="@@VERSION@@";
 $TL_EXTDIR="@@LIBEXTDIR@@";
 $debug=0;
 
 use lib qw(@@LIBMODDIR@@);
+use LC::version;
 use LC::log; 
 use LC::config;
 use LC::UI;

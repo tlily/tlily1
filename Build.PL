@@ -7,43 +7,19 @@ use File::Path;
 use FileHandle;
 use DirHandle;
 use Cwd;
+use LC::version;
 
-### Configure Me
+# You no longer have to edit the paths here to configure tigerlily.
+# This build script will ask you where you want to put tigerlily
+# and make a build.cache file to save your preferences.
 
-$VERSION='0.2b';
-$CVSTAG='release-0-2b';
-
-#$PREFIX='/usr/local';
-##$PREFIX="$ENV{'HOME'}/inst";
-#$BINDIR=$PREFIX."/bin";
-#$LIBDIR=$PREFIX."/lib/tlily";
-#$LIBMODDIR=$LIBDIR; # the LC dir will be made below this
-#$LIBEXTDIR=$LIBDIR."/extensions";
-
-# for local testing/hacking/use: uncomment these and  perl Build.PL
-$PREFIX=Cwd::cwd;
-$BINDIR=$PREFIX;
-$LIBDIR=$PREFIX;
-$LIBMODDIR=$LIBDIR; # the LC dir will be made below this
-$LIBEXTDIR=$LIBDIR."/extensions";
-
-### You shouldn't have to change anything below this line.
-
+# Find perl
 $PERL = $Config{'startperl'} ||
         $Config{'perlpath'}? "#!".$Config{'perlpath'} : '' ||
         "#/usr/bin/perl";
 
 while(@ARGV) {
-	# this first part doesn't work yet.
-	if($ARGV[0] =~ /[A-Z_]*=.*$/o) {
-		$ARGV[0] =~ s/=(.*)$/=\'$1\'/;
-		$ARGV[0] = '$'.$ARGV[0];
-		print $ARGV[0], "\n";
-		eval $ARGV[0];
-		if($@) { carp $@; exit(1); }
-		shift;
-	}
-	elsif($ARGV[0] eq "-n") {
+	if($ARGV[0] eq "-n") {
 		$nonono = 1; shift;
 	}
 	elsif($ARGV[0] eq "-d") {
@@ -51,6 +27,9 @@ while(@ARGV) {
 	}
 	elsif($ARGV[0] eq "-h") {
 		&Usage;
+	}
+	elsif($ARGV[0] eq "-f") {
+		$yesdamnit = 1; shift;
 	}
 	else {
 		$target=shift;
@@ -60,10 +39,13 @@ while(@ARGV) {
 print "-d: $debug\n" if $debug;
 print "-n: $nonono\n" if $debug;
 
+$VERSION = $TL_VERSION;
+$CVSTAG = &ver2tag($VERSION);
+$STATE = 'test';
 $moddir="LC";
 $extdir="extensions";
 $modext='\.pm';
-$extext='\.e';
+$extext='\.pl';
 @modfiles = &get_files($moddir, $modext);
 @extfiles = &get_files($extdir, $extext);
 print join("\n", @modfiles), "\n" if $debug;
@@ -75,11 +57,13 @@ if(!$target) {
 elsif($target eq 'install') {
 	&make_tlily;
 	
+	print "Installing tlily...\n";
 	&install('DIR' => $BINDIR, 'MODE' => 0755);
 	&install('FILE' => 'tlily',
 	         'DEST' => $BINDIR.'/tlily',
 	         'MODE' => 0755);
 
+	print "Installing tlily support modules...\n";
 	&install('DIR' => "$LIBMODDIR/$moddir", 'MODE' => 0755);
 
 	my($file);
@@ -89,6 +73,7 @@ elsif($target eq 'install') {
 		         'MODE' => 0644);
 	}
 
+	print "Installing tlily global extensions...\n";
 	&install('DIR' => $LIBEXTDIR, 'MODE' => 0755);
 
 	foreach $file (@extfiles) {
@@ -98,22 +83,102 @@ elsif($target eq 'install') {
 	}
 }
 elsif($target eq 'release') {
-	print "This part does not work yet.\n";
-	my($cmd) = 'cvs rtag $CVSTAG tigerlily';
-	print "(not executed) ", $cmd, "\n";
+	my($cmd);
+
+	&ask_version;
+	&make_version_file($VERSION);
+	
+	$cmd = "cvs commit -m 'Automatic commit of version file' LC/version.pm";
+	if($nonono) {
+		print "Would have executed: $cmd\n";
+	}
+	else {
+		print "Committing LC/version.pm with:\n$cmd\n";
+		system($cmd);
+	}
+
+	$cmd = "cvs tag -F $CVSTAG";
+	if($nonono) {
+		print "Would have executed: $cmd\n";
+	}
+	else {
+		print "Tagging release $VERSION with:\n$cmd\n";
+		system("$cmd");
+	}
+
+	if($nonono) {
+		print "Would have created directory 'buildtmp'\n";
+		print "Would have changed directory to 'buildtmp'\n";
+	}
+	else {
+		print "Making temporary release directory..\n";
+		mkdir("buildtmp", 0755);
+		chdir("buildtmp");
+	}
+
+	$cmd = "cvs export -r $CVSTAG -d tlily-$VERSION tlily";
+	if($nonono) {
+		print "Would have executed: $cmd\n";
+	}
+	else {
+		print "Exporting tlily $VERSION with:\n$cmd\n";
+		system("$cmd");
+	}
+
 	$cmd = $Config{'tar'} || "tar";
-	$cmd .= " cf tlily-$VERSION.tar tlily.PL Build.PL";
-	foreach(@modfiles) {
-		$cmd .= " $moddir/$_";
+	$cmd .= " cf ../tlily-$VERSION.tar tlily-$VERSION";
+	if($nonono) {
+		print "Would have executed: $cmd\n";
 	}
-	foreach(@extfiles) {
-		$cmd .= " $extdir/$_";
+	else {
+		if(-f "../tlily-$VERSION.tar") { unlink("../tlily-$VERSION.tar"); }
+		print "Packaging tlily $VERSION with:\n$cmd\n";
+		system("$cmd");
 	}
-	print "(not executed) ", $cmd, "\n";
+
+	if($nonono) {
+		print "Would have changed directory to ..\n";
+		print "Would have removed directory 'buildtmp'\n";
+	}
+	else {
+		chdir("..");
+		print "Removing temporary release directory..\n";
+		rmtree("buildtmp", 0, 0);
+	}
+
 	$cmd = $Config{'gzip'} || "gzip";
 	$cmd .= " -9 tlily-$VERSION.tar";
-	print "(not executed) ", $cmd, "\n";
+	if($nonono) {
+		print "Would have executed: $cmd\n";
+	}
+	else {
+		if(-f "tlily-$VERSION.tar.gz") { unlink("tlily-$VERSION.tar.gz"); }
+		print "Compressing the release archive with:\n$cmd\n";
+		system("$cmd");
+	}
+
+	&update_version($VERSION);
 }
+elsif($target eq 'clean') {
+	rmtree('buildtmp', 0, 0);
+	unlink("tlily");
+	unlink("tlily-$VERSION.tar");
+	unlink("tlily-$VERSION.tar.gz");
+	if(!$yesdamnit && -f "build.cache") {
+		my($inp) = &ask("Remove build.cache?", "y");
+		if($inp eq '' || $inp =~ /(y|yes)/io) {
+			unlink("build.cache");
+		}
+	}
+	else {
+		if($yesdamnit) { unlink("build.cache"); }
+	}
+}
+else {
+	print STDERR "Unknown target $target\n";
+	&Usage;
+}
+	
 
 exit(0);
 
@@ -141,8 +206,11 @@ sub install {
 			printf("%o\n", $mode);
 		}
 		else {
-			$rc = mkpath($dir, 0, $mode); 
-			if(!$rc) { croak $dir,": ",$!; }
+			if(! -e $dir) {
+				$rc = mkpath($dir, 0, $mode); 
+				if(!$rc) { croak $dir,": ",$!; }
+			}
+			chmod($mode,$dir);
 		}
 		return 1;
 	}
@@ -166,6 +234,7 @@ sub install {
 }
 
 sub make_tlily {
+	&ask_dirs;
 	if($nonono) {
 		print "Would have created tlily from tlily.PL with the following\n";
 		print "parameters:";
@@ -177,6 +246,10 @@ Extensions Library directory:  $LIBEXTDIR
 );
 		return;
 	}
+	print "Writing tlily\n";
+	if(-f 'tlily') {
+		unlink 'tlily';
+	}
 	my($ifh) = new FileHandle("tlily.PL", "r");
 	die $! if not $ifh;
 
@@ -187,14 +260,13 @@ Extensions Library directory:  $LIBEXTDIR
 
 	while(<$ifh>) {
 		s|\@\@PERL\@\@|$PERL|;
-		s|\@\@VERSION\@\@|$VERSION|;
 		s|\@\@LIBMODDIR\@\@|$LIBMODDIR|;
 		s|\@\@LIBEXTDIR\@\@|$LIBEXTDIR|;
 		print $ofh $_;
 	}
 	close($ifh);
 	close($ofh);
-	chmod(0755, "tlily");
+	chmod(0555, "tlily");
 }
 
 sub Usage {
@@ -202,8 +274,194 @@ sub Usage {
 Usage: perl Build.PL [-n][-h][install|release]
 	-n: Show what would have been done without actually doing it.
 	-h: Show this help
-	install: do variable substitutions on tlily.PL and install TigerLily
+	install: do path substitutions on tlily.PL and install TigerLily
 	release: tag the release via CVS and make a .tar.gz for release
+	clean:   remove the generated tlily and any left-over files and
+	         directories possibly left behind by this script.
 );
 	exit(1);
+}
+
+sub ask_dirs {
+	my($inp);
+	my($cachefile) = "build.cache";
+
+	if(-f $cachefile) {
+		print "Reading cache file $cachefile.\n";
+		do "$cachefile";
+		return;
+	} else {
+		$PREFIX='/usr/local';
+		print qq(By default, tlily will be installed in $PREFIX/bin, global extensions
+under $PREFIX/lib/tlily/extensions, etc..., i.e. with
+$PREFIX as prefix for all installation directories.  It is typically
+set to /usr/local, but you may choose /usr if you wish to install
+tlily among your system binaries.  If you wish to have binaries under
+/bin but support files under /usr/local/lib, that's ok: you will be
+prompted separately for each of the installation directories, the
+prefix only used to set the defaults.
+
+Use an installation prefix of 'Current' to configure tlily for use in
+the current directory only.
+
+);
+
+		$inp = &ask("Installation prefix to use?", $PREFIX);
+		if($inp) {
+			if($inp eq 'Current') {
+				&use_current_dir; return;
+			}
+			$PREFIX=$inp;
+		}
+	
+		$BINDIR=$PREFIX."/bin";
+		$inp = &ask("Installation directory for the tlily script?", $BINDIR);
+		if($inp) { $BINDIR=$inp; }
+		
+		$LIBDIR=$PREFIX."/lib/tlily";
+	
+		$LIBMODDIR=$LIBDIR; # the LC dir will be made below this
+		$inp = &ask("Installation directory for the tlily support library?",
+		    $LIBMODDIR);
+		if($inp) { $LIBMODDIR=$inp; }
+	
+		$LIBEXTDIR=$LIBDIR."/extensions";
+		$inp = &ask("Installation directory for the tlily global extensions?",
+		    $LIBEXTDIR);
+		if($inp) { $LIBEXTDIR=$inp; }
+
+		&write_buildcache;
+	}
+}
+
+sub use_current_dir {
+	print "\nUsing current directory.\n";
+	$PREFIX = Cwd::cwd;
+	print "Installation prefix is $PREFIX\n";
+	$BINDIR = $PREFIX;
+	print "Script location is $BINDIR\n";
+	$LIBDIR = $PREFIX;
+	$LIBMODDIR = $LIBDIR;
+	print "Module location is $LIBMODDIR\n";
+	$LIBEXTDIR = $LIBDIR."/extensions";
+	print "Extension directory is $LIBEXTDIR\n";
+
+	&write_buildcache;
+}
+
+sub write_buildcache {
+		my($cachefile) = 'build.cache';
+		if($nonono) {
+			print "Would have written $cachefile with the following\n";
+			print "settings:\n";
+			print "\$PREFIX = '$PREFIX'\n";
+			print "\$BINDIR = '$BINDIR'\n";
+			print "\$LIBDIR = '$LIBDIR'\n";
+			print "\$LIBMODDIR = '$LIBMODDIR'\n";
+			print "\$LIBEXTDIR = '$LIBEXTDIR'\n";
+			return;
+		}
+		print "Writing $cachefile\n";
+		if(-f $cachefile) { unlink $cachefile; }
+		my($fh) = new FileHandle($cachefile, "w");
+		if(!$fh) { die $!; }
+
+		print $fh qq(# build.cache
+# Automatically generated by Build.PL.
+\$PREFIX = '$PREFIX';
+\$BINDIR = '$BINDIR';
+\$LIBDIR = '$LIBDIR';
+\$LIBMODDIR = '$LIBMODDIR';
+\$LIBEXTDIR = '$LIBEXTDIR';
+);
+		close $fh;
+		chmod(0444, $cachefile);
+}
+
+sub ask_version {
+	my($ver) = $VERSION;
+	my($inp) = &ask("Release Version?", $ver);
+
+	if($inp ne '') {
+		$inp = version_part($inp);
+		if(!$inp) { die "bad version string"; }
+		$VERSION = $inp;
+	}
+	else {
+		$VERSION=$ver;
+	}
+	$CVSTAG = &ver2tag($VERSION);
+	print "VERSION=$VERSION\nCVSTAG=$CVSTAG\n" if $debug;
+}
+
+sub ask {
+	$|=1;
+	my($q,$d) = @_;
+	my($sin) = new_from_fd FileHandle(STDIN, "r");
+	if(length($q." [".$d."]: ") > 80) {
+		print $q, "\n[", $d, "]: ";
+	}
+	else {
+		print $q, " [", $d, "]: ";
+	}
+	chomp(my($l) = $sin->getline);
+	$l;
+}
+
+sub ver2tag {
+	my($ver) = @_;
+	my($maj,$min,$sub,$pre) = split_version($ver);
+	"$STATE-$maj-$min$sub".($pre?"-pre$pre":'');
+}
+
+sub split_version {
+	my($ver) = @_;
+	my($maj,$min,$sub,$pre);
+	$ver =~ m/(\d)\.(\d)(\w)/o;
+	($maj,$min,$sub) = ($1, $2, $3);
+	$ver =~ m/-pre(\d+)/o;
+	($maj,$min,$sub,$1);
+}
+
+sub update_version {
+	my($ver)=@_;
+	my($maj,$min,$sub,$pre) = split_version($ver);
+	$sub++;
+#	if($pre) { $pre++; } else { $sub++; $pre=1; }
+#	$ver = "$maj.$min$sub".($pre?"-pre$pre":'');
+	$ver = "$maj.$min$sub";
+	&make_version_file($ver);
+	print "Next version will be $ver.\n";
+}
+
+sub version_part {
+	my($maj,$min,$sub,$pre) = split_version($_[0]);
+#	"$maj.$min$sub".($pre?"-pre$pre":'');
+	"$maj.$min$sub";
+}
+
+sub make_version_file {
+	my($ver) = @_;
+	if($nonono) {
+		print "Would have made LC/version.pm with the version number $ver.\n";
+		return;
+	}
+	print "Writing LC/version.pm, version $ver\n";
+	if(-f "LC/version.pm") { unlink "LC/version.pm"; }
+	my($fh) = new FileHandle("LC/version.pm", "w");
+	if(!$fh) { die $!; }
+
+	print $fh qq(
+# version.pm
+# Automatically generated by Build.PL.
+#
+package LC::version;
+use Exporter;
+\@ISA = qw(Exporter);
+\@EXPORT = qw(\$TL_VERSION);
+\$TL_VERSION = '$ver';
+1;
+);
+	close $fh;
+	chmod(0444, "LC/version.pm");
 }
