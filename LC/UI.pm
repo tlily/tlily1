@@ -48,17 +48,26 @@ of attributes.)
 
 =item ui_output()
 
-Sends a line of output to the user.  The passed line may contain HTML-style
-attribute tags, such as <b>.  All tags used must be first defined with the
-ui_attr() function.  Text sent with this function is drawn with the
-'text_window' tag by default.
+Sends a line of output to the user.  There are two forms of this command
+which may be used: one takes the line to send as its only argument, the
+other takes a hash of parameters.  The line text is given in the 'Text'
+parameter.
+
+The passed line may contain HTML-style attribute tags, such as <b>.  All
+tags used must be first defined with the ui_attr() function.  Text sent
+with this function is drawn with the 'text_window' tag by default.
 
 Backslashes may be used to quote '<' characters that do not begin
 attribute tags.  Backslashes must themselves be quoted.
 
 The text may contain embedded newlines.
 
+The 'WrapChar' parameter may be given to specify a prefix to use for
+wordwrapped lines of output.
+
     ui_output(' -> From <user>damien</user>');
+    ui_output(Text => ' -> From <user>damien</user>',
+	      WrapChar => ' -> ');
 
 =item ui_status()
 
@@ -640,11 +649,18 @@ sub win_scroll($) {
 
 
 # Adds a line of text to the text window.
-sub ui_output($) {
-    my($text) = @_;
+sub ui_output {
+    my %h;
+    if (@_ == 1) {
+	%h = (Text => $_[0]);
+    } else {
+	%h = @_;
+    }
 
     my($line, $fmt);
-    ($line, $fmt) = fmtline($text);
+    ($line, $fmt) = fmtline($h{Text});
+    unshift @$fmt, $FOwrapchar, $h{WrapChar} if ($h{WrapChar});
+
     push @text_lines, $line;
     push @text_fmts, $fmt;
 

@@ -128,7 +128,8 @@ sub init() {
 			  Call => sub {
 			      my($event,$handler) = @_;
 			      if ($event->{ToUser}) {
-				  ui_output($event->{Text});
+				  ui_output(Text => $event->{Text},
+					    WrapChar => $event->{WrapChar});
 			      }
 			      if ($event->{Signal}) {
 				  ui_bell();

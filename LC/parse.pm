@@ -370,6 +370,7 @@ sub parse_line($$) {
 	if (($line =~ /^ >>/) || ($line =~ /^ \\<\\</)) { 
 	    # private headers
 	    %event = (Type => 'privhdr',
+		      WrapChar => substr($line, 0, 4),
 		      From => $msg_sender,
 		      To => \@msg_dest);
 
@@ -379,6 +380,7 @@ sub parse_line($$) {
 	} else {
 	    # public headers
 	    %event = (Type => 'pubhdr',
+		      WrapChar => substr($line, 0, 4),
 		      From => $msg_sender,
 		      To => \@msg_dest);
 
