@@ -11,6 +11,9 @@ my @text_lines = ();
 my $text_lastline = -1;
 
 my $win_endline = -1;
+my $win_lastseen = -1;
+
+my $win_moremode = 0;
 
 my $input_line = "";
 my $input_fchar = 0;
@@ -222,7 +225,7 @@ sub win_redraw () {
 }
 
 
-# Scrolls the text window up.
+# Scrolls the text window.
 sub win_scroll ($) {
     my($n) = @_;
 
