@@ -1,6 +1,7 @@
 Version 0.7a
+  * [extensions/info.pl] Fixed /info override to correctly recognize /info [CWS]
   * [extensions/info.pl] Fixed %info edit to only change the info if you made
-								 a change to the edit buffer [SMC]
+                         a change to the edit buffer [SMC]
   * [extensions/info.pl] Added %export [JDW]
   * [extensions/smartexit.pl] Fix recognition of /det and /bye [FeRD@RPI][CWS]
   * [LC/Config.pm] Added some pod docs [CWS]
@@ -19,7 +20,7 @@ Version 0.7a
                do a ui_set() to change the color [CWS]
   * [LC/Config.pm] When $config{load} or $config{slash} are updated, process
                    them for '-' removals [CWS]
-  * [extensions/misc.pl] Added %set command to help set %config vars [CWS]
+  * [extensions/set.pl] Added %set command to help set %config vars [CWS]
   * [Build.PL] Check to see if the user has the Curses and Term::Size
                modules [CWS]
   * [Build.PL] New option: -p <dir> specifies a prefix to use.  All other
