@@ -1,6 +1,6 @@
 @@PERL@@
 
-require 5.003;
+require 5.00307;
 
 $TL_ETCDIR="@@ETCDIR@@";
 $TL_LIBDIR="@@LIBDIR@@";
