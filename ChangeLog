@@ -1,4 +1,5 @@
 Version 0.3c
+  * Fixed bug in tlily.PL which caused ~/.lily/tlily/init not to be read. [CWS]
   * The Build now tells you how to install when you only make tlily. [CWS]
   * The Build now accepts 'tlily' as a target on the command line. [CWS]
   * Tilde(~) expansion will be done on all paths entered by the user. [CWS]

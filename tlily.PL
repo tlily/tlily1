@@ -236,7 +236,7 @@ sub dotfile_init() {
     # have been loaded.
     if ( -f "$ENV{HOME}/.lily/tlily/init" ) {
 	log_notice("Loading config from ~/.lily/tlily/init");
-	extension("<$ENV{HOME}/.lily/tlily/init");
+	extension("$ENV{HOME}/.lily/tlily/init");
     } else {
 	log_notice("(You may add perl code in ~/.lily/tlily/init)");
     }
