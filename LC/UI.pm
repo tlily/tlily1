@@ -27,6 +27,10 @@ my %key_trans = (
 		 '' => \&input_home,
 		 (KEY_END) => \&input_end,
 		 '' => \&input_end,
+		 (KEY_PPAGE) => \&input_pageup,
+		 '' => \&input_pageup,
+		 (KEY_NPAGE) => \&input_pagedown,
+		 '' => \&input_pagedown,
 		 "\r" => \&input_accept,
 		 "\n" => \&input_accept,
 		 "" => \&input_refresh,
@@ -171,6 +175,8 @@ sub win_index ($) {
 sub win_draw_line ($$) {
     my($ypos,$line) = @_;
 
+    $line = ' ' if ($line eq '');
+
     $line =~ s/\\\<//g;
     $line =~ tr/</</;
     $line =~ s/\\(.)/$1/g;
@@ -219,7 +225,48 @@ sub win_redraw () {
 # Scrolls the text window up.
 sub win_scroll ($) {
     my($n) = @_;
-    copywin stdscr, stdscr, $n, 0, 0, 0, $LINES - 3 - $n, $COLS - 1, 0;
+
+    my $new_end = $win_endline + $n;
+    $new_end = 0 if ($new_end < 0);
+    $new_end = $text_lastline if ($new_end > $text_lastline);
+    $n = $new_end - $win_endline;
+    $win_endline = $new_end;
+
+    my $up = ($n > 0) ? 1 : 0;
+    $n = -$n if ($n < 0);
+
+    if ($n > $LINES - 3) {
+	win_redraw;
+	return;
+    }
+
+    getyx($y,$x);
+
+    if ($up) {
+	my $pad = newpad $LINES, $COLS;
+	copywin stdscr, $pad, $n, 0, 0, 0, $LINES - 3 - $n, $COLS - 1, 0;
+	copywin $pad, stdscr, 0, 0, 0, 0, $LINES - 3 - $n, $COLS - 1, 0;
+	delwin $pad;
+
+	my $i;
+	for ($i = 0; $i < $n; $i++) {
+	    my $s = win_index($win_endline - $i);
+	    win_draw_line($LINES - 3 - $i, ($s ? $s : ''));
+	}
+    } else {
+	my $pad = newpad $LINES, $COLS;
+	copywin stdscr, $pad, 0, 0, 0, 0, $LINES - 3 - $n, $COLS - 1, 0;
+	copywin $pad, stdscr, 0, 0, $n, 0, $LINES - 3, $COLS - 1, 0;
+	delwin $pad;
+
+	my $i;
+	for ($i = 0; $i < $n; $i++) {
+	    my $s = win_index($win_endline - ($LINES - 3) + $i);
+	    win_draw_line($i, ($s ? $s : ''));
+	}
+    }
+
+    move($y,$x);
 }
 
 
@@ -234,18 +281,10 @@ sub addline ($) {
     push(@fmt, '---') if (@fmt == 0);
     $text_lastline += scalar(@fmt);
     if ($atend) {
-	getyx($y,$x);
 	win_scroll(scalar(@fmt));
-	$win_endline = $text_lastline;
-	my $ypos = $LINES - 3;
-	foreach (@fmt) {
-	    win_draw_line($ypos--, $_);
-	}
-	move($y,$x);
     } else {
 	win_redraw;
     }
-    sline_redraw();
     refresh;
 }
 
@@ -362,6 +401,20 @@ sub input_accept (;$) {
 # Redraw the UI screen.
 sub input_refresh (;$) {
     redraw();
+}
+
+
+# Page up.
+sub input_pageup (;$) {
+    &win_scroll(-($LINES - 4));
+    refresh;
+}
+
+
+# Page down.
+sub input_pagedown (;$) {
+    &win_scroll($LINES - 4);
+    refresh;
 }
 
 
