@@ -1,6 +1,8 @@
 Version 0.7b-post
+  * [extensions/irc.pl] Extension using the SubClient interface to use irc from
+	                     within tigerlily. [JDW]
   * [LC/SubClient.pm] Added support for subclients and the %irc command to
-    support dsirc as a subclient.
+                      support dsirc as a subclient. [JDW&SMC]
 
 Version 0.7b  
   * [extensions/parse.pl] Fixed the stalls during /reviews (could be faster
