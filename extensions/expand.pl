@@ -4,6 +4,9 @@ my %expansions = ('sendgroup' => '',
 		  'sender'    => '',
 		  'recips'    => '');
 
+my @past_sends = ();
+
+
 sub exp_set($$) {
     my($a,$b) = @_;
     $expansions{$a} = $b;
@@ -29,7 +32,7 @@ sub exp_expand($$$) {
 
 	$exp =~ tr/ /_/;
 	return ($exp . $key . $line, length($exp) + 1, 2);
-    } elsif (($key eq ':') || ($key eq ';')) {
+    } elsif (($key eq ':') || ($key eq ';') || ($key eq ',')) {
 	my $fore = substr($line, 0, $pos);
 	my $aft  = substr($line, $pos);
 
@@ -54,25 +57,36 @@ sub exp_expand($$$) {
 sub exp_complete($$$) {
     my($key, $line, $pos) = @_;
 
-    return if ($pos == 0);
-
     my $partial = substr($line, 0, $pos);
+    my $full;
 
-    # Only expand if we are in the destination zone.
-    return if ($partial =~ /[\@\[\]\;\:\=\"\?\s]/);
-
-    $partial =~ s/^.*,//;
-    my $full = expand_name($partial);
-    $full =~ tr/ /_/;
+    if (length($partial) == 0) {
+	$full = $past_sends[0] . ';';
+    } elsif ($partial !~ /[\@\[\]\;\:\=\"\?\s]/) {
+	$partial =~ m/^(.*,)?(.*)/;
+	$full = $1 . expand_name($2);
+	$full =~ tr/ /_/;
+    } elsif (substr($partial, 0, -1) !~ /[\@\[\]\;\:\=\"\?\s]/) {
+	chop $partial;
+	$full = $past_sends[0];
+	for (my $i = 0; $i < @past_sends; $i++) {
+	    if ($past_sends[$i] eq $partial) {
+		$full = $past_sends[($i+1)%@past_sends];
+		last;
+	    }
+	}
+	$full .= ';';
+    }
 
     return unless($full);
-    substr($line, $pos - length($partial), length($partial)) = $full;
+    substr($line, 0, $pos) = $full;
     $pos += length($full) - length($partial);
-
+    
     return ($line, $pos, 2);
 }
 
 
+ui_callback(',', \&exp_expand);
 ui_callback(':', \&exp_expand);
 ui_callback(';', \&exp_expand);
 ui_callback('=', \&exp_expand);
@@ -82,6 +96,9 @@ register_eventhandler(Type => 'userinput',
 		      Call => sub {
 			  my($event,$handler) = @_;
 			  if ($event->{Text} =~ /^([^:;\s]*)[;:]/) {
+			      @past_sends = grep { $_ ne $1 } @past_sends;
+			      unshift @past_sends, $1;
+			      pop @past_sends if (@past_sends > 5);
 			      exp_set('recips', $1);
 			  }
 			  return 0;
