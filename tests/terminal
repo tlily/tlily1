@@ -1,0 +1,143 @@
+#!/usr/local/bin/perl -w
+
+use IO::Select;
+
+if (@ARGV == 0) {
+	print "$0 <terminal module>\n";
+	exit;
+}
+
+my $terminal = shift @ARGV;
+
+eval "use $terminal";
+my $T = $terminal->new();
+
+my $sel = IO::Select->new();
+$sel->add(\*STDIN);
+sub waitfor {
+	$T->term_refresh();
+	while (1) {
+		my $ch = $T->term_get_char();
+		return $ch if (defined $ch);
+#print STDERR "Select...";
+		IO::Select::select($sel, undef, undef, undef);
+#print STDERR "done. (trf = $T->term_resize_flag)\n";
+		$T->term_winch() if ($T->term_resize_flag);
+	}
+}
+
+my $rsub;
+sub resize {
+	&$rsub if (defined $rsub);
+}
+
+$T->term_init(\&resize);
+
+#
+# Basic output tests.
+#
+
+$T->term_clear();
+$T->term_move(0, 0);
+$T->term_addstr("Basic terminal test.");
+waitfor();
+
+
+#
+# Positioning test.
+#
+
+$T->term_clear();
+$T->term_move(0, 0);
+$T->term_addstr("Positioning test.");
+$T->term_move(3, 3); $T->term_addstr("* <- (3,3)");
+$T->term_move(4, 2); $T->term_addstr("* <- (4,2)");
+$T->term_move(5, 4); $T->term_addstr("* <- (5,4)");
+waitfor();
+
+
+#
+# Motion test.
+#
+
+$T->term_clear();
+$T->term_move(0, 0);
+$T->term_addstr("term_insert_char() test.");
+$T->term_move(3, 0);
+$T->term_addstr("The next line should be 'abcdef'.");
+$T->term_move(4, 0);
+$T->term_addstr("abef");
+$T->term_move(4, 2);
+$T->term_insert_char(); $T->term_insert_char();
+$T->term_addstr("cd");
+$T->term_move(5, 0);
+waitfor();
+
+
+#
+# Attribute test.
+#
+
+$T->term_clear();
+$T->term_move(0, 0);
+$T->term_addstr("Attribute test.");
+$T->term_setattr('normal');
+$T->term_move(1, 0); $T->term_addstr("Normal");
+$T->term_setattr('normal', 'bold');
+$T->term_move(2, 0); $T->term_addstr("Bold");
+$T->term_setattr('normal', 'reverse');
+$T->term_move(3, 0); $T->term_addstr("Reverse");
+$T->term_setattr('normal', 'bold', 'reverse');
+$T->term_move(4, 0); $T->term_addstr("Bold reverse");
+$T->term_setattr('normal');
+waitfor();
+
+
+#
+# Window size tests.
+#
+
+$rsub = sub {
+	$T->term_clear();
+	for ($i = 0; $i < $T->term_lines; $i++) {
+		$T->term_move($i, 0); $T->term_addstr('#');
+		$T->term_move($i, $T->term_cols - 1); $T->term_addstr('#');
+	}
+	for ($i = 0; $i < $T->term_cols; $i++) {
+		$T->term_move(0, $i); $T->term_addstr('#');
+		$T->term_move($T->term_lines - 1, $i); $T->term_addstr('#');
+	}
+	$T->term_move(1, 1);
+	$T->term_addstr("Terminal size test.");
+	$T->term_move(2, 1);
+	$T->term_addstr(sprintf("Size = (%d, %d)", $T->term_lines, $T->term_cols));
+	$T->term_refresh();
+};
+&$rsub();
+while ($c = waitfor()) {
+	#&$rsub() if ($c eq 'r');
+	last if (defined $c);
+}
+
+
+#
+# Input test.
+#
+
+$T->term_clear();
+$T->term_move(0, 0);
+$T->term_addstr("Input test.");
+$T->term_move(1, 0);
+$T->term_addstr("Press <q> to continue.");
+while ($c = waitfor()) {
+	$T->term_move(3, 0);
+	$T->term_delete_to_end();
+	$T->term_addstr("Input: " . $c);
+	last if ($c eq 'q');
+}
+
+
+$T->term_clear();
+$T->term_refresh();
+
+$T->term_end();
