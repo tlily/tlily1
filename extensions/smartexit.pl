@@ -3,16 +3,16 @@
 #
 
 register_eventhandler(Type => 'scommand',
-		      Call => \&handler);
+                      Call => \&handler);
 
 sub handler {
     my($e, $h) = @_;
     my $t = $e->{Text};
     $t =~ s/\s.*$//;
 
-    if (($command eq '/detach') || ($command eq '/bye')) {
+    if (($t =~ m#^/det#) || ($t eq '/bye')) {
+	ui_output "Exiting smartly...";
 	$config{exit_on_disconnect} = 1;
     }
-
     return 0;
 }
