@@ -5,7 +5,6 @@ use Exporter;
 use LC::Server;
 use LC::parse;
 use LC::Event;
-use LC::log;
 
 @ISA = qw(Exporter);
 

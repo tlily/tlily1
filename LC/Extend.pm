@@ -10,7 +10,6 @@ use LC::parse;
 use LC::User;
 use LC::Command;
 use LC::State;
-use LC::log;
 use LC::Config;
 use LC::Event;
 #require "dumpvar.pl";
@@ -79,7 +78,6 @@ sub extension($) {
     push @share,@LC::User::EXPORT;
     push @share,@LC::Command::EXPORT;
     push @share,@LC::State::EXPORT;
-    push @share,@LC::log::EXPORT;
     push @share,@LC::Config::EXPORT;
     push @share,@LC::Event::EXPORT;
     $TL_VERSION=$main::TL_VERSION;

@@ -8,7 +8,6 @@ use LC::UI;
 use LC::parse;
 use LC::Config;
 use LC::Event;
-use LC::log;
 
 @ISA = qw(Exporter Tie::StdHash);
 

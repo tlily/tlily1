@@ -2,7 +2,6 @@
 package LC::Server;
 
 use Exporter;
-use LC::log;
 use LC::Event;
 use IO::Socket;
 use POSIX;
