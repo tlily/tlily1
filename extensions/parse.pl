@@ -1,5 +1,5 @@
 # -*- Perl -*-
-# $Header: /data/cvs/tlily/extensions/parse.pl,v 2.5 1998/12/08 06:23:25 neild Exp $
+# $Header: /data/cvs/tlily/extensions/parse.pl,v 2.6 1999/01/04 18:23:54 neild Exp $
 =head1 NAME
 
 parse.pl - The lily event parser
@@ -52,6 +52,8 @@ my $msg_hdr = undef;
 my $msg_wrapchar;
 my @msg_dest;
 my $msg_raw;
+
+my %whopos = ();
 
 
 # Take raw server output, and deal with it.
@@ -453,8 +455,26 @@ sub parse_line($$) {
     # /who output ############################################################
 
     # /who header lines
-    if ($line =~ /^  Name.*On Since/ ||
-	$line =~ /^\s+----\s+--------\s+----\s+-----\s*$/) {
+    if ($line =~ /^  Name.*On Since/) {
+	%event = (Type => 'text',
+		  For => 'who');
+	goto found;
+    }
+    if ($line =~ /^(\s+)(-+)(\s+)(-+)(\s+)(-+)(\s+)(-+)\s*$/) {
+	my @p = ();
+	while ($line =~ /(-*)\s*/g) {
+		push @p, length($1) if ($1);
+		push @p, pos($line);
+	}
+
+	%whopos = ( name_s  => $p[0],
+	            name_l  => 39,
+	            since_s => $p[2],
+	            since_l => $p[3],
+	            idle_s  => $p[4] - 2,
+	            idle_l  => $p[5] + 2,
+	            state_s => $p[6] - 1,
+	            state_l => 6 );
 
 	%event = (Type => 'text',
 		  For => 'who');
@@ -464,20 +484,16 @@ sub parse_line($$) {
     # /who information
     if (($line =~ /^[\>\<\| ][ \-\=\+][^\(]/) &&
 	(length($warm) > 63) &&
-	((substr($warm, 57, 6) eq '  here') ||
-	 (substr($warm, 57, 6) eq '  away') ||
-	 (substr($warm, 57, 6) eq 'detach'))) {
+	((substr($warm, $whopos{state_s}, $whopos{state_l}) eq '  here') ||
+	 (substr($warm, $whopos{state_s}, $whopos{state_l}) eq '  away') ||
+	 (substr($warm, $whopos{state_s}, $whopos{state_l}) eq 'detach'))) {
 	my($name, $blurb) = (undef, undef);
-	my $state = substr($warm, 57, 6);
+	my $state = substr($warm, $whopos{state_s}, $whopos{state_l});
 	$state =~ s/^\s*//;
 
-	if (substr($warm, 2, 39) =~ /^([^\[]+) \[(.*)\]/) {
-	    ($name, $blurb) = ($1, $2);
-	} else {
-	    $name = substr($warm, 2, 39);
-	    $name =~ s/^\s*//;
-	    $name =~ s/\s*$//;
-	    undef $name if (length($name) == 0);
+	my $nameblurb = substr($warm, $whopos{name_s}, $whopos{name_l});
+	if ($nameblurb =~ /^([^\[\s]+)( \[(.*)\])?/) {
+	    ($name, $blurb) = ($1, $3);
 	}
 
 	if ($name) {

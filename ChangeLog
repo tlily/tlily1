@@ -1,5 +1,9 @@
 Version 1.0.3-post
+  * [extensions/parse.pl] Parser fixes to cope with the changed lily output
+    format for /who.  This should hopefully work on all servers -- it
+    autodetects based on the /who headers.  [DPN]
   * [extensions/keepalive.pl] Changes to keepalive: I think it should actually
+    work now.  [DPN]
 
 Version 1.0.3
   * [Build.PL] Remove lilybot on a 'perl Build.PL clean'
