@@ -240,7 +240,7 @@ sub parse_line($$) {
 	($line =~ /^\# \\\</) ||
 	($line =~ /^\# \#\#\#/)) {
 
-	if (substr($line, 2, 1) eq '*') {
+	if (((substr($line, 2, 1) eq '*')) || (substr($line, 2, 1) eq '>')) {
 	    $line = substr($line, 2);
 	    $review = '# ';
 	} else {

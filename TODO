@@ -1,8 +1,6 @@
 Bugs to fix:
 - Line tagging is useless.
 
-- Emote sends are not parsed properly during /reviews.
-
 
 Feature requests:
 - Make home/end do something.  (C-a/C-e or M-</M->)  (Honker suggests making
