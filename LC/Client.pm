@@ -1,4 +1,5 @@
 # -*- Perl -*-
+# $header$
 package LC::Client;
 
 use LC::Event;

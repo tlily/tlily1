@@ -1,4 +1,5 @@
 @@PERL@@
+# $Header: /data/cvs/tlily/lilybot.PL,v 1.2 1998/06/01 16:53:34 mjr Exp $
 
 require 5.00307;
 
