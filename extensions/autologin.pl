@@ -9,6 +9,13 @@ unshift @files, $config{'autologin_file'} if ($config{'autologin_file'});
 
 init();
 
+register_help_short("autologin", "Module for automating the login process.");
+register_help_long("autologin", 
+"Reads files containing lines of the format: <green>alias host port login passwd</green> in order to automate your login process to the specified server.  Unlike lclient, all fields must be present or the line will be ignored. (FIXME!)
+Config options for autologin:
+    \$autologin_file = '<yellow>filename</yellow>';
+        Prepends <yellow>filename</yellow> to the list of filenames containing autologin information.
+");
 
 sub init {
     my $file;
