@@ -1,5 +1,5 @@
 # -*- Perl -*-
-# $Header: /data/cvs/tlily/extensions/zone.pl,v 1.11 1998/05/29 05:12:35 mjr Exp $
+# $Header: /data/cvs/tlily/extensions/zone.pl,v 2.1 1998/06/12 08:57:02 albert Exp $
 #
 # Timezone support.
 # This module rewrites dates into the local timezone.

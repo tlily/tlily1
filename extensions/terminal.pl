@@ -1,4 +1,4 @@
-# $Header: /data/cvs/tlily/extensions/terminal.pl,v 1.2 1998/05/29 05:12:34 mjr Exp $
+# $Header: /data/cvs/tlily/extensions/terminal.pl,v 2.1 1998/06/12 08:56:55 albert Exp $
 #
 # Terminal extension.
 #

@@ -1,4 +1,4 @@
-# $Header: /data/cvs/tlily/extensions/pipes.pl,v 1.5 1998/06/10 00:09:24 neild Exp $
+# $Header: /data/cvs/tlily/extensions/pipes.pl,v 2.1 1998/06/12 08:56:45 albert Exp $
 #
 # Piped command processing.
 #

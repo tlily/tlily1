@@ -1,4 +1,4 @@
-# $Header: /data/cvs/tlily/extensions/misc.pl,v 1.16 1998/05/29 05:12:30 mjr Exp $
+# $Header: /data/cvs/tlily/extensions/misc.pl,v 2.1 1998/06/12 08:56:42 albert Exp $
 register_eventhandler(Type => 'uunknown',
 		      Call => \&bang_handler);
 register_help_short('eval', "run perl code");

@@ -1,5 +1,5 @@
 # -*- Perl -*-
-# $Header: /data/cvs/tlily/LC/Extend.pm,v 1.27 1998/06/02 18:33:17 neild Exp $
+# $Header: /data/cvs/tlily/LC/Extend.pm,v 2.1 1998/06/12 08:56:10 albert Exp $
 package LC::Extend;
 
 use Exporter;

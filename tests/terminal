@@ -1,5 +1,5 @@
 #!/usr/local/bin/perl -w
-# $Header: /data/cvs/tlily/tests/terminal,v 1.3 1998/05/29 05:12:36 mjr Exp $
+# $Header: /data/cvs/tlily/tests/terminal,v 2.1 1998/06/12 08:57:04 albert Exp $
 
 use IO::Select;
 

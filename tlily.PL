@@ -1,5 +1,5 @@
 @@PERL@@
-# $Header: /data/cvs/tlily/tlily.PL,v 1.40 1998/06/12 01:36:28 albert Exp $
+# $Header: /data/cvs/tlily/tlily.PL,v 2.1 1998/06/12 08:56:00 albert Exp $
 
 require 5.00307;
 

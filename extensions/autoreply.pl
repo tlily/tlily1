@@ -1,5 +1,5 @@
 # -*- Perl -*-
-# $Header: /data/cvs/tlily/extensions/autoreply.pl,v 1.5 1998/05/29 05:12:25 mjr Exp $
+# $Header: /data/cvs/tlily/extensions/autoreply.pl,v 2.1 1998/06/12 08:56:28 albert Exp $
 
 register_eventhandler(Type => "send",
 		      Call => \&autoreply_event);

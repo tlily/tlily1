@@ -1,5 +1,5 @@
 # -*- Perl -*-
-# $Header: /data/cvs/tlily/extensions/gag.pl,v 1.10 1998/06/02 23:11:20 steve Exp $
+# $Header: /data/cvs/tlily/extensions/gag.pl,v 2.1 1998/06/12 08:56:32 albert Exp $
 
 #
 # The gag extension adds the ability to `gag' all sends from a given user.

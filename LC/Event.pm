@@ -1,5 +1,5 @@
 # -*- Perl -*-
-# $Header: /data/cvs/tlily/LC/Event.pm,v 1.16 1998/06/12 05:28:03 albert Exp $
+# $Header: /data/cvs/tlily/LC/Event.pm,v 2.1 1998/06/12 08:56:08 albert Exp $
 package LC::Event;
 
 =head1 NAME

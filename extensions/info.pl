@@ -1,5 +1,5 @@
 # -*- Perl -*-
-# $Header: /data/cvs/tlily/extensions/info.pl,v 1.20 1998/06/07 09:54:08 danaf Exp $
+# $Header: /data/cvs/tlily/extensions/info.pl,v 2.1 1998/06/12 08:56:36 albert Exp $
 
 sub info_set(%) {
     my %args=@_;

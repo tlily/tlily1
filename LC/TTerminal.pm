@@ -1,5 +1,5 @@
 # -*- Perl -*-
-# $Header: /data/cvs/tlily/LC/TTerminal.pm,v 1.8 1998/06/05 07:25:33 josh Exp $
+# $Header: /data/cvs/tlily/LC/TTerminal.pm,v 2.1 1998/06/12 08:56:17 albert Exp $
 package LC::TTerminal;
 
 use IO::Select;

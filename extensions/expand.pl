@@ -1,5 +1,5 @@
 # -*- Perl -*-
-# $Header: /data/cvs/tlily/extensions/expand.pl,v 1.13 1998/06/05 04:21:29 neild Exp $
+# $Header: /data/cvs/tlily/extensions/expand.pl,v 2.1 1998/06/12 08:56:30 albert Exp $
 
 my %expansions = ('sendgroup' => '',
 		  'sender'    => '',

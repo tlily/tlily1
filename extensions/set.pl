@@ -1,4 +1,4 @@
-# $Header: /data/cvs/tlily/extensions/set.pl,v 1.6 1998/06/12 06:13:41 albert Exp $
+# $Header: /data/cvs/tlily/extensions/set.pl,v 2.1 1998/06/12 08:56:48 albert Exp $
 sub dumpit {
     my($l,%H) = @_;
     $l = 0 if ! $l;

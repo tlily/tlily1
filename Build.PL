@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# $Header: /data/cvs/tlily/Build.PL,v 1.17 1998/06/12 08:19:13 albert Exp $
+# $Header: /data/cvs/tlily/Build.PL,v 2.1 1998/06/12 08:55:48 albert Exp $
 
 use Config;
 use Carp;

@@ -1,5 +1,5 @@
 # -*- Perl -*-
-# $Header: /data/cvs/tlily/LC/CTerminal.pm,v 1.21 1998/06/12 05:19:30 albert Exp $
+# $Header: /data/cvs/tlily/LC/CTerminal.pm,v 2.1 1998/06/12 08:56:03 albert Exp $
 package LC::CTerminal;
 
 =head1 NAME

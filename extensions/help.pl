@@ -1,4 +1,4 @@
-# $Header: /data/cvs/tlily/extensions/help.pl,v 1.7 1998/05/29 05:12:27 mjr Exp $
+# $Header: /data/cvs/tlily/extensions/help.pl,v 2.1 1998/06/12 08:56:33 albert Exp $
 register_user_command_handler('help', \&help_cmd);
 register_help_short('help', "help on commands");
 register_help_long('help', 

@@ -1,5 +1,5 @@
 # -*- Perl -*-
-# $Header: /data/cvs/tlily/extensions/log.pl,v 1.3 1998/05/29 05:12:29 mjr Exp $
+# $Header: /data/cvs/tlily/extensions/log.pl,v 2.1 1998/06/12 08:56:39 albert Exp $
 
 #
 # Log a lily session to a file.

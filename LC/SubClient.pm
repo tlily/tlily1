@@ -1,5 +1,5 @@
 # -*- Perl -*-
-# $Header: /data/cvs/tlily/LC/SubClient.pm,v 1.12 1998/05/29 06:09:28 josh Exp $
+# $Header: /data/cvs/tlily/LC/SubClient.pm,v 2.1 1998/06/12 08:56:16 albert Exp $
 package LC::SubClient;
 
 # bugs:

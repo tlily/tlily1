@@ -1,5 +1,5 @@
 # -*- Perl -*-
-# $Header: /data/cvs/tlily/LC/State.pm,v 1.22 1998/06/10 16:47:54 neild Exp $
+# $Header: /data/cvs/tlily/LC/State.pm,v 2.1 1998/06/12 08:56:14 albert Exp $
 package LC::State;
 
 =head1 NAME

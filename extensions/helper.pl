@@ -1,5 +1,5 @@
 # -*- Perl -*-
-# $Header: /data/cvs/tlily/extensions/helper.pl,v 1.1 1998/06/05 23:07:48 steve Exp $
+# $Header: /data/cvs/tlily/extensions/helper.pl,v 2.1 1998/06/12 08:56:34 albert Exp $
 
 my $top = "";
 

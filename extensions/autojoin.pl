@@ -1,4 +1,4 @@
-# $Header: /data/cvs/tlily/extensions/autojoin.pl,v 1.3 1998/06/12 05:38:45 albert Exp $
+# $Header: /data/cvs/tlily/extensions/autojoin.pl,v 2.1 1998/06/12 08:56:26 albert Exp $
 register_eventhandler(Type => 'disccreate',
     Call => sub {
 	my($e, $h) = @_;

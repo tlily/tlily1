@@ -1,5 +1,5 @@
 # -*- Perl -*-
-# $Header: /data/cvs/tlily/extensions/source.pl,v 1.1 1998/06/05 23:07:51 steve Exp $
+# $Header: /data/cvs/tlily/extensions/source.pl,v 2.1 1998/06/12 08:56:50 albert Exp $
 
 sub do_source($) {
     my ($fname) = @_;

@@ -1,5 +1,5 @@
 # -*- Perl -*-
-# $Header: /data/cvs/tlily/LC/User.pm,v 1.19 1998/06/01 02:19:56 neild Exp $
+# $Header: /data/cvs/tlily/LC/User.pm,v 2.1 1998/06/12 08:56:22 albert Exp $
 package LC::User;
 
 use Exporter;

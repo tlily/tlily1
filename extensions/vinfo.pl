@@ -1,4 +1,4 @@
-# $Header: /data/cvs/tlily/extensions/vinfo.pl,v 1.4 1998/05/29 05:12:35 mjr Exp $
+# $Header: /data/cvs/tlily/extensions/vinfo.pl,v 2.1 1998/06/12 08:57:08 albert Exp $
 #
 # insecure.pl
 #

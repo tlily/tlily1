@@ -1,4 +1,4 @@
-# $Header: /data/cvs/tlily/extensions/keepalive.pl,v 1.3 1998/06/07 09:55:48 danaf Exp $
+# $Header: /data/cvs/tlily/extensions/keepalive.pl,v 2.1 1998/06/12 08:56:38 albert Exp $
 #
 # keepalive -- periodically ping the server, just to verify our connection
 #              is still there.

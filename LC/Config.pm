@@ -1,5 +1,5 @@
 # -*- Perl -*-
-# $Header: /data/cvs/tlily/LC/Config.pm,v 1.16 1998/06/12 05:23:47 albert Exp $
+# $Header: /data/cvs/tlily/LC/Config.pm,v 2.1 1998/06/12 08:56:07 albert Exp $
 package LC::Config;
 
 use Safe;
