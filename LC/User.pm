@@ -1,5 +1,5 @@
 # -*- Perl -*-
-# $Header: /data/cvs/tlily/LC/User.pm,v 2.4 1998/12/07 22:37:56 neild Exp $
+# $Header: /data/cvs/tlily/LC/User.pm,v 2.5 1998/12/08 06:04:51 neild Exp $
 package LC::User;
 
 use Exporter;
@@ -124,7 +124,7 @@ sub output_send($) {
     my($event) = @_;
 
     if ($event->{Emote}) {
-	ui_output(Text => $event->{Body},
+	ui_output(Text => "<emote>" . $event->{Body} . "</emote>",
 	          Target => $event->{Target},
 	          WrapChar => $event->{WrapChar});
 	return;
