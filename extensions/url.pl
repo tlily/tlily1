@@ -13,7 +13,7 @@ sub handler {
 }
 
 sub url_cmd {
-    ($arg,$num)=@_;
+    ($arg,$num)=split /\s+/, "@_";
     my $url;
     
     if ($arg eq "clear") {
@@ -33,6 +33,7 @@ sub url_cmd {
 	if ($num=~/^\d+$/) { $url=$urls[$num-1]; } else { $url=$num; }
 	if (! $url) { ui_output("(invalid URL number $num)"); }
 
+	ui_output("(viewing $url)");
 	my $cmd=$config{urlviewer};
 	if ($cmd =~ /%URL%/) {
 	    $cmd=~s/%URL%/$url/g;
