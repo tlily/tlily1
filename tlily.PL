@@ -135,7 +135,7 @@ sub init_connection_handling() {
 	    $state = 'connected';
 	}
 	if ($state eq 'connected') {
-	    deregister_eventhandler($handler->{Id});
+	    deregister_handler($handler->{Id});
 	    on_connect();
 	}
 	return 0;

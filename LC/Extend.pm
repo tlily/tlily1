@@ -116,7 +116,7 @@ sub extension_unload($) {
 
     @a = (@{$ext->{EventHandlers}});
     foreach $x (@a) {
-	deregister_eventhandler($x);
+	deregister_handler($x);
     }
 
     @a = (@{$ext->{UICallbacks}});
@@ -208,12 +208,6 @@ sub register_timedhandler(%) {
 sub deregister_handler($) {
     my($id) = @_;
     &LC::Event::deregister_handler($id);
-    list_remove @{$Extensions{/current/}->{EventHandlers}}, $id;
-}
-
-sub deregister_eventhandler($) {
-    my($id) = @_;
-    &LC::Event::deregister_eventhandler($id);
     list_remove @{$Extensions{/current/}->{EventHandlers}}, $id;
 }
 

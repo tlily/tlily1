@@ -156,9 +156,7 @@ use IO::Select;
 @EXPORT = qw(&register_eventhandler
 	     &register_iohandler
 	     &register_timedhandler
-	     &deregister_eventhandler
 	     &deregister_handler
-	     &deregister_eventhandler
 	     &dispatch_event
 	     &event_loop);
 

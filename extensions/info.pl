@@ -38,7 +38,7 @@ sub info_set($;\@) {
 		server_send($l);
 	    }
 	}
-	deregister_eventhandler($handler->{Id});
+	deregister_handler($handler->{Id});
 	return 0;
     });
     

@@ -72,7 +72,7 @@ sub statusline_init() {
 	my($event, $handler) = @_;
 	if ($event->{Text} =~ /^Welcome to \w* at\s+(.*?)\s*$/) {
 	    $status{Server} = $1;
-	    deregister_eventhandler($handler->{Id});
+	    deregister_handler($handler->{Id});
 	}
 	return 0;
     });
