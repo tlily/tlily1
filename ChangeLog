@@ -1,4 +1,6 @@
 Version 0.8b
+  * [extensions/parse.pl] Fixed parser to display the lily banner
+                          correctly [SMC]
   * [extensions/misc.pl] Added support for !! to execute last !command [SMC]
   * [LC/State.pm, extensions/expand.pl] Added emote_oops.  [DPN]
   * [extensions/zone.pl, LC/StatusLine.pm] Fix overflows when $zonedelta or

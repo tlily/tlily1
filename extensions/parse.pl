@@ -35,7 +35,7 @@ The exact server output for the line.
 	    '\(Y\/n\)\s*$',
             '^login:',
 	    '^password:',
-	    '^\* ');
+	    '^\* $');
 
 my $partial;
 
