@@ -3,11 +3,10 @@ package LC::TTerminal;
 
 use IO::Select;
 use Term::Cap;
+use Term::Size;
 use POSIX;
 
 use LC::Config;
-
-require 'termio.ph';
 
 my %attrs = ('bold' => 0,
              'reverse' => 0);
@@ -34,27 +33,12 @@ sub term_lines () { $term_lines; }
 sub term_cols () { $term_cols; }
 
 
-# Determine the terminal size.
-sub term_get_size () {
-    my $winsize = '';
-    #my $TIOCGWINSZ = (ord('T') << 8) | 104;
-    if (ioctl(STDIN, &TIOCGWINSZ, $winsize)) {
-	my($ws_row, $ws_col, $ws_xp, $ws_yp) = unpack("SSSS", $winsize);
-	$ws_row = 24 if ($ws_row <= 0);
-	$ws_col = 80 if ($ws_col <= 0);
-	($LINES, $COLS) = ($ws_row, $ws_col);
-	($ENV{LINES}, $ENV{COLUMNS}) = ($ws_row, $ws_col);
-	return($ws_row, $ws_col);
-    }
-    return($LINES, $COLS);
-}
-
 # Initialize the terminal.
 sub term_init ($) {
     my $self = shift;
     return if ($term_up);
     $resize_cb = $_[0];
-    ($term_lines, $term_cols) = term_get_size;
+    ($term_cols, $term_lines) = Term::Size::chars;
 
     my $termios = new POSIX::Termios;
     $termios->getattr;
@@ -275,7 +259,7 @@ sub term_select ($$$$) {
 
     if ($term_resize_flag) {
 	$term_resize_flag = 0;
-	($term_lines, $term_cols) = term_get_size;
+	($term_cols, $term_lines) = Term::Size::chars;
 	&$resize_cb if (defined $resize_cb);
     }
 
