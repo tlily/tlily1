@@ -51,14 +51,15 @@ $extext='\.pl';
 print join("\n", @modfiles), "\n" if $debug;
 print join("\n", @extfiles), "\n" if $debug;
 
-if(!$target) {
+if(!$target || $target eq 'tlily') {
 	&make_tlily;
+	print "To install Tigerlily, do a 'perl Build.PL install'.\n";
 }
 elsif($target eq 'install') {
 	&make_tlily;
 	
 	if($DIRS_ARE_LOCAL) {
-		print "Your installation directories are set for local development of tigerlily.\n";
+		print "\nYour installation directories are set for local development of tigerlily.\n";
 		my($inp) = &ask("Do you really want to install tigerlily?", "n");
 		if($inp eq '' || $inp =~ /(n|no)/io) {
 			print "OK, bailing out of install.\n";
@@ -178,15 +179,7 @@ elsif($target eq 'clean') {
 	unlink("tlily");
 	unlink("tlily-$VERSION.tar");
 	unlink("tlily-$VERSION.tar.gz");
-	if(!$yesdamnit && -f "build.cache") {
-		my($inp) = &ask("Remove build.cache?", "y");
-		if($inp eq '' || $inp =~ /(y|yes)/io) {
-			unlink("build.cache");
-		}
-	}
-	else {
-		if($yesdamnit) { unlink("build.cache"); }
-	}
+	unlink("build.cache");
 }
 else {
 	print STDERR "Unknown target $target\n";
@@ -328,24 +321,24 @@ the current directory only.
 			if($inp eq 'Current') {
 				&use_current_dir; return;
 			}
-			$PREFIX=$inp;
+			$PREFIX=&tilde_expand($inp);
 		}
 	
 		$BINDIR=$PREFIX."/bin";
 		$inp = &ask("\nInstallation directory for the tlily script?", $BINDIR);
-		if($inp) { $BINDIR=$inp; }
+		if($inp) { $BINDIR=&tilde_expand($inp); }
 		
 		$LIBDIR=$PREFIX."/lib/tlily";
 	
 		$LIBMODDIR=$LIBDIR; # the LC dir will be made below this
 		print "\nInstallation directory for the tlily internal modules?  (The directory 'LC'\n";
 		$inp = &ask("will be created under this directory for the internal modules.)", $LIBMODDIR);
-		if($inp) { $LIBMODDIR=$inp; }
+		if($inp) { $LIBMODDIR=&tilde_expand($inp); }
 	
 		$LIBEXTDIR=$LIBDIR."/extensions";
 		$inp = &ask("\nInstallation directory for the tlily global extensions?",
 		    $LIBEXTDIR);
-		if($inp) { $LIBEXTDIR=$inp; }
+		if($inp) { $LIBEXTDIR=&tilde_expand($inp); }
 		$DIRS_ARE_LOCAL = '0';
 
 		&write_buildcache;
@@ -483,4 +476,33 @@ use Exporter;
 );
 	close $fh;
 	chmod(0444, "LC/version.pm");
+}
+
+sub tilde_expand {
+	my($inp) = @_;
+
+	my(@inp) = split('/', $inp);
+
+	foreach $pe (@inp) {
+		if($pe eq '~') {
+			my($name,$passwd,$uid,$gid,$quota,$comment,$gcos,$dir,$shell) =
+			    getpwuid($>);
+			if(!$dir) {
+				print "No home directory for uid ", $>, ", ignoring ~.\n";
+				next;
+			}
+			$pe = $dir;
+		}
+		elsif($pe =~ /~(\w+)/o) {
+			my($name,$passwd,$uid,$gid,$quota,$comment,$gcos,$dir,$shell) =
+			    getpwnam($1);
+			if(!$dir) {
+				print "No home directory for user ", $1, ", ignoring ~", $1,
+				    ".\n";
+				next;
+			}
+			$pe =~ s/~(\w+)/$dir/;
+		}
+	}
+	join("/", @inp);
 }
