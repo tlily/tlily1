@@ -42,10 +42,12 @@ sub url_cmd {
 	}
 	if ($config{urlviewer_text}) {
 	    ui_end();
-	    system($cmd);
+	    $ret=`$cmd 2>&1`;	    
 	    ui_start();	    
+	    ui_output($ret) if $ret;
 	} else {
-	    system($cmd);
+  	    $ret=`$cmd 2>&1`;
+	    ui_output($ret) if $ret;
 	}
 	return
     }
