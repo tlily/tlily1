@@ -1,6 +1,12 @@
 # -*- Perl -*-
 
 # This is a dummy UI module for the time being..
+
+# How do you use this?  It's nice and kludgey.  Move the UI.pm file aside, 
+# and ln -s UI-dummy.pm UI.pm.
+
+# Also configure the $usable flag however you want it.
+
 package LC::UI;
 
 use Exporter;
@@ -26,6 +32,8 @@ use Carp qw(cluck);
 	     $ui_cols
 	     &ui_escape
 	    );
+	    
+$usable=0;	    
 
 sub ui_start {
     print "ui_start\n";
@@ -56,12 +64,19 @@ sub ui_output {
     } else {
 	%h = @_;
     }
-
-    print "ui_output: $h{Text}\n";
+    
+    if ($usable) {
+       # if I felt nice, i'd try to strip out the tags at this point too, but
+       # that's non-trivial, and for performance testing, I want to keep this
+       # as raw as I can.
+       print "$h{Text}\n";
+    } else {
+       print "ui_output: $h{Text}\n";
+    }       
 }
 
 sub ui_status {
-    print "ui_status @_\n";
+    print "ui_status @_\n" unless $usable;
     return undef;
 }
 
@@ -107,12 +122,14 @@ sub ui_prompt {
     print "ui_prompt @_\n";
 }
 
-
 sub ui_escape {
     my ($line)=@_;
+    $line =~ s/\</\\\</g; $line =~ s/\>/\\\>/g;
+#    $line =~ s/\\\\([<>])/\\$1/g;  #what the heck!
 
     return $line;
 }
+
 
 sub ui_select($$$$) {
     my($rr, $wr, $er, $to) = @_;
