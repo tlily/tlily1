@@ -1,4 +1,4 @@
-Version 0.3c
+Version 0.4a
   * Bugfix: The handler registering functions were not returning the correct
     ID to extensions.  [DPN]
   * Added prompt handing on the input line.  [DPN]
