@@ -734,12 +734,12 @@ sub parse_user() {
     if ($line =~ /^\s*%(\S*)\s*(.*)/) {
 	%ev = ( Type => 'ccommand',
 		Command => $1,
-		Args => [ quotewords("\\s+", 0, $2) ] );
+		Args => [ split /\s+/, $2 ] );
     } elsif ($line =~ /^\s*\/(\S*)\s*(.*)/) {
 	%ev = ( Type => 'scommand',
 		Command => $1,
-		Args => [ quotewords("\\s+", 0, $2) ] );
-    } elsif ($line =~ /^([\S;:]*)[;:](.*)/) {
+		Args => [ split /\s+/, $2 ] );
+    } elsif ($line =~ /^([^\s;:]*)[;:](.*)/) {
 	%ev = ( Type => 'usend',
 		To => [ split /,/, $1 ],
 		Body => $2 );
