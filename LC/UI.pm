@@ -168,7 +168,13 @@ use LC::Config;
 	     &ui_prompt
 	     &ui_select
 	     &ui_set
+	     &ui_gag
+	     &ui_gagged
+	     &ui_ungag
+	     &ui_gaglist
 	     $ui_cols);
+
+my %gagged;
 
 my $term;
 
@@ -247,7 +253,7 @@ my $attr_cur_fg = COLOR_WHITE;
 #   FOattr <attr>
 #   FOpopattr <attr>
 #   FOtext <length>
-
+#   FOgag
 
 my $FOnull     = 0;
 my $FOwrapchar = 1;
@@ -256,7 +262,7 @@ my $FOnewline  = 3;
 my $FOattr     = 4;
 my $FOpopattr  = 5;
 my $FOtext     = 6;
-
+my $FOgag      = 7;
 
 # A list of lines in the text window.  These lines are stored unformatted.
 my @text_lines = (" ");
@@ -373,6 +379,12 @@ sub win_draw_line($$$@) {
 
     my $i;
     for ($i = 0; $i < scalar(@$fmt); $i++) {
+	if ($fmt->[$i] == $FOgag) {
+	    $from=$fmt->[++$i];
+	    if ($gagged{$from}) {
+		$line=muffle($line);	 
+	    }
+	}
 	if ($fmt->[$i] == $FOwrapchar) {
 	    $wrapchar = $fmt->[++$i];
 	} elsif (($fmt->[$i] == $FOwrap) || ($fmt->[$i] == $FOnewline)) {
@@ -500,6 +512,10 @@ sub line_wrap($$) {
 	    next;
 	} elsif ($t == $FOtext) {
 	    $len += shift @$fmt;
+	    next;
+	} elsif ($t == $FOgag) {
+	    my $from=shift @$fmt;
+	    push @fmt,$t,$from;
 	    next;
 	}
 
@@ -641,10 +657,10 @@ sub win_scroll($) {
 	    $term->term_delete_line();
 	    $term->term_move(win_height(),0);
 	    $term->term_insert_line();
-
+	    
 	    win_draw_line(win_height(),
 			  $text_lines[$text_l], $text_fmts[$text_l],
-			  $text_r, 1);
+			  $text_r, 1);	
 	}
     } elsif ($n < 0) {
 	my $i;
@@ -719,6 +735,14 @@ sub ui_output {
     my($line, $fmt);
     ($line, $fmt) = fmtline($h{Text});
     unshift @$fmt, $FOwrapchar, $h{WrapChar} if ($h{WrapChar});
+    
+    # There has GOT to be a better way to do this ;)
+    my ($fr)=grep /^from:/,@{$h{Tags}};	    
+    my ($from)=($fr=~/from:(.*)/);	    
+
+    if ($from && $gagged{$from} && $line=~/^\s*\-/) { 
+	unshift @$fmt, $FOgag, $from;
+    }
 
     push @text_lines, $line;
     push @text_fmts, $fmt;
@@ -1212,6 +1236,7 @@ sub ui_set(%) {
 	    win_redraw();
 	    $term->term_refresh();
 	}
+	
     }
 }
 
@@ -1219,6 +1244,56 @@ sub ui_set(%) {
 sub ui_select($$$$) {
     my($r, $w, $e, $t) = @_;
     return $term->term_select($r, $w, $e, $t);
+}
+
+
+# Gag handling!
+
+sub isupper {
+    my($c) = @_;
+    return ((ord($c) >= 'A') && (ord($c) <= 'Z')) ? 1 : 0;
+}
+
+sub muffle($) {
+    my($line) = @_;
+    my $new = $line;
+
+    $new =~ s/\b\w\b/m/g;
+    $new =~ s/\b\w\w\b/mm/g;
+    $new =~ s/\b\w\w\w\b/mrm/g;
+    $new =~ s/\b(\w+)\w\w\w\b/'m'.('r'x length($1)).'fl'/ge;
+
+    my $i;
+    for ($i = 0; $i < length($line); $i++) {
+	substr($new, $i, 1) = uc(substr($new, $i, 1))
+	    if (isupper(substr($line, $i, 1)));
+    }
+
+    return $new;
+}
+
+
+sub ui_gag($) {
+    my ($name)=@_;
+    
+    $gagged{$name}=1;
+    redraw();
+}
+
+sub ui_ungag($) {
+    my ($name)=@_;
+    
+    delete $gagged{$name};
+    redraw();
+}
+
+sub ui_gagged($) {
+    my ($name)=@_;
+    return $gagged{$name};
+}
+
+sub ui_gaglist() {    
+    return keys %gagged;
 }
 
 1;
