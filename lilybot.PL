@@ -1,5 +1,5 @@
 @@PERL@@
-# $Header: /data/cvs/tlily/lilybot.PL,v 1.2 1998/06/01 16:53:34 mjr Exp $
+# $Header: /data/cvs/tlily/lilybot.PL,v 1.3 1998/06/02 20:05:34 josh Exp $
 
 require 5.00307;
 
@@ -137,6 +137,22 @@ sub eventhandler {
 	    if ($event->{Raw} =~ /grope/i) {
 		response("$to;Me grope good!");		
 	    }
+
+	    if ($event->{Raw} =~ /excuse/i) {
+		$exc=getquote("http://www.cae.wisc.edu/cgi-bin/ballard/bofhserver.pl");
+		$exc =~ s/The cause of the problem is/Automatic Excuse/;
+		
+		if ($exc =~ /\S/) {
+		    response("$to;$exc");		
+		}
+	    }
+
+	    if ($event->{Raw} =~ /surreal|weird|compliment/i) {
+		$comp=getquote("http://pharmdec.wustl.edu/cgi-bin/jardin_scripts/SCG");		
+		if ($comp =~ /\S/) {
+		    response("$to;$comp");		
+		}
+	    }
 	}
 	
 	chomp($send=$event->{Raw});       
@@ -151,6 +167,27 @@ sub response {
     ($string)=@_;
     print "(sending \"$string\" to server)\n";
     server_send("$string\n");
+}
+
+sub getquote {
+    my ($url)=@_;
+    my ($ret,$p);
+
+    open (E,"lynx -dump $url |");
+    foreach (<E>) {
+	print;
+
+	if (/____/) {
+	    $p=! defined($p);
+	    next;
+	}
+	if (/^\s*$/) { next; }
+	s/\s+/ /g;
+	if ($p) { $ret .= $_; }
+    }
+    close(E);    
+
+    $ret;
 }
 
 1;
