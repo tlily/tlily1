@@ -1,5 +1,5 @@
 # -*- Perl -*-
-# $Header: /data/cvs/tlily/tlily.global,v 2.2 1998/10/01 17:45:40 neild Exp $
+# $Header: /data/cvs/tlily/tlily.global,v 2.3 1998/12/08 21:36:51 steve Exp $
 # Global defaults for tlily
 # PLEASE DO NOT EDIT EXCEPT FOR DEVELOPMENT!
 # EDIT YOUR SITE CONFIG FILE INSTEAD!
@@ -46,6 +46,14 @@ $browser_textmode=0;
 $browser="netscape -remote 'openURL(%URL%)'";
 $clocktype=24;
 $clockdelta=0;
+
+# Httpd settings
+# Time for the httpd to remain active after the last file has been
+# deregistered.
+$httpdtimeout=300;
+
+# If 0, then don't print httpd debug messages.
+$debughttpd=1;
 
 # End defaults
 

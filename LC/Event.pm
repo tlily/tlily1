@@ -1,5 +1,5 @@
 # -*- Perl -*-
-# $Header: /data/cvs/tlily/LC/Event.pm,v 2.4 1998/12/04 01:10:48 josh Exp $
+# $Header: /data/cvs/tlily/LC/Event.pm,v 2.5 1998/12/08 21:36:52 steve Exp $
 package LC::Event;
 
 # NOTES ON MEMORY LEAKS

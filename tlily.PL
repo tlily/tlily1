@@ -1,5 +1,5 @@
 @@PERL@@
-# $Header: /data/cvs/tlily/tlily.PL,v 2.2 1998/10/24 05:16:48 josh Exp $
+# $Header: /data/cvs/tlily/tlily.PL,v 2.3 1998/12/08 21:36:50 steve Exp $
 
 require 5.00307;
 
@@ -21,6 +21,7 @@ use LC::StatusLine;
 use LC::Extend;
 use LC::Event;
 use LC::SubClient;
+use LC::Httpd;
 $|=1;
 
 @ORIGINAL_ARGV=@ARGV;

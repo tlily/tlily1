@@ -1,5 +1,5 @@
 @@PERL@@
-# $Header: /data/cvs/tlily/lilybot.PL,v 2.5 1998/12/04 01:10:43 josh Exp $
+# $Header: /data/cvs/tlily/lilybot.PL,v 2.6 1998/12/08 21:36:48 steve Exp $
 
 # This is the source to the bot running as "MechaJosh" on RPI-Lily.
 
