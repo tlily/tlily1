@@ -1,6 +1,13 @@
 Version 0.5b
   * [extensions/misc.pl] %eval prints the result of the eval'd expr.  [DPN]
   * [extensions/info.pl] Fixed the breeding backslash bug.  [DPN]
+  * [extensions/zone.pl] Activate the zone extension if zonetype is set [CWS]
+  * [LC/Config.pm] Forgot a shift @ARGV in one of the if statements
+    processing the command line [CWS]
+  * [LC/Config.pm] the -m/-mono option wasn't being special-cased like
+    it should have been in the command line parser [CWS]
+  * [tlily.PL] the ?: construct to choose the mono/color choice hash
+    didn't work right -- yanked it out to a full if() stmt [CWS]
 
 Version 0.5a
   * [Build.PL] Bugfix:  The perl library 'use lib (...' line shouldn't have
