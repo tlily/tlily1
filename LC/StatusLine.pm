@@ -45,8 +45,6 @@ use LC::Event;
 	     );
 
 my $current_id=42;
-my ($status_Pseudo, $status_Blurb, $status_State, $status_Server);
-my $status_SyncState;
 my $lastredraw;
 
 sub redraw_statusline() {
@@ -65,7 +63,8 @@ sub redraw_statusline() {
 	    my $val=${$d->{Var}};
    	    if (! $val && $d->{Call}) {		
 		$val=&{$d->{Call}};
-            } 
+            }
+#	    print STDERR "StatusLine Draw ID $id=\"$val\" VAR=$d->{Var} CALL=$d->{Call}\n";
             next unless length($val);
 	    
    	    my $position=$d->{Position};
@@ -231,7 +230,7 @@ sub status_time {
 sub status_username {
     my $name = $status_Pseudo;
     $name .= " [$status_Blurb]" if (defined($status_Blurb));
-    return $name;
+    return $name;    
 }
 
 sub status_state {
