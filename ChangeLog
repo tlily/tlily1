@@ -1,4 +1,5 @@
 Version 0.6e
+  * [extensions/look.pl]  Added a chomp() to remove exess newlines.  [DPN]
   * [extensions/info.pl, tlily.global]  Added an 'editor' config var.  [DPN]
   * [LC/State.pm] Added -f option to %sync.  [DPN]
   * [extensions/help.pl] Tweaked help output.  [DPN]

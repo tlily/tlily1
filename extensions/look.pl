@@ -15,6 +15,7 @@ sub spellcheck($$$) {
     return if ($word eq '');
 
     @res = `look $word`;
+    chomp(@res);
 
     foreach (@res) {
 	ui_output $_;
